@@ -325,6 +325,20 @@
     function teachersBySubject(subj){ return (allTeachers||[]).filter(t=>t.subject===subj); }
     function dedupeTeachers(list){ const seen=new Map(); list.forEach(t=>{ const key=`${t.name}||${t.email||''}`; if(!seen.has(key)) seen.set(key,t); }); return Array.from(seen.values()); }
     function getC1(obj){ return (obj.class1 || obj['분류1'] || obj.state || '').trim(); }
+    /* === 통일된 시약 상태 판별 함수 === */
+    const RE_SOLID = /고체|분말|결정|시약병|pellet|powder/i;
+    const RE_BIO   = /생물/i;
+    const RE_INDICATOR = /지시약/i;
+    function isSolidLike_(state, name) {
+      return RE_SOLID.test(state || '') || RE_BIO.test(state || '') || RE_INDICATOR.test((state || '') + ' ' + (name || ''));
+    }
+    function getConcPlaceholder_(state, name) {
+      if (RE_BIO.test(state || '')) return '생물 시약(입력 불필요)';
+      if (RE_INDICATOR.test((state || '') + ' ' + (name || ''))) return '지시약(입력 불필요)';
+      if (RE_SOLID.test(state || '')) return '고체 시약(입력 불필요)';
+      return '농도 단위를 꼭 입력하세요.';
+    }
+
     function normalizeRecord(rec){
       const r = {
         name:       rec['물질명'] || rec.name || '',
@@ -338,6 +352,8 @@
         cas:        rec['화학물질 고유번호'] || rec.cas || ''
       };
       r.state = getC1(r);
+      r.isBio = RE_BIO.test(r.state);
+      r.isIndicator = RE_INDICATOR.test(r.state + ' ' + r.name);
       r.studentOK = normalizeYesNo(r.studentOK);
       r.guidance  = normalizeGuidance(r.guidance);
       r.disposal  = normDisposal(r.disposal);
@@ -359,9 +375,9 @@
     }
     function normDisposal(v){
       const s=String(v||'').trim().toLowerCase();
-      const map={ '유기':'유기','유기성':'유기','organic':'유기','무기':'무기','무기성':'무기','inorganic':'무기','산':'산','산성':'산','acid':'산','염기':'염기','알칼리':'염기','base':'염기' };
+      const map={ '유기':'유기','유기성':'유기','organic':'유기','무기':'무기','무기성':'무기','inorganic':'무기','산':'산','산성':'산','acid':'산','염기':'염기','알칼리':'염기','base':'염기','기타':'기타','etc':'기타','other':'기타' };
       if(map[s]) return map[s];
-      if(/organic/i.test(s)) return '유기'; if(/inorganic/i.test(s)) return '무기'; if(/acid/i.test(s)) return '산'; if(/base|alkali/i.test(s)) return '염기';
+      if(/inorganic/i.test(s)) return '무기'; if(/organic/i.test(s)) return '유기'; if(/acid/i.test(s)) return '산'; if(/base|alkali/i.test(s)) return '염기';
       return v||'';
     }
 
@@ -888,14 +904,13 @@
       const stateCell = r.insertCell(); const state = rec.state || ''; stateCell.innerText = state;
 
       const inpConc = document.createElement('input'); inpConc.type='text'; inpConc.placeholder='농도 단위를 꼭 입력하세요.';
-      const isSolidLike = /고체/.test(state) || rec.isBio || rec.isIndicator;
-      if (isSolidLike) { inpConc.value=''; inpConc.disabled=true; inpConc.placeholder = rec.isBio ? '생물 시약(입력 불필요)' : '입력 불필요'; }
+      if (isSolidLike_(state, rec.name)) { inpConc.value=''; inpConc.disabled=true; inpConc.placeholder = getConcPlaceholder_(state, rec.name); }
       r.insertCell().appendChild(inpConc);
 
       const inpVol = document.createElement('input'); inpVol.type='text'; inpVol.placeholder='사용량 단위를 꼭 입력하세요.'; r.insertCell().appendChild(inpVol);
 
       const selDisp = document.createElement('select');
-      selDisp.innerHTML = '<option>선택하세요</option><option>유기</option><option>무기</option><option>산</option><option>염기</option>';
+      selDisp.innerHTML = '<option>선택하세요</option><option>유기</option><option>무기</option><option>산</option><option>염기</option><option>기타</option>';
       if (rec.disposal) selDisp.value = rec.disposal;
       r.insertCell().appendChild(selDisp);
 
@@ -912,6 +927,7 @@
       r.dataset.state = state;
       r.dataset.isBio = rec.isBio ? '1' : '0';
       r.dataset.isIndicator = rec.isIndicator ? '1' : '0';
+      r.dataset.isSolidLike = isSolidLike_(state, rec.name) ? '1' : '0';
       r.dataset.disposalDefault = rec.disposal || '';
       r.dataset.guidance = rec.guidance || '';
       r.dataset.class1 = rec.class1 || '';
@@ -944,7 +960,7 @@
       const inpConc = document.createElement('input'); inpConc.type = 'text'; inpConc.placeholder = '농도 단위를 꼭 입력하세요.'; r.insertCell().appendChild(inpConc);
       const inpVol = document.createElement('input'); inpVol  .type  = 'text'; inpVol.placeholder  = '사용량 단위를 꼭 입력하세요.'; r.insertCell().appendChild(inpVol);
 
-      const selDisp = document.createElement('select'); selDisp.innerHTML = '<option>선택하세요</option><option>유기</option><option>무기</option><option>산</option><option>염기</option>'; r.insertCell().appendChild(selDisp);
+      const selDisp = document.createElement('select'); selDisp.innerHTML = '<option>선택하세요</option><option>유기</option><option>무기</option><option>산</option><option>염기</option><option>기타</option>'; r.insertCell().appendChild(selDisp);
 
       const inpMsds= document.createElement('input'); inpMsds.type = 'text'; inpMsds.placeholder = '취급 주의/MSDS 핵심사항을 기록하세요.'; r.insertCell().appendChild(inpMsds);
 
@@ -1011,11 +1027,10 @@
         if (!ch.name) errs.push('• 시약명 누락');
         if (!ch.vol)  errs.push(`• ${ch.name||'시약'}: 사용량 누락`);
         if (!ch.msds) errs.push(`• ${ch.name||'시약'}: MSDS/주의사항 누락`);
-        const isSolidLike = /고체/.test(ch.state) || /생물|지시약/.test((ch.state||'') + ' + ' + (ch.name||''));
-        if (/액체/.test(ch.state)) {
-          if (!ch.conc) errs.push(`• ${ch.name||'시약'}: 액체는 농도 필수`);
-        } else if (isSolidLike) {
+        if (isSolidLike_(ch.state, ch.name)) {
           if (ch.conc) errs.push(`• ${ch.name||'시약'}: 고체/생물/지시약은 농도 입력 금지`);
+        } else {
+          if (!ch.conc) errs.push(`• ${ch.name||'시약'}: 액체는 농도 필수`);
         }
         if (!ch.disposal || ch.disposal==='선택하세요') errs.push(`• ${ch.name||'시약'}: 폐기 방법 미선택`);
       });
@@ -1166,15 +1181,13 @@
 
           if (!name) { showCustomAlert('시약명을 입력해야 합니다.'); return false; }
           if (!vol || !msds) { showCustomAlert('시약의 사용량과 MSDS를 모두 입력하세요.'); return false; }
-          if (!disposal || disposal === '선택하세요') { showCustomAlert('시약의 폐수 처리 분류(유기/무기/산/염기)를 선택하세요.'); return false; }
+          if (!disposal || disposal === '선택하세요') { showCustomAlert('시약의 폐수 처리 분류(유기/무기/산/염기/기타)를 선택하세요.'); return false; }
 
-          const isBio = tr.dataset.isBio === '1';
-          const isIndicator = tr.dataset.isIndicator === '1';
           const conc  = c[3].querySelector('input').value.trim();
 
-          if (isBio || isIndicator || /고체/.test(state)) {
-            if (conc) { showCustomAlert('생물/지시약/고체 시약은 농도를 입력할 수 없습니다.'); return false; }
-          } else if (/액체/.test(state)) {
+          if (isSolidLike_(state, name)) {
+            if (conc) { showCustomAlert('고체/생물/지시약 시약은 농도를 입력할 수 없습니다.'); return false; }
+          } else {
             if (!conc) { showCustomAlert('액체 시약은 농도를 반드시 입력해야 합니다.'); return false; }
           }
         }
@@ -1569,15 +1582,22 @@
         const inpName = document.createElement('input'); inpName.type='text'; inpName.value=c['시약명']||''; r.insertCell().appendChild(inpName);
         const inpFormula = document.createElement('input'); inpFormula.type='text'; inpFormula.value=c['화학식']||''; r.insertCell().appendChild(inpFormula);
         const tdState = r.insertCell(); tdState.innerText = c['상태'] || c['분류1'] || '';
-        const inpConc = document.createElement('input'); inpConc.type='text'; inpConc.value=c['농도']||''; r.insertCell().appendChild(inpConc);
+        const chemState = tdState.innerText;
+        const chemName = inpName.value;
+        const inpConc = document.createElement('input'); inpConc.type='text'; inpConc.value=c['농도']||'';
+        if (isSolidLike_(chemState, chemName)) { inpConc.value=''; inpConc.disabled=true; inpConc.placeholder=getConcPlaceholder_(chemState, chemName); }
+        r.insertCell().appendChild(inpConc);
         const inpVol  = document.createElement('input'); inpVol.type='text'; inpVol.value=c['용량']||''; r.insertCell().appendChild(inpVol);
-        const selDisp = document.createElement('select'); selDisp.innerHTML='<option>선택하세요</option><option>유기</option><option>무기</option><option>산</option><option>염기</option>'; r.insertCell().appendChild(selDisp);
+        const selDisp = document.createElement('select'); selDisp.innerHTML='<option>선택하세요</option><option>유기</option><option>무기</option><option>산</option><option>염기</option><option>기타</option>'; r.insertCell().appendChild(selDisp);
         selDisp.value = normDisposal(c['폐기 방법']||'');
         const inpMsds = document.createElement('input'); inpMsds.type='text'; inpMsds.value=c['MSDS 및 취급 주의사항']||c['MSDS']||''; r.insertCell().appendChild(inpMsds);
         const tdG = r.insertCell(); tdG.innerText = normalizeGuidance(c['교사임장여부']||'');
         const del = document.createElement('button'); del.type='button'; del.textContent='삭제'; del.className='btn-del'; del.onclick=()=>{ tbl.deleteRow(r.rowIndex); markUnvalidated(); }; r.insertCell().appendChild(del);
-        r.dataset.state = tdState.innerText;
-        r.dataset.isBio='0'; r.dataset.isIndicator='0'; r.dataset.disposalDefault='';
+        r.dataset.state = chemState;
+        r.dataset.isBio = RE_BIO.test(chemState) ? '1' : '0';
+        r.dataset.isIndicator = RE_INDICATOR.test(chemState + ' ' + chemName) ? '1' : '0';
+        r.dataset.isSolidLike = isSolidLike_(chemState, chemName) ? '1' : '0';
+        r.dataset.disposalDefault='';
         r.dataset.guidance = tdG.innerText; r.dataset.class1 = c['분류1']||'';
         r.dataset.class2=''; r.dataset.studentOK=''; r.dataset.hazard=''; r.dataset.cas='';
         r.dataset.formula = inpFormula.value;

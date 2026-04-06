@@ -192,7 +192,7 @@
   <div class="card-container">
 
     <!-- 1층 과학실험실 -->
-    <div class="card floor1" onclick="goToForm('form')">
+    <div class="card floor1" onclick="goToForm('form', event)">
       <div class="card-header">
         <div class="floor-badge">S동 1층</div>
         <h2>1층 과학실험실 신청</h2>
@@ -208,7 +208,7 @@
     </div>
 
     <!-- 2, 3층 과학실험실 -->
-    <div class="card floor23" onclick="goToForm('form2f')">
+    <div class="card floor23" onclick="goToForm('form2f', event)">
       <div class="card-header">
         <div class="floor-badge">S동 2·3층</div>
         <h2>2, 3층 과학실험실 신청</h2>
@@ -216,7 +216,7 @@
       </div>
       <div class="lab-list">
         <div class="lab-label">신청 가능 실험실</div>
-        <div class="lab-names"><span class="lab-name">물리실험실</span><span class="separator"> · </span><span class="lab-name">파동광학 실험실</span><span class="separator"> · </span><span class="lab-name">AP Lab</span><span class="separator"> · </span><span class="lab-name">Tech &amp Art LaB</span></div>
+        <div class="lab-names"><span class="lab-name">물리실험실</span><span class="separator"> · </span><span class="lab-name">파동광학 실험실</span><span class="separator"> · </span><span class="lab-name">AP Lab</span><span class="separator"> · </span><span class="lab-name">Tech &amp; Art Lab</span></div>
       </div>
       <div class="card-action">
         <div class="btn">2, 3층 실험실 신청하기 →</div>
@@ -235,7 +235,7 @@
     const webAppUrl = <?!= JSON.stringify(webAppUrl || '') ?>;
     let isNavigating = false;
 
-    function goToForm(page) {
+    function goToForm(page, e) {
       if (isNavigating) return;
       if (!webAppUrl) {
         alert('URL 정보를 가져올 수 없습니다. 페이지를 새로고침해 주세요.');
@@ -243,7 +243,7 @@
       }
       isNavigating = true;
 
-      const card = event.currentTarget;
+      const card = (e || window.event).currentTarget;
       const btn = card.querySelector('.btn');
       card.classList.add('loading');
       btn.innerHTML = '<span class="spinner"></span>이동 중...';

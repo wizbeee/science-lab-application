@@ -149,7 +149,7 @@
         <label><input type="radio" name="decision" value="반려"> 반려</label>
       </div>
       <div id="commentDiv" class="hidden">
-        <label>반려 사유</label>
+        <label id="commentLabel">반려 사유</label>
         <textarea id="comment" rows="3" cols="50" style="width: 100%;" placeholder="반려 사유를 입력하세요."></textarea>
       </div>
     </div>
@@ -306,8 +306,17 @@
     function toggleComment() {
       const decision = document.querySelector('input[name="decision"]:checked');
       const commentDiv = document.getElementById('commentDiv');
-      if (decision && decision.value === '반려') commentDiv.classList.remove('hidden');
-      else commentDiv.classList.add('hidden');
+      const commentLabel = document.getElementById('commentLabel');
+      const comment = document.getElementById('comment');
+      if (!decision) { commentDiv.classList.add('hidden'); return; }
+      commentDiv.classList.remove('hidden');
+      if (decision.value === '반려') {
+        commentLabel.textContent = '반려 사유';
+        comment.placeholder = '반려 사유를 입력하세요.';
+      } else {
+        commentLabel.textContent = '승인 의견 (선택)';
+        comment.placeholder = '학생에게 전달할 의견이 있으면 입력하세요.';
+      }
     }
 
     // 시약 테이블에서 '필요'가 있는지 다시 검사 (현재는 셀 텍스트만 본다)

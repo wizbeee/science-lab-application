@@ -246,22 +246,24 @@ function sendTeacherApprovalEmail_(data, appId) {
 }
 
 /** 학생에게 1차 승인 안내 */
-function sendStudentFirstApproveEmail_(rec) {
+function sendStudentFirstApproveEmail_(rec, comment) {
   const email = getStudentEmail_(rec['대표자학번']);
   if (!email) return { ok: false, error: '학번 누락' };
   const e = escapeHtml_;
   const subject = `[실험실 1차 승인] ${e(rec['대표자이름'])}님의 신청이 1차 승인되었습니다`;
-  const body = buildEmailHtml_('실험실 1차 승인 안내', [
+  const lines = [
     `${e(rec['대표자이름'])}님, 과학실험실 사용 신청이 지도교사에 의해 1차 승인되었습니다.`,
     '',
     `• 신청 ID: ${e(rec['신청ID'])}`,
     `• 실험실: ${e(rec['신청실험실'])}`,
     `• 실험 날짜: ${normalizeDateYMD_(rec['실험할날짜'])}`,
     `• 실험 제목: ${e(rec['실험제목'] || '')}`,
-    '',
-    '실험실 담당교사의 최종 승인을 거쳐 확정됩니다.',
-    '최종 승인/반려 결과는 이메일로 안내됩니다.'
-  ]);
+  ];
+  if (comment && String(comment).trim()) {
+    lines.push('', `<b>지도교사 의견:</b> ${e(comment)}`);
+  }
+  lines.push('', '실험실 담당교사의 최종 승인을 거쳐 확정됩니다.', '최종 승인/반려 결과는 이메일로 안내됩니다.');
+  const body = buildEmailHtml_('실험실 1차 승인 안내', lines);
   return sendMail_(email, subject, body);
 }
 
@@ -330,12 +332,12 @@ function sendLabTeacherFinalEmail_(rec, appId) {
 }
 
 /** 학생에게 최종 승인 안내 */
-function sendStudentFinalApproveEmail_(rec) {
+function sendStudentFinalApproveEmail_(rec, comment) {
   const email = getStudentEmail_(rec['대표자학번']);
   if (!email) return { ok: false, error: '학번 누락' };
   const e = escapeHtml_;
   const subject = `[실험실 최종 승인] ${e(rec['대표자이름'])}님의 실험실 사용이 승인되었습니다`;
-  const body = buildEmailHtml_('실험실 최종 승인 완료', [
+  const lines = [
     `${e(rec['대표자이름'])}님, 과학실험실 사용 신청이 최종 승인되었습니다.`,
     '',
     `• 신청 ID: ${e(rec['신청ID'])}`,
@@ -343,10 +345,12 @@ function sendStudentFinalApproveEmail_(rec) {
     `• 실험 날짜: ${normalizeDateYMD_(rec['실험할날짜'])}`,
     `• 시간: ${e(rec['신청시간'])}`,
     `• 실험 제목: ${e(rec['실험제목'] || '')}`,
-    '',
-    '실험 당일 안전장구를 반드시 착용하시고, 실험실 안전 수칙을 준수해 주세요.',
-    '실험실 사용 후 반드시 뒷정리를 완료해 주세요.'
-  ]);
+  ];
+  if (comment && String(comment).trim()) {
+    lines.push('', `<b>담당교사 의견:</b> ${e(comment)}`);
+  }
+  lines.push('', '실험 당일 안전장구를 반드시 착용하시고, 실험실 안전 수칙을 준수해 주세요.', '실험실 사용 후 반드시 뒷정리를 완료해 주세요.');
+  const body = buildEmailHtml_('실험실 최종 승인 완료', lines);
   return sendMail_(email, subject, body);
 }
 
@@ -385,23 +389,18 @@ function sendTeacherFinalResultEmail_(rec, decision, comment) {
   const subject = isApproved
     ? `[실험실 최종 승인 완료] ${e(rec['대표자이름'])} (${e(rec['대표자학번'])})`
     : `[실험실 최종 반려] ${e(rec['대표자이름'])} (${e(rec['대표자학번'])})`;
-  const lines = isApproved
-    ? [
-        `${e(rec['대표자이름'])} (${e(rec['대표자학번'])}) 학생의 실험실 사용 신청이 최종 승인되었습니다.`,
-        '',
-        `• 실험실: ${e(rec['신청실험실'])}`,
-        `• 날짜/시간: ${normalizeDateYMD_(rec['실험할날짜'])} / ${e(rec['신청시간'])}`,
-        `• 실험 제목: ${e(rec['실험제목'] || '')}`,
-      ]
-    : [
-        `${e(rec['대표자이름'])} (${e(rec['대표자학번'])}) 학생의 실험실 사용 신청이 최종 반려되었습니다.`,
-        '',
-        `• 실험실: ${e(rec['신청실험실'])}`,
-        `• 날짜/시간: ${normalizeDateYMD_(rec['실험할날짜'])} / ${e(rec['신청시간'])}`,
-        `• 실험 제목: ${e(rec['실험제목'] || '')}`,
-        '',
-        `<b>반려 사유:</b> ${e(comment) || '(사유 없음)'}`,
-      ];
+  const lines = [
+    `${e(rec['대표자이름'])} (${e(rec['대표자학번'])}) 학생의 실험실 사용 신청이 최종 ${isApproved ? '승인' : '반려'}되었습니다.`,
+    '',
+    `• 실험실: ${e(rec['신청실험실'])}`,
+    `• 날짜/시간: ${normalizeDateYMD_(rec['실험할날짜'])} / ${e(rec['신청시간'])}`,
+    `• 실험 제목: ${e(rec['실험제목'] || '')}`,
+  ];
+  if (comment && String(comment).trim()) {
+    lines.push('', `<b>${isApproved ? '승인 의견' : '반려 사유'}:</b> ${e(comment)}`);
+  } else if (!isApproved) {
+    lines.push('', `<b>반려 사유:</b> (사유 없음)`);
+  }
   const body = buildEmailHtml_(isApproved ? '최종 승인 완료 안내' : '최종 반려 안내', lines);
   return sendMail_(email, subject, body);
 }
@@ -826,14 +825,16 @@ function canonDisposal_(val) {
   const map = new Map([
     ['유기','유기'], ['organic','유기'], ['organics','유기'],
     ['무기','무기'], ['inorganic','무기'],
-    ['산','산'],     ['acid','산'],     ['acids','산'],
-    ['염기','염기'], ['base','염기'],   ['bases','염기'], ['alkali','염기'], ['alkaline','염기']
+    ['산','산'],     ['acid','산'],     ['acids','산'], ['산성','산'],
+    ['염기','염기'], ['base','염기'],   ['bases','염기'], ['alkali','염기'], ['alkaline','염기'],
+    ['기타','기타'], ['etc','기타'],    ['other','기타']
   ]);
   if (map.has(s)) return map.get(s);
   if (/염기/.test(s) || /\bbase\b|\balkali/.test(s)) return '염기';
-  if (/유기/.test(s) || /\borganic/.test(s)) return '유기';
   if (/무기/.test(s) || /\binorganic/.test(s)) return '무기';
-  if (/산/.test(s)   || /\bacid/.test(s))     return '산';
+  if (/유기/.test(s) || /\borganic/.test(s)) return '유기';
+  if (/^산$/.test(s) || /\bacid/.test(s)) return '산';
+  if (/기타/.test(s) || /\bother\b|\betc\b/.test(s)) return '기타';
   return '';
 }
 
@@ -887,12 +888,9 @@ function validateChemicals(chems) {
   const dispMap = getDisposalMap_();
   const mismatches = [];
   (chems || []).forEach(c => {
-    const nameRaw = String(c && c.name || c['시약명'] || c['물질명'] || '').trim();
-    const gotRaw  = String(c && (c.disposal || c['폐기 방법'] || c['폐수처리'] || c['폐기'] || ''))
-                      .trim();
-    const gd      = String(c && (c.guidance || c['교사임장여부'] || c['교사 임장 여부'] || '')).trim();
+    const nameRaw = String((c && (c.name || c['시약명'] || c['물질명'])) || '').trim();
+    const gotRaw  = String((c && (c.disposal || c['폐기 방법'] || c['폐수처리'] || c['폐기'])) || '').trim();
     if (!nameRaw || !gotRaw) return;
-    if (gd !== '필요' && gd !== '불필요') return;
     const key = normalizeChemName_(nameRaw);
     const got = canonDisposal_(gotRaw);
     const expected = dispMap[key] || '';
@@ -1029,9 +1027,11 @@ function submitApplication_(data) {
         }
       }
 
+      const RE_SOLID_SERVER = /고체|분말|시약병|결정|pellet|powder|생물|지시약/i;
       const isSolidLike =
-        /고체|분말|시약병|결정|pellet|powder/i.test(clientState || '') ||
-        /고체|분말|시약병|결정|pellet|powder/i.test(finalState || '');
+        RE_SOLID_SERVER.test(clientState || '') ||
+        RE_SOLID_SERVER.test(finalState || '') ||
+        RE_SOLID_SERVER.test(name || '');
 
       const conc = String(c['농도'] || '').trim();
       const amt  = String((c['용량'] ?? c['사용량'] ?? '')).trim();
@@ -1118,11 +1118,12 @@ function submitApplication_(data) {
       const stateFromMaster = class1Map[key] || String(c['상태'] || c['분류1'] || '').trim();
       const msdsText = (c['MSDS 및 취급 주의사항'] ?? c['MSDS'] ?? '');
       const guidance = (c['교사임장여부'] ?? c['교사 임장 여부'] ?? c.guidance ?? '');
+      const disposal = String(c['폐기 방법'] || c['폐수처리'] || c['폐기'] || c.disposal || '').trim();
       chemSh.appendRow([
         id, now, data.lab, data.date, data.timeSlot,
         data.studentId, data.studentName,
         name, stateFromMaster, c['농도'] || '', (c['용량'] ?? c['사용량'] ?? '') || '',
-        msdsText || '', guidance || ''
+        msdsText || '', guidance || '', disposal
       ]);
     });
   }
@@ -1299,7 +1300,7 @@ function submitApproval_(info) {
 
   if (decision === '승인') {
     // 학생에게 1차 승인 안내
-    const r1 = sendStudentFirstApproveEmail_(rec);
+    const r1 = sendStudentFirstApproveEmail_(rec, comment);
     if (!r1.ok) warnings.push('학생 1차 승인 메일 발송 실패: ' + (r1.error || ''));
 
     // 담당교사에게 최종 승인 요청 (실패 시 학과 메일로 fallback)
@@ -1371,9 +1372,9 @@ function submitFinalApproval_(info) {
   const warnings = [];
 
   if (decision === '승인') {
-    const r1 = sendStudentFinalApproveEmail_(rec);
+    const r1 = sendStudentFinalApproveEmail_(rec, comment);
     if (!r1.ok) warnings.push('학생 최종승인 메일 발송 실패: ' + (r1.error || ''));
-    const r2 = sendTeacherFinalResultEmail_(rec, '승인', '');
+    const r2 = sendTeacherFinalResultEmail_(rec, '승인', comment);
     if (!r2.ok) warnings.push('지도교사 최종승인 결과 메일 발송 실패: ' + (r2.error || ''));
   } else {
     const r1 = sendStudentFinalRejectEmail_(rec, comment);

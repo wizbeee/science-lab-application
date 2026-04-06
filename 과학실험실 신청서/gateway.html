@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>과학실험실 사용 신청 - 선택</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', 'Apple SD Gothic Neo', Arial, sans-serif;
+      background: linear-gradient(135deg, #e8f0fe 0%, #f5f5f5 50%, #e8f5e9 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .header h1 {
+      font-size: 2rem;
+      color: #1a237e;
+      margin-bottom: 8px;
+    }
+    .header p {
+      font-size: 1rem;
+      color: #555;
+    }
+
+    .card-container {
+      display: flex;
+      gap: 32px;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 900px;
+      width: 100%;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      width: 400px;
+      max-width: 100%;
+      overflow: hidden;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+        display: flex;
+        flex-direction: column;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    }
+    .card:active {
+      transform: translateY(0);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    .card.loading {
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    .card-header {
+      padding: 24px 24px 16px;
+      text-align: center;
+    }
+    .card-header .floor-badge {
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      letter-spacing: 0.3px;
+    }
+    .card.floor1 .floor-badge {
+      background: #e3f2fd;
+      color: #1565c0;
+    }
+    .card.floor23 .floor-badge {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+    .card-header h2 {
+      font-size: 1.5rem;
+      color: #222;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+    .card-header .subtitle {
+      font-size: 0.8rem;
+      color: #aaa;
+      font-weight: 400;
+      letter-spacing: 0.3px;
+    }
+
+    .lab-list {
+      padding: 0 24px 16px;
+    }
+    .lab-list .lab-label {
+      font-size: 1rem;
+      font-weight: 500;
+      color: #444;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    .lab-list .lab-names {
+      font-size: 1rem;
+      color: #444;
+      text-align: center;
+      line-height: 2;
+      font-weight: 500;
+    }
+    .lab-list .lab-names .lab-name {
+      white-space: nowrap;
+    }
+    .lab-list .lab-names .separator {
+      color: #ccc;
+      margin: 0 2px;
+    }
+
+    .card-action {
+      padding: 16px 24px 24px;
+      text-align: center;
+      margin-top: auto;
+    }
+    .card-action .btn {
+      display: inline-block;
+      width: 100%;
+      padding: 14px 0;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #fff;
+      pointer-events: none;
+      text-decoration: none;
+    }
+    .card.floor1 .btn {
+      background: linear-gradient(135deg, #1976d2, #42a5f5);
+    }
+    .card.floor23 .btn {
+      background: linear-gradient(135deg, #2e7d32, #66bb6a);
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .btn .spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+
+    .footer-note {
+      margin-top: 40px;
+      font-size: 0.8rem;
+      color: #999;
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 768px) {
+      body { padding: 20px 12px; }
+      .header h1 { font-size: 1.5rem; }
+      .card-container { gap: 20px; }
+      .card { width: 100%; }
+      .card-header h2 { font-size: 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>과학실험실 사용 신청</h1>
+    <p>신청하려는 실험실이 위치한 층을 선택해 주세요.</p>
+  </div>
+
+  <div class="card-container">
+
+    <!-- 1층 과학실험실 -->
+    <div class="card floor1" onclick="goToForm('form')">
+      <div class="card-header">
+        <div class="floor-badge">S동 1층</div>
+        <h2>1층 과학실험실 신청</h2>
+        <div class="subtitle">화학 · 생물 계열 실험실</div>
+      </div>
+      <div class="lab-list">
+        <div class="lab-label">신청 가능 실험실</div>
+        <div class="lab-names"><span class="lab-name">화학실험실</span><span class="separator"> · </span><span class="lab-name">생물실험실</span><span class="separator"> · </span><span class="lab-name">첨단기기 실험실</span><span class="separator"> · </span><span class="lab-name">프로젝트 실험실</span><span class="separator"> · </span><span class="lab-name">OPEN Lab</span></div>
+      </div>
+      <div class="card-action">
+        <div class="btn">1층 실험실 신청하기 →</div>
+      </div>
+    </div>
+
+    <!-- 2, 3층 과학실험실 -->
+    <div class="card floor23" onclick="goToForm('form2f')">
+      <div class="card-header">
+        <div class="floor-badge">S동 2·3층</div>
+        <h2>2, 3층 과학실험실 신청</h2>
+        <div class="subtitle">물리 계열 실험실</div>
+      </div>
+      <div class="lab-list">
+        <div class="lab-label">신청 가능 실험실</div>
+        <div class="lab-names"><span class="lab-name">물리실험실</span><span class="separator"> · </span><span class="lab-name">파동광학 실험실</span><span class="separator"> · </span><span class="lab-name">AP Lab</span><span class="separator"> · </span><span class="lab-name">Tech &amp Art LaB</span></div>
+      </div>
+      <div class="card-action">
+        <div class="btn">2, 3층 실험실 신청하기 →</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer-note">
+    신청 전 지도교사와 사전 협의가 필요합니다.<br>
+    실험실 안전 수칙을 반드시 숙지한 후 신청해 주세요.
+  </div>
+
+  <script>
+    // 서버에서 주입
+    const webAppUrl = <?!= JSON.stringify(webAppUrl || '') ?>;
+    let isNavigating = false;
+
+    function goToForm(page) {
+      if (isNavigating) return;
+      if (!webAppUrl) {
+        alert('URL 정보를 가져올 수 없습니다. 페이지를 새로고침해 주세요.');
+        return;
+      }
+      isNavigating = true;
+
+      const card = event.currentTarget;
+      const btn = card.querySelector('.btn');
+      card.classList.add('loading');
+      btn.innerHTML = '<span class="spinner"></span>이동 중...';
+
+      const url = webAppUrl + '?page=' + encodeURIComponent(page);
+      window.top.location.href = url;
+    }
+  </script>
+</body>
+</html>

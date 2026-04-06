@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>실험실 신청 승인</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 40px; display: flex; justify-content: center; }
+    #approvalForm { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); width: 1000px; max-width: 100%; box-sizing: border-box; }
+    h2 { text-align: center; margin-bottom: 30px; }
+    label { font-weight: bold; display: block; margin-top: 15px; }
+    .radio-group { display: flex; gap: 20px; margin-top: 10px; flex-wrap: wrap; }
+    .section { margin-top: 24px; }
+    .hidden { display: none; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
+    #saveBtn { margin-top: 24px; padding: 12px; width: 100%; background: #4285F4; color: #fff; border: none; font-size: 16px; border-radius: 5px; cursor: pointer; }
+    #saveBtn:disabled { background: #aaa; cursor: default; }
+    #statusMsg { margin-top: 12px; font-size: 14px; color: #333; }
+    .output { padding: 8px; background: #fafafa; border: 1px solid #ddd; border-radius: 4px; word-break: break-word; white-space: pre-wrap; }
+    .inline-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .time-input { width: 120px; }
+
+    /* 모바일 대응 */
+    @media (max-width: 768px) {
+      body { padding: 8px; }
+      #approvalForm { padding: 16px; width: 100%; }
+      h2 { font-size: 1.3rem; margin-bottom: 16px; }
+      label { font-size: 14px; margin-top: 12px; }
+      .output { font-size: 14px; }
+      .radio-group { gap: 12px; }
+      .radio-group label { font-size: 14px; }
+      table { font-size: 12px; display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .inline-row { flex-direction: column; align-items: stretch; gap: 8px; }
+      .time-input { width: 100%; }
+      textarea { width: 100% !important; box-sizing: border-box; }
+      input, select, textarea, button { font-size: 16px !important; }
+    }
+  </style>
+</head>
+<body>
+  <form id="approvalForm" onsubmit="return false;">
+    <h2>실험실 신청 승인</h2>
+
+    <label>신청 ID</label>
+    <div id="appId" class="output"></div>
+
+    <label>제출 일시</label>
+    <div id="submittedAt" class="output"></div>
+
+    <label>실험 날짜</label>
+    <div id="appDateOnly" class="output"></div>
+
+    <label>대표자</label>
+    <div id="student" class="output"></div>
+
+    <label>동반자 명단</label>
+    <div id="teamMembers" class="output"></div>
+
+    <label>총 인원수</label>
+    <div id="totalParticipants" class="output"></div>
+
+    <label>신청 실험실 / 시간</label>
+    <div id="labTime" class="output"></div>
+
+    <label>실험 제목</label>
+    <div id="title" class="output"></div>
+
+    <label>사용 목적</label>
+    <div id="purpose" class="output"></div>
+
+    <label>첨단기기실 이용 여부</label>
+    <div id="advancedLab" class="output"></div>
+
+    <label>첨단기기실 이용 사유</label>
+    <div id="advancedLabReason" class="output"></div>
+
+    <label>후드 사용 여부</label>
+    <div id="hoodUse" class="output"></div>
+
+    <label>후드 사용 사유</label>
+    <div id="hoodReason" class="output"></div>
+
+    <label>실험 준비물</label>
+    <div id="materials" class="output"></div>
+
+    <label>실험 과정</label>
+    <div id="process" class="output"></div>
+
+    <label>실험 뒷정리</label>
+    <div id="cleanup" class="output"></div>
+
+    <label>실험시 주의사항</label>
+    <div id="precautions" class="output"></div>
+
+    <label>안전장구</label>
+    <div id="safety" class="output"></div>
+
+    <label>지도교사</label>
+    <div id="teacherName" class="output"></div>
+
+    <label>지도교사 이메일</label>
+    <div id="teacherEmail" class="output"></div>
+
+    <div class="section">
+      <label>시약 목록</label>
+      <table id="chemicalTable">
+        <thead>
+          <tr>
+            <th>시약명</th><th>상태</th><th>농도</th><th>용량</th><th>MSDS</th><th>교사임장여부</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <label>1. 직접 실험실에 가셔서 지도해야 하나요?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="guidance" value="Yes"> Yes</label>
+        <label><input type="radio" name="guidance" value="No"> No</label>
+      </div>
+      <div id="entryTimeDiv" class="hidden">
+        <div class="inline-row">
+          <label style="margin:0;">임장 시작시간</label>
+          <input type="time" id="fromTime" class="time-input">
+          <label style="margin:0;">임장 종료시간</label>
+          <input type="time" id="toTime" class="time-input">
+        </div>
+      </div>
+
+      <label style="margin-top:16px;">2. 도구/장비와 시약/재료가 적절한가요?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="toolOk" value="Yes"> Yes</label>
+        <label><input type="radio" name="toolOk" value="No"> No</label>
+      </div>
+
+      <label style="margin-top:16px;">3. 학생의 실험과정, 뒷정리, 실험시 주의사항의 내용이 적절한가요?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="processOk" value="Yes"> Yes</label>
+        <label><input type="radio" name="processOk" value="No"> No</label>
+      </div>
+    </div>
+
+    <div class="section">
+      <label>승인 / 반려</label>
+      <div class="radio-group">
+        <label><input type="radio" name="decision" value="승인"> 승인</label>
+        <label><input type="radio" name="decision" value="반려"> 반려</label>
+      </div>
+      <div id="commentDiv" class="hidden">
+        <label>반려 사유</label>
+        <textarea id="comment" rows="3" cols="50" style="width: 100%;" placeholder="반려 사유를 입력하세요."></textarea>
+      </div>
+    </div>
+
+    <button id="saveBtn" onclick="submitApproval()">저장하기</button>
+    <div id="statusMsg"></div>
+  </form>
+
+  <script>
+    'use strict';
+
+    // ===== 1) 서버 주입 값 =====
+    const templateId = <?!= JSON.stringify(id || '') ?>;
+    const serverData = <?!= JSON.stringify(typeof appData === 'undefined' ? null : appData) ?>;
+
+    // ===== 2) URL에서 id 파싱 =====
+    function getIdFromLocation() {
+      const qs = new URLSearchParams(location.search);
+      const qid = (qs.get('id') || '').trim();
+
+      const hs = new URLSearchParams(location.hash.replace(/^#/, ''));
+      const hid = (hs.get('id') || '').trim();
+
+      if (templateId && String(templateId).trim()) return String(templateId).trim();
+      if (qid) return qid;
+      if (hid) return hid;
+      return '';
+    }
+    const id = getIdFromLocation();
+
+    function z(x){ return String(x).padStart(2,'0'); }
+    function formatDateTime(iso) {
+      if (!iso) return '';
+      try {
+        const d = new Date(iso);
+        if (isNaN(d.getTime())) return String(iso);
+        return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())} ${z(d.getHours())}:${z(d.getMinutes())}:${z(d.getSeconds())}`;
+      } catch(e){ return String(iso); }
+    }
+    function formatDateOnly(iso) {
+      if (!iso) return '';
+      try {
+        const d = new Date(iso);
+        if (isNaN(d.getTime())) return String(iso);
+        return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`;
+      } catch(e){ return String(iso); }
+    }
+
+    function fillForm(data) {
+      document.getElementById('appId').innerText       = data['신청ID'] || '';
+      if (data['제출일시']) document.getElementById('submittedAt').innerText = formatDateTime(data['제출일시']);
+      if (data['실험할날짜']) document.getElementById('appDateOnly').innerText = formatDateOnly(data['실험할날짜']);
+      document.getElementById('student').innerText     = `${data['대표자이름'] || ''} (${data['대표자학번'] || ''})`;
+      document.getElementById('teamMembers').innerText = data['동반자명단'] || '';
+      document.getElementById('totalParticipants').innerText = data['총인원수'] || '';
+      document.getElementById('labTime').innerText     = `${data['신청실험실'] || ''} / ${data['신청시간'] || ''}`;
+      document.getElementById('title').innerText       = data['실험제목'] || '';
+      document.getElementById('purpose').innerText     = data['사용목적'] || '';
+      document.getElementById('advancedLab').innerText       = data['첨단기기실 이용 여부'] || '';
+      document.getElementById('advancedLabReason').innerText = data['첨단기기실 이용 사유'] || '';
+      document.getElementById('hoodUse').innerText          = data['후드 사용 여부'] || '';
+      document.getElementById('hoodReason').innerText       = data['후드 사용 사유'] || '';
+      document.getElementById('materials').innerText        = data['실험준비물'] || '';
+      document.getElementById('process').innerText          = data['실험과정'] || '';
+      document.getElementById('cleanup').innerText          = data['실험뒷정리'] || '';
+      document.getElementById('precautions').innerText      = data['실험시 주의사항'] || '';
+      document.getElementById('safety').innerText           = data['안전장구'] || '';
+      document.getElementById('teacherName').innerText      = data['지도교사이름'] || '';
+      document.getElementById('teacherEmail').innerText     = data['지도교사이메일'] || '';
+
+      const tbody = document.querySelector('#chemicalTable tbody');
+      tbody.innerHTML = '';
+      let hasGuidanceRequired = false;
+
+      (data.chemicals || []).forEach((c) => {
+        const tr = document.createElement('tr');
+
+        // 시약명~MSDS
+        ['시약명','상태','농도','용량','MSDS'].forEach(k => {
+          const td = document.createElement('td');
+          td.innerText = c[k] || '';
+          tr.appendChild(td);
+        });
+
+        // 교사임장여부: ★ 여기서 드롭다운 없이 그대로 출력
+        const tdGuid = document.createElement('td');
+        const need = (c['교사임장여부'] || '').trim();
+        tdGuid.innerText = need;
+        if (need === '필요') {
+          hasGuidanceRequired = true;
+        }
+        tr.appendChild(tdGuid);
+
+        tbody.appendChild(tr);
+      });
+
+      // 시약 중 하나라도 '필요'면 1번을 Yes로 고정
+      const yesRadio = document.querySelector('input[name="guidance"][value="Yes"]');
+      const noRadio  = document.querySelector('input[name="guidance"][value="No"]');
+      if (hasGuidanceRequired) {
+        yesRadio.checked = true;
+        yesRadio.disabled = false;
+        noRadio.checked = false;
+        noRadio.disabled = true;
+        document.getElementById('entryTimeDiv').classList.remove('hidden');
+      } else {
+        yesRadio.disabled = false;
+        noRadio.disabled = false;
+      }
+
+      setupEventListeners();
+    }
+
+    function setupEventListeners() {
+      document.querySelectorAll('input[name="toolOk"]').forEach(r => {
+        r.removeEventListener('change', updateDecision);
+        r.addEventListener('change', updateDecision);
+      });
+      document.querySelectorAll('input[name="processOk"]').forEach(r => {
+        r.removeEventListener('change', updateDecision);
+        r.addEventListener('change', updateDecision);
+      });
+      document.querySelectorAll('input[name="guidance"]').forEach(r => {
+        r.removeEventListener('change', toggleEntryTime);
+        r.addEventListener('change', toggleEntryTime);
+      });
+      document.querySelectorAll('input[name="decision"]').forEach(r => {
+        r.removeEventListener('change', toggleComment);
+        r.addEventListener('change', toggleComment);
+      });
+    }
+
+    function toggleEntryTime(e) {
+      const entryDiv = document.getElementById('entryTimeDiv');
+      if (e.target.value === 'Yes') entryDiv.classList.remove('hidden');
+      else entryDiv.classList.add('hidden');
+    }
+
+    function updateDecision() {
+      const t = document.querySelector('input[name="toolOk"]:checked');
+      const p = document.querySelector('input[name="processOk"]:checked');
+      if (t && p) {
+        if (t.value === 'Yes' && p.value === 'Yes') {
+          const approveRadio = document.querySelector('input[name="decision"][value="승인"]');
+          if (approveRadio) approveRadio.checked = true;
+        } else {
+          const rejectRadio = document.querySelector('input[name="decision"][value="반려"]');
+          if (rejectRadio) rejectRadio.checked = true;
+        }
+        toggleComment();
+      }
+    }
+
+    function toggleComment() {
+      const decision = document.querySelector('input[name="decision"]:checked');
+      const commentDiv = document.getElementById('commentDiv');
+      if (decision && decision.value === '반려') commentDiv.classList.remove('hidden');
+      else commentDiv.classList.add('hidden');
+    }
+
+    // 시약 테이블에서 '필요'가 있는지 다시 검사 (현재는 셀 텍스트만 본다)
+    function checkGuidanceFromChemicals() {
+      const tbody = document.querySelector('#chemicalTable tbody');
+      const rows = Array.from(tbody.rows);
+
+      let mustGuide = false;
+
+      rows.forEach(r => {
+        const lastCell = r.cells[r.cells.length - 1];
+        const v = (lastCell.innerText || '').trim();
+        if (v === '필요') mustGuide = true;
+      });
+
+      const yesRadio = document.querySelector('input[name="guidance"][value="Yes"]');
+      const noRadio  = document.querySelector('input[name="guidance"][value="No"]');
+
+      if (mustGuide) {
+        yesRadio.checked = true;
+        noRadio.checked = false;
+        yesRadio.disabled = false;
+        noRadio.disabled = true;
+        document.getElementById('entryTimeDiv').classList.remove('hidden');
+      } else {
+        yesRadio.disabled = false;
+        noRadio.disabled = false;
+      }
+    }
+
+    function loadApplicationData() {
+      const status = document.getElementById('statusMsg');
+
+      if (serverData && !serverData.__error) {
+        fillForm(serverData);
+        status.innerText = '';
+        return;
+      }
+      if (serverData && serverData.__error) {
+        alert('데이터 로딩 오류: ' + serverData.__error);
+        status.innerText = '로딩 실패: ' + serverData.__error;
+        return;
+      }
+      if (!id) {
+        alert('신청 ID가 제공되지 않았습니다.');
+        status.innerText = '신청 ID가 없습니다.';
+        return;
+      }
+
+      status.innerText = '데이터 로딩 중...';
+      google.script.run
+        .withSuccessHandler(function(data) {
+          if (!data) {
+            alert('신청 데이터를 찾을 수 없습니다.');
+            status.innerText = '데이터 없음';
+            return;
+          }
+          fillForm(data);
+          status.innerText = '';
+        })
+        .withFailureHandler(function(error) {
+          alert('데이터 로딩 오류: ' + (error.message || error));
+          status.innerText = '로딩 실패: ' + (error.message || error);
+        })
+        .getApplication(id);
+    }
+
+    // 시약 테이블에서 선택한 임장여부 수집 (이제는 텍스트만 회수)
+    function collectChemicalsGuidance() {
+      const tbody = document.querySelector('#chemicalTable tbody');
+      const rows = Array.from(tbody.rows);
+      const result = [];
+
+      rows.forEach(r => {
+        const cells = r.cells;
+        const name = (cells[0].innerText || '').trim();
+        const lastCell = cells[cells.length - 1];
+        const guidance = (lastCell.innerText || '').trim();
+        result.push({ name: name, guidance: guidance });
+      });
+
+      return result;
+    }
+
+    function submitApproval() {
+      const btn = document.getElementById('saveBtn');
+      const status = document.getElementById('statusMsg');
+      const guidance = document.querySelector('input[name="guidance"]:checked')?.value;
+      const fromTime = document.getElementById('fromTime').value;
+      const toTime = document.getElementById('toTime').value;
+      const toolOk = document.querySelector('input[name="toolOk"]:checked')?.value;
+      const processOk = document.querySelector('input[name="processOk"]:checked')?.value;
+      const decision = document.querySelector('input[name="decision"]:checked')?.value;
+      const comment = document.getElementById('comment').value.trim();
+
+      if (!guidance) { alert('1번을 선택하세요.'); return; }
+      if (decision === '승인' && guidance === 'Yes' && (!fromTime || !toTime)) { alert('임장 시간을 모두 입력하세요.'); return; }
+      if (guidance === 'Yes' && fromTime && toTime && fromTime >= toTime) { alert('시작시간은 종료시간보다 이전이어야 합니다.'); return; }
+      if (!toolOk) { alert('2번을 선택하세요.'); return; }
+      if (!processOk) { alert('3번을 선택하세요.'); return; }
+      if (!decision) { alert('승인/반려를 선택하세요.'); return; }
+      if (decision === '반려' && !comment) { alert('반려 사유를 입력하세요.'); return; }
+
+      const chemicalsGuidance = collectChemicalsGuidance();
+
+      btn.disabled = true;
+      status.innerText = '저장 중입니다…';
+
+      const info = {
+        id: id,
+        decision: decision,
+        comment: comment,
+        guidanceRequired: guidance,
+        entryTime: guidance === 'Yes' ? `${fromTime}~${toTime}` : '',
+        toolOk: toolOk,
+        processOk: processOk,
+        chemicalsGuidance: chemicalsGuidance   // 프론트에서 만든 시약별 임장여부 (이제 텍스트만)
+      };
+
+      google.script.run
+        .withSuccessHandler(function(msg) {
+          status.innerText = msg;
+          btn.disabled = false;
+          alert(msg);
+        })
+        .withFailureHandler(function(error) {
+          status.innerText = '오류: ' + (error.message || error);
+          btn.disabled = false;
+          alert('오류: ' + (error.message || error));
+        })
+        .submitApproval(info);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', loadApplicationData);
+    } else {
+      setTimeout(loadApplicationData, 50);
+    }
+  </script>
+</body>
+</html>

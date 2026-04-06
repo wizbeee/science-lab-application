@@ -1,0 +1,1962 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <title>과학실험실 사용 신청서(S동 1층 실험실)</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+      background: #f5f5f5;
+      font-family: Arial, sans-serif;
+    }
+    #applicationForm {
+      width: 1200px;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h1, h3, h4 { color: #333; margin-bottom: 8px; }
+    input, select, textarea, button, label { font-size: 14px; }
+    input, select, textarea {
+      width: 100%; padding: 6px; margin-bottom: 12px; box-sizing: border-box;
+    }
+    button { padding: 8px 16px; cursor: pointer; margin-top: 10px; }
+
+    table { width: 100%; border-collapse: collapse; margin: 10px 0; table-layout: fixed; }
+    th, td { border: 1px solid #ccc; padding: 6px; text-align: center; word-break: keep-all; }
+
+    #chemicalSearchGroup { display: flex; gap: 8px; margin-bottom: 8px; }
+    #chemicalSearchGroup input { flex: 1; }
+
+    .time-row, .safety-row, .radio-row {
+      display: flex; gap: 24px; margin-bottom: 16px; flex-wrap: wrap; align-items: center;
+    }
+    input[type="checkbox"], input[type="radio"] {
+      width: 16px !important;
+      height: 16px;
+      min-width: 16px;
+      padding: 0 !important;
+      margin: 0 !important;
+      margin-right: 6px !important;
+      margin-bottom: 0 !important;
+      flex-shrink: 0;
+    }
+    .safety-row input[type="text"] { flex: 1; margin-left: 8px; box-sizing: border-box; }
+    #statusMessage { display: inline-block; font-weight: bold; margin-left: 16px; color: #555; }
+
+    #customAlert {
+      display: none; position: fixed; top: 30%; left: 50%;
+      transform: translate(-50%,-30%); background: white; border: 1px solid #333;
+      padding: 20px; z-index:1000; box-shadow:0 0 10px black; text-align:center;
+    }
+    #customAlert button { margin-top: 15px; }
+    .guidance-required { color: #d32f2f !important; font-weight: bold; }
+
+    #dialogOverlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(2px); z-index: 9999;
+    }
+    #overlayBlock {
+      display: none; position: fixed; inset: 0;
+      background: rgba(240,240,240,0.85); backdrop-filter: blur(2px);
+      z-index: 10000; text-align: center;
+    }
+    #overlayBlock .block-msg {
+      margin-top: 180px; font-size: 1.6rem; font-weight: bold; color: #333;
+      background: #fff; display: inline-block; padding: 32px 60px; border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+    }
+
+    #confirmDialog {
+      display: none; position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%); background: white; border: 1px solid #ddd;
+      padding: 20px; z-index: 10001; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      border-radius: 8px; width: 600px; max-width: 90%; max-height: 80vh; overflow-y: auto;
+    }
+    #confirmDialog h3 {
+      margin-top: 0; color: #333; border-bottom: 2px solid #4285F4; padding-bottom: 10px;
+      position: sticky; top: -20px; background: white; z-index: 1;
+    }
+    #confirmDialog .content-wrapper { padding: 10px 0; line-height: 1.8; }
+    #confirmDialog .question-item { margin-bottom: 15px; padding: 10px; background: #f9f9f9; border-radius: 5px; }
+    #confirmDialog .question-item strong { display: block; margin-bottom: 8px; font-size: 14px; }
+    #confirmDialog .sub-text { font-size: 13px; color: #666; margin: 5px 0 8px 20px; }
+    #confirmDialog .input-group { margin-left: 20px; display: flex; align-items: center; gap: 10px; }
+    #confirmDialog .radio-group { margin-left: 20px; display: flex; gap: 30px; align-items: center; }
+    #confirmDialog .radio-group label { display: flex; align-items: center; cursor: pointer; }
+    #confirmDialog .radio-group input[type="radio"] { margin-right: 5px; cursor: pointer; }
+    #confirmDialog .button-group { display: flex; gap: 10px; justify-content: center; margin-top: 20px; padding-top: 15px;
+      border-top: 1px solid #ddd; position: sticky; bottom: -20px; background: white; z-index: 1; }
+    #confirmDialog button { padding: 10px 25px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; }
+    #confirmDialog .btn-confirm { background: #4285F4; color: white; }
+    #confirmDialog .btn-confirm:disabled { background: #ccc; cursor: not-allowed; }
+    #confirmDialog .btn-cancel { background: #6c757d; color: white; }
+
+    @media (max-width: 650px) {
+      .time-row, .safety-row { flex-direction: column; gap: 8px; align-items: flex-start; }
+      .time-item, .safety-item { width: auto; }
+    }
+
+    /* ===== 모바일 대응 강화 ===== */
+    @media (max-width: 768px) {
+      body { padding: 8px; }
+      #applicationForm { width: 100%; padding: 14px; box-sizing: border-box; }
+      h1 { font-size: 1.3rem; }
+      h3 { font-size: 1rem; }
+      input, select, textarea, button { font-size: 16px !important; }
+      table { font-size: 12px; display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .chem-table { min-width: 700px; }
+      #chemicalSearchGroup { flex-direction: column; }
+      #chemicalSearchGroup input, #chemicalSearchGroup button { width: 100%; }
+      .radio-row { flex-direction: column; gap: 8px; align-items: flex-start; }
+      .fab-container { right: 12px; bottom: 12px; gap: 8px; }
+      .fab { padding: 8px 12px; font-size: 13px; }
+      #confirmDialog { width: 95vw; max-height: 85vh; padding: 14px; }
+      #loadDialog { width: 95vw; padding: 14px; }
+      .info-box { font-size: 11px; }
+      .unit-hint { font-size: .75rem; }
+    }
+
+    #confirmDialog, #confirmDialog .content-wrapper { word-break: keep-all; }
+    #confirmDialog .radio-group label { white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+
+    .blocked-input { outline: 2px solid #d32f2f; background: #fff6f6; }
+
+    .fab-container { position: fixed; right: 24px; bottom: 24px; display: flex; flex-direction: column; gap: 10px; z-index: 10002; }
+    .fab {
+      position: relative; overflow: hidden;
+      background: #4285F4; color: #fff; border: none; border-radius: 24px;
+      padding: 10px 14px; font-weight: bold; cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+      transition: transform .08s ease, box-shadow .12s ease, filter .12s ease;
+      outline: none;
+    }
+    .fab.secondary { background: #6c757d; }
+    .fab:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,0.28); filter: brightness(1.02); }
+    .fab:active { transform: translateY(0) scale(0.98); box-shadow: 0 2px 8px rgba(0,0,0,0.25); filter: brightness(0.98); }
+    .fab:focus-visible { box-shadow: 0 0 0 3px rgba(66,133,244,0.35), 0 2px 8px rgba(0,0,0,0.25); }
+    .fab .ripple { position: absolute; border-radius: 50%; transform: scale(0); animation: ripple .5s linear; background: rgba(255,255,255,.45); pointer-events: none; }
+    @keyframes ripple { to { transform: scale(4); opacity: 0; } }
+
+    /* ===== 통합 불러오기 다이얼로그 ===== */
+    #loadOverlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.35); backdrop-filter: blur(2px); z-index:10010; }
+    #loadDialog {
+      display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+      background:#fff; width:520px; max-width:92vw; border-radius:10px;
+      box-shadow:0 10px 30px rgba(0,0,0,.3); z-index:10011; padding:0; overflow:hidden;
+    }
+    #loadDialog.blurred {
+      filter: blur(3px);
+      pointer-events: none;
+    }
+    #loadDialog .load-header {
+      padding: 16px 20px 0 20px;
+    }
+    #loadDialog .load-header h3 {
+      margin: 0 0 12px; font-size: 1.1rem; color: #333;
+    }
+    /* 탭 스타일 */
+    .load-tabs {
+      display: flex; border-bottom: 2px solid #e0e0e0; margin: 0;
+    }
+    .load-tab {
+      flex: 1; padding: 10px 12px; text-align: center; cursor: pointer;
+      font-size: 14px; font-weight: 600; color: #888; background: none;
+      border: none; border-bottom: 3px solid transparent;
+      transition: color .15s, border-color .15s;
+      margin: 0; outline: none;
+    }
+    .load-tab:hover { color: #555; }
+    .load-tab.active {
+      color: #4285F4; border-bottom-color: #4285F4;
+    }
+    .load-tab.active-green {
+      color: #34a853; border-bottom-color: #34a853;
+    }
+    /* 탭 패널 */
+    .load-panel { display: none; padding: 16px 20px 20px 20px; }
+    .load-panel.active { display: block; }
+    .load-panel .form-row { display:flex; gap:10px; margin:10px 0; }
+    .load-panel .form-row > * { flex:1; }
+    .load-panel .btns { display:flex; gap:10px; justify-content:flex-end; margin-top:12px; }
+    .load-panel .btn { padding:8px 14px; border:none; border-radius:6px; cursor:pointer; font-weight:600; background:#e0e0e0; }
+    .load-panel .btn:hover { filter: brightness(1.05); }
+    .load-panel .btn:active { filter: brightness(0.95); }
+    /* 승인 조회 결과 */
+    .load-panel .result-list { margin-top:12px; max-height:280px; overflow-y:auto; }
+    .load-panel .result-item {
+      display:flex; justify-content:space-between; align-items:center; padding:10px; margin:6px 0;
+      border:1px solid #e0e0e0; border-radius:6px; background:#fafafa; gap:8px; flex-wrap:wrap;
+    }
+    .load-panel .result-item:hover { background:#f0f7ff; border-color:#4285F4; }
+    .load-panel .result-info { flex:1; font-size:13px; line-height:1.5; }
+    .load-panel .result-info b { color:#333; }
+
+    @media (max-width: 768px) {
+      #loadDialog { width:95vw; }
+      .load-tab { font-size: 13px; padding: 8px 6px; }
+      .load-panel .result-item { flex-direction:column; align-items:stretch; }
+    }
+
+    .unit-hint{ font-size:.85rem; color:#d32f2f; margin-top:6px }
+    .unit-hint code{ background:#f3f4f6; padding:2px 6px; border-radius:6px; }
+
+    .pill { display:inline-block; padding:4px 8px; border-radius:999px; background:#eef2ff; color:#3730a3; font-size:12px; }
+    .badge-ok { color:#065f46; background:#ecfdf5; border:1px solid #a7f3d0; }
+    .badge-err { color:#991b1b; background:#fef2f2; border:1px solid #fecaca; }
+    .note { background:#fff7ed; color:#9a3412; border:1px solid #fed7aa; padding:8px 10px; border-radius:8px; font-size:12px; }
+    .danger { background:#fef2f2; color:#991b1b; border:1px solid #fecaca; padding:8px 10px; border-radius:8px; font-size:12px; }
+    .ok { background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; padding:8px 10px; border-radius:8px; font-size:12px; }
+
+    .chem-table { table-layout: fixed; }
+    #chemicalList input[type="text"], #chemicalList input[type="number"], #chemicalList select {
+      width: 100%; box-sizing: border-box;
+    }
+    .btn-del {
+      display:inline-block; width:100%; max-width:56px; padding:4px 6px;
+      font-size:12px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+
+    #overlayBlock, #dialogOverlay, #loadOverlay { pointer-events: none; }
+    #overlayBlock[style*="display: block"],
+    #dialogOverlay[style*="display: block"],
+    #loadOverlay[style*="display: block"] { pointer-events: auto; }
+
+    .info-box {
+      background:#eff6ff;
+      border:1px solid #bfdbfe;
+      border-radius:6px;
+      padding:8px 12px;
+      font-size:12px;
+      margin-bottom:12px;
+      line-height:1.4;
+    }
+  </style>
+  <script>
+    (function throttleReload(){
+      try {
+        var lastReloadTime = Number(localStorage.getItem('lastReloadTime') || 0);
+        var now = Date.now();
+        if (now - lastReloadTime < 3000) {
+          function showMsg() {
+            document.body.innerHTML =
+              '<div style="font-size:2rem; color:red; text-align:center; margin-top:100px;">새로고침이 너무 빠릅니다.<br>잠시 후 다시 시도하세요.</div>';
+          }
+          if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', showMsg);
+          else showMsg();
+          throw new Error('Reload throttled');
+        } else {
+          localStorage.setItem('lastReloadTime', String(now));
+        }
+      } catch(e) {}
+    })();
+
+    window.addEventListener('DOMContentLoaded', () => {
+      ['overlayBlock','dialogOverlay','loadOverlay'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.style.display = 'none';
+          el.style.pointerEvents = 'none';
+        }
+      });
+    });
+
+    const TIME_SLOTS = ['ET','EP1','7교시'];
+    let labOriginalLabels = {};
+
+    let calendarFetchSeq = 0;
+    let currentCalendarBlocks = null;
+
+    let lastCopyTime = 0, lastPasteTime = 0, copyCount = 0, pasteCount = 0;
+    const ACTION_DELAY = 1000, MAX_ACTIONS_PER_MINUTE = 10;
+    setInterval(() => { copyCount = Math.max(0, copyCount - 1); pasteCount = Math.max(0, pasteCount - 1); }, 6000);
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === "F12" || (e.ctrlKey && e.shiftKey && (e.key.toLowerCase() === "i" || e.key.toLowerCase() === "j")) || (e.ctrlKey && e.key.toLowerCase() === "u")) {
+        e.preventDefault(); alert("허용되지 않은 동작입니다."); return false;
+      }
+      const t = Date.now();
+      const isC = (e.ctrlKey || e.metaKey) && e.key.toLowerCase()==='c';
+      const isV = (e.ctrlKey || e.metaKey) && e.key.toLowerCase()==='v';
+      const isX = (e.ctrlKey || e.metaKey) && e.key.toLowerCase()==='x';
+      if (isC){ if (t-lastCopyTime<ACTION_DELAY || copyCount>=MAX_ACTIONS_PER_MINUTE){ e.preventDefault(); showCustomAlert('복사 제한을 초과했습니다. 잠시 후 다시 시도해주세요.'); return false; } lastCopyTime=t; copyCount++; }
+      if (isV){ if (t-lastPasteTime<ACTION_DELAY || pasteCount>=MAX_ACTIONS_PER_MINUTE){ e.preventDefault(); showCustomAlert('붙여넣기 제한을 초과했습니다. 잠시 후 다시 시도해주세요.'); return false; } lastPasteTime=t; pasteCount++; }
+      if (isX){ if (t-lastCopyTime<ACTION_DELAY || copyCount>=MAX_ACTIONS_PER_MINUTE){ e.preventDefault(); showCustomAlert('잘라내기 제한을 초과했습니다. 잠시 후 다시 시도해주세요.'); return false; } lastCopyTime=t; copyCount++; }
+    });
+
+    function showOverlayBlock(msg, bringToFront) {
+      const overlay = document.getElementById('overlayBlock');
+      overlay.querySelector('.block-msg').innerHTML = msg;
+      overlay.style.display = 'block';
+
+      if (bringToFront) {
+        overlay.style.zIndex = '11000';
+        const dlg = document.getElementById('loadDialog');
+        if (dlg) dlg.classList.add('blurred');
+      } else {
+        overlay.style.zIndex = '10000';
+      }
+    }
+    function hideOverlayBlock() {
+      const overlay = document.getElementById('overlayBlock');
+      overlay.style.display = 'none';
+      overlay.style.zIndex = '10000';
+      const dlg = document.getElementById('loadDialog');
+      if (dlg) dlg.classList.remove('blurred');
+    }
+
+    let restrictedIds = [], hasRestrictedMatch = false, restrictedHitSet = new Set();
+    function extractFiveDigitTokens(text){ if(!text) return []; const a=[], re=/\b(\d{5})\b/g; let m; while((m=re.exec(String(text)))!==null) a.push(m[1]); return a; }
+    function isTuesday(dateStr){ if(!dateStr) return false; const d=new Date(dateStr); return !isNaN(d) && d.getDay()===2; }
+    function isSeventhExceptionActive(){
+      const purpose=(document.getElementById('purpose')?.value||'').trim();
+      const dateStr=(document.getElementById('date')?.value||'').trim();
+      const p7=document.getElementById('period7');
+      return !!(p7 && p7.checked) && purpose==='동아리 활동' && isTuesday(dateStr);
+    }
+
+    let chemicalDB = [], allTeachers = [];
+    const MAX_CHEMICALS = 20;
+
+    let validatedOk = false, cooldownTimer = null, cooldownRemain = 0;
+
+    function teachersBySubject(subj){ return (allTeachers||[]).filter(t=>t.subject===subj); }
+    function dedupeTeachers(list){ const seen=new Map(); list.forEach(t=>{ const key=`${t.name}||${t.email||''}`; if(!seen.has(key)) seen.set(key,t); }); return Array.from(seen.values()); }
+    function getC1(obj){ return (obj.class1 || obj['분류1'] || obj.state || '').trim(); }
+    function normalizeRecord(rec){
+      const r = {
+        name:       rec['물질명'] || rec.name || '',
+        formula:    rec['화학식'] || rec.formula || '',
+        class1:     rec['분류1'] || rec.class1 || '',
+        class2:     rec['분류2'] || rec.class2 || '',
+        guidance:   rec['임장여부'] || rec['교사임장여부'] || rec.guidance || '',
+        disposal:   rec['폐수처리'] || rec['폐수 처리 분류'] || rec.disposal || '',
+        studentOK:  rec['불출가능'] || rec['학생 불출 가능 여부'] || rec.studentOK || '',
+        hazard:     rec['유해영역'] || rec['유해화학물질관리에 의한 규제 영역'] || rec.hazard || '',
+        cas:        rec['화학물질 고유번호'] || rec.cas || ''
+      };
+      r.state = getC1(r);
+      r.studentOK = normalizeYesNo(r.studentOK);
+      r.guidance  = normalizeGuidance(r.guidance);
+      r.disposal  = normDisposal(r.disposal);
+      return r;
+    }
+    function normalizeYesNo(v){
+      const s=String(v||'').trim();
+      if(!s) return '';
+      if(/(예|가능|yes|true)/i.test(s)) return '예';
+      if(/(아니오|불가|no|false)/i.test(s)) return '아니오';
+      return s;
+    }
+    function normalizeGuidance(v){
+      const s = String(v || '').trim();
+      if (!s) return '';
+      if (/(불필요|불요|해당없음|무|x|X|미필요|없음|N\b|no\b|false)/i.test(s)) return '불필요';
+      if (/(필요|임장|참관|교사참관|교사임장|O\b|o\b|Y\b|yes\b|true\b|필수)/i.test(s)) return '필요';
+      return s;
+    }
+    function normDisposal(v){
+      const s=String(v||'').trim().toLowerCase();
+      const map={ '유기':'유기','유기성':'유기','organic':'유기','무기':'무기','무기성':'무기','inorganic':'무기','산':'산','산성':'산','acid':'산','염기':'염기','알칼리':'염기','base':'염기' };
+      if(map[s]) return map[s];
+      if(/organic/i.test(s)) return '유기'; if(/inorganic/i.test(s)) return '무기'; if(/acid/i.test(s)) return '산'; if(/base|alkali/i.test(s)) return '염기';
+      return v||'';
+    }
+
+    function initApp(){
+      const searchBtn = document.querySelector('#chemicalSearchGroup button');
+      if (searchBtn) searchBtn.disabled = true;
+
+      const labSel = document.getElementById('lab');
+      if (labSel) {
+        [...labSel.options].forEach(opt => {
+          opt.dataset.originalLabel = opt.textContent;
+          if (opt.value) labOriginalLabels[opt.value] = opt.textContent;
+        });
+      }
+
+      google.script.run
+        .withSuccessHandler(db => {
+          let arr = [];
+
+          if (Array.isArray(db) && db.length && typeof db[0] === 'object' && !Array.isArray(db[0])) {
+            arr = db;
+          }
+          else if (Array.isArray(db) && db.length && Array.isArray(db[0])) {
+            let headerRowIdx = 0;
+            if (db.length > 1) {
+              const r1 = (db[1] || []).map(x => String(x || '').trim());
+              if (r1.includes('물질명') && r1.includes('화학식')) {
+                headerRowIdx = 1;
+              }
+            }
+            const header = (db[headerRowIdx] || []).map(x => String(x || '').trim());
+            for (let i = headerRowIdx + 1; i < db.length; i++) {
+              const row = db[i] || [];
+              if (row.every(v => v === '' || v == null)) continue;
+              const obj = {};
+              header.forEach((h, idx) => {
+                if (!h) return;
+                obj[h] = row[idx] != null ? row[idx] : '';
+              });
+              arr.push(obj);
+            }
+          }
+
+          try {
+            chemicalDB = arr.map(normalizeRecord);
+          } catch(e) {
+            chemicalDB = [];
+          }
+
+          if (searchBtn) searchBtn.disabled = false;
+        })
+        .withFailureHandler(_ => {
+          if (searchBtn) searchBtn.disabled = false; chemicalDB = [];
+        })
+        .getChemicalList();
+
+      google.script.run.withSuccessHandler(list => {
+        allTeachers = list;
+        loadTeachers([]); recomputeTeacherOptions(); enforceAdvancedLabByLab(document.getElementById('lab')?.value);
+      }).getTeacherList();
+
+      google.script.run.withSuccessHandler(list => { restrictedIds = Array.isArray(list) ? list.slice() : []; }).getRestrictedList();
+
+      const teacherEmailEl = document.getElementById('teacherEmail'); if (teacherEmailEl) teacherEmailEl.value = '';
+
+      showDayOfWeek(); updatePeriod7Availability();
+
+      const sidEl = document.getElementById('studentId');
+      const tmEl  = document.getElementById('teamMembers');
+      sidEl?.addEventListener('input', immediateWarnIfBlocked);
+      tmEl?.addEventListener('input', immediateWarnIfBlocked);
+      sidEl?.addEventListener('blur', immediateWarnIfBlocked);
+      tmEl?.addEventListener('blur', immediateWarnIfBlocked);
+
+      document.querySelectorAll('input[name="timeSlot"]').forEach(cb => {
+        cb.disabled = false;
+      });
+
+      const chemSearchInput = document.getElementById('chemicalSearch');
+      chemSearchInput?.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); searchChemical(); }});
+
+      initFabFeedback();
+
+      const chemTable = document.getElementById('chemicalList');
+      chemTable.addEventListener('input', markUnvalidated);
+      chemTable.addEventListener('change', markUnvalidated);
+    }
+    document.addEventListener('DOMContentLoaded', initApp);
+
+    function loadTeachers(list) {
+      const sel = document.getElementById('teacher');
+      sel.innerHTML = '<option value="">선택</option>';
+      list.forEach(item => {
+        const o = document.createElement('option');
+        o.value = item.name; o.textContent = item.name; o.dataset.email = item.email || '';
+        sel.appendChild(o);
+      });
+      sel.selectedIndex = 0;
+      sel.onchange = e => {
+        document.getElementById('teacherEmail').value = e.target.selectedOptions[0]?.dataset.email || '';
+      };
+    }
+
+    function enforceAdvancedLabByLab(labVal) {
+      const advSel   = document.getElementById('advancedLab');
+      const advNote  = document.getElementById('advancedLabNote');
+      const reasonEl = document.getElementById('advancedLabReason');
+      if (!advSel || !reasonEl) return;
+
+      if (String(labVal || '').trim() === '첨단기기실험실') {
+        advSel.value = '예'; advSel.disabled = true; advSel.style.background = '#f8f9fa';
+        reasonEl.style.display = 'block';
+        if (advNote) advNote.style.display = 'block';
+      } else {
+        advSel.disabled = false; advSel.style.background = '';
+        if (advNote) advNote.style.display = 'none';
+        if (advSel.value !== '예') { reasonEl.style.display = 'none'; reasonEl.value = ''; }
+      }
+    }
+
+    function recomputeTeacherOptions() {
+      const purpose = (document.getElementById('purpose')?.value || '').trim();
+      const labVal  = (document.getElementById('lab')?.value  || '').trim();
+
+      const chem = teachersBySubject('화학');
+      const bio  = teachersBySubject('생명과학');
+
+      const isClubPurpose = (purpose === '동아리' || purpose === '동아리 활동' || purpose.includes('동아리'));
+      if (isClubPurpose) { loadTeachers(dedupeTeachers([...chem, ...bio])); return; }
+
+      const isOpenGroupLab = (labVal === '프로젝트실험실' || labVal === '첨단기기실험실' || labVal === '오픈랩');
+      if (isOpenGroupLab) { loadTeachers(dedupeTeachers([...chem, ...bio])); return; }
+
+      if (!labVal) { loadTeachers([]); return; }
+      if (labVal === '화학실험실')      loadTeachers(chem);
+      else if (labVal === '생물실험실') loadTeachers(bio);
+      else loadTeachers([]);
+    }
+
+    function resetTimeLabelsOnly() {
+      const timeCbs = document.querySelectorAll('input[name="timeSlot"]');
+      timeCbs.forEach(cb => {
+        cb.disabled = false;
+        const label = cb.closest('label');
+        if (label) {
+          label.textContent = label.textContent.replace(/\s*\(신청 불가\)\s*$/, '');
+          label.insertBefore(cb, label.firstChild);
+        }
+      });
+      updatePeriod7Availability();
+    }
+
+    function disableAllTimeSlots() {
+      const timeCbs = document.querySelectorAll('input[name="timeSlot"]');
+      timeCbs.forEach(cb => {
+        cb.checked = false;
+        cb.disabled = true;
+        const label = cb.closest('label');
+        if (label) {
+          label.textContent = label.textContent.replace(/\s*\(신청 불가\)\s*$/, '');
+          label.insertBefore(cb, label.firstChild);
+        }
+      });
+      updatePeriod7Availability();
+    }
+
+    function disableTimeSlots(blockedList) {
+      const timeCbs = document.querySelectorAll('input[name="timeSlot"]');
+      timeCbs.forEach(cb => {
+        const label = cb.closest('label');
+        if (blockedList.indexOf(cb.value) !== -1) {
+          cb.checked = false;
+          cb.disabled = true;
+          if (label) {
+            label.textContent = label.textContent.replace(/\s*\(신청 불가\)\s*$/, '');
+            label.insertBefore(cb, label.firstChild);
+          }
+        } else {
+          cb.disabled = false;
+          if (label) {
+            label.textContent = label.textContent.replace(/\s*\(신청 불가\)\s*$/, '');
+            label.insertBefore(cb, label.firstChild);
+          }
+        }
+      });
+      updatePeriod7Availability();
+    }
+
+    function applyCalendarBlocksForSelectedLab() {
+      const labSel = document.getElementById('lab');
+      const info   = currentCalendarBlocks;
+
+      if (labSel) {
+        [...labSel.options].forEach(opt => {
+          if (!opt.value) return;
+          opt.disabled = false;
+          if (labOriginalLabels[opt.value]) {
+            opt.textContent = labOriginalLabels[opt.value];
+          }
+        });
+      }
+
+      if (!info) {
+        resetTimeLabelsOnly();
+        return;
+      }
+
+      if (info.allBlocked) {
+        if (labSel) {
+          [...labSel.options].forEach(opt => {
+            if (opt.value) opt.disabled = true;
+          });
+          labSel.value = '';
+        }
+        disableAllTimeSlots();
+        if (info.notice) {
+          showCustomAlert(info.notice);
+        } else {
+          showCustomAlert('해당 날짜에는 과학실험실 사용이 불가능합니다.');
+        }
+        return;
+      }
+
+      if (labSel && Array.isArray(info.blockedLabs) && info.blockedLabs.length) {
+        info.blockedLabs.forEach(bl => {
+          const opt = [...labSel.options].find(o => o.value === bl);
+          if (opt) {
+            opt.disabled = true;
+            opt.textContent = labOriginalLabels[bl] ? labOriginalLabels[bl] : bl;
+          }
+        });
+      }
+
+      const selectedLab = labSel ? labSel.value : '';
+
+      if (!selectedLab) {
+        resetTimeLabelsOnly();
+        return;
+      }
+
+      const isThisLabBlocked =
+        Array.isArray(info.blockedLabs) && info.blockedLabs.includes(selectedLab);
+
+      if (isThisLabBlocked) {
+        labSel.value = '';
+        disableAllTimeSlots();
+        if (info.notice) {
+          showCustomAlert(info.notice);
+        } else {
+          showCustomAlert(selectedLab + '은(는) 이 날짜에는 신청할 수 없습니다.');
+        }
+        return;
+      }
+
+      resetTimeLabelsOnly();
+
+      const mergedBlocked = [];
+      if (info.blockedTimesByLab && info.blockedTimesByLab[selectedLab]) {
+        const blockedList = info.blockedTimesByLab[selectedLab];
+        blockedList.forEach(t => { if (mergedBlocked.indexOf(t) === -1) mergedBlocked.push(t); });
+        if (info.noticeForLab && info.noticeForLab[selectedLab]) {
+          showCustomAlert(info.noticeForLab[selectedLab]);
+        }
+      }
+      if (Array.isArray(info.blockedTimes) && info.blockedTimes.length) {
+        info.blockedTimes.forEach(t => { if (mergedBlocked.indexOf(t) === -1) mergedBlocked.push(t); });
+      }
+      if (mergedBlocked.length) {
+        disableTimeSlots(mergedBlocked);
+      }
+    }
+
+    function showLookupLoading() {
+      var el = document.getElementById('lookupLoading');
+      if (el) { el.style.display = 'flex'; }
+    }
+    function hideLookupLoading() {
+      var el = document.getElementById('lookupLoading');
+      if (el) el.style.display = 'none';
+    }
+
+    function fetchCalendarBlocks(dateStr) {
+      if (!dateStr) {
+        resetCalendarBlocks();
+        hideLookupLoading();
+        currentCalendarBlocks = null;
+        return;
+      }
+
+      const mySeq = ++calendarFetchSeq;
+      showLookupLoading();
+
+      google.script.run
+        .withSuccessHandler(function(info) {
+          if (mySeq !== calendarFetchSeq) return;
+          currentCalendarBlocks = info;
+          applyCalendarBlocksForSelectedLab();
+          if (info && info.notice && !info.allBlocked) {
+            showCustomAlert(info.notice);
+          }
+          hideLookupLoading();
+        })
+        .withFailureHandler(function(err) {
+          if (mySeq !== calendarFetchSeq) return;
+          hideLookupLoading();
+          console && console.warn && console.warn('캘린더 조회 실패:', err);
+        })
+        .getUnavailableForDate(dateStr);
+    }
+
+    function showDayOfWeek() {
+      const input = document.getElementById('date'), span = document.getElementById('dayOfWeek');
+      if (!input.value) {
+        span.textContent = '';
+        updatePeriod7Availability();
+        recomputeTeacherOptions();
+        resetCalendarBlocks();
+        currentCalendarBlocks = null;
+        return;
+      }
+      const daysKor = ['일', '월', '화', '수', '목', '금', '토'];
+      const d = new Date(input.value);
+      const dayOfWeek = d.getDay();
+
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+        showCustomAlert('주말은 실험실을 이용할 수 없습니다.');
+        input.value = '';
+        span.textContent = '';
+        updatePeriod7Availability();
+        recomputeTeacherOptions();
+        immediateWarnIfBlocked();
+        resetCalendarBlocks();
+        currentCalendarBlocks = null;
+        return;
+      }
+
+      span.textContent = `(${daysKor[dayOfWeek]}요일)`;
+      updatePeriod7Availability();
+      recomputeTeacherOptions();
+      immediateWarnIfBlocked();
+      fetchCalendarBlocks(input.value);
+    }
+
+    function handleLabChange(s) {
+      const teacherSelect = document.getElementById('teacher');
+      teacherSelect.innerHTML = '<option value="">선택</option>';
+      document.getElementById('teacherEmail').value = '';
+      recomputeTeacherOptions();
+      enforceAdvancedLabByLab(s && s.value);
+      applyCalendarBlocksForSelectedLab();
+      markUnvalidated();
+    }
+
+    function resetCalendarBlocks() {
+      const labSel = document.getElementById('lab');
+      if (labSel) {
+        [...labSel.options].forEach(opt => {
+          opt.disabled = false;
+          if (opt.value && labOriginalLabels[opt.value]) {
+            opt.textContent = labOriginalLabels[opt.value];
+          }
+        });
+      }
+      resetTimeLabelsOnly();
+    }
+
+    function handleAdvancedLabChange(s) {
+      const o = document.getElementById('advancedLabReason');
+      o.style.display = s.value==='예' ? 'block' : 'none';
+      if(s.value!=='예') o.value='';
+      markUnvalidated();
+    }
+    function handleHoodChange(s) {
+      const o = document.getElementById('hoodReason');
+      o.style.display = s.value==='예' ? 'block' : 'none';
+      if(s.value!=='예') o.value='';
+    }
+    function handleSafetyOtherChange(cb) {
+      const o = document.getElementById('otherSafety');
+      o.style.display = cb.checked ? 'inline-block' : 'none';
+      if(!cb.checked) o.value='';
+    }
+
+    function updatePeriod7Availability() {
+      const dateInput = document.getElementById('date');
+      const purposeSelect = document.getElementById('purpose');
+      const label = document.getElementById('period7Label');
+      const period7 = document.getElementById('period7');
+
+      if (!dateInput.value || !purposeSelect.value) {
+        label.style.display = 'none'; period7.checked = false; period7.disabled = true; return;
+      }
+      const day = new Date(dateInput.value).getDay();
+      const isTue = day === 2;
+      const isClub = purposeSelect.value === '동아리 활동';
+      if (isTue && isClub) {
+        label.style.display = 'inline-block';
+        const blocked7th = is7thPeriodBlockedByCalendar_();
+        period7.disabled = blocked7th;
+        if (blocked7th) period7.checked = false;
+      }
+      else { label.style.display = 'none'; period7.checked = false; period7.disabled = true; }
+    }
+
+    function is7thPeriodBlockedByCalendar_() {
+      if (!currentCalendarBlocks) return false;
+      if (currentCalendarBlocks.allBlocked) return true;
+      const globalTimes = currentCalendarBlocks.blockedTimes || [];
+      if (globalTimes.includes('7교시')) return true;
+      const selectedLab = (document.getElementById('lab')?.value || '').trim();
+      if (selectedLab && currentCalendarBlocks.blockedTimesByLab) {
+        const labTimes = currentCalendarBlocks.blockedTimesByLab[selectedLab] || [];
+        if (labTimes.includes('7교시')) return true;
+      }
+      return false;
+    }
+
+    function updateRestrictedFlags() {
+      restrictedHitSet.clear();
+      const sidEl = document.getElementById('studentId');
+      const tmEl  = document.getElementById('teamMembers');
+      const sid = sidEl?.value || '';
+      const tm  = tmEl?.value  || '';
+
+      const sidTokens = extractFiveDigitTokens(sid);
+      const tmTokens  = extractFiveDigitTokens(tm);
+
+      sidTokens.forEach(t => { if (restrictedIds.includes(t)) restrictedHitSet.add(t); });
+      tmTokens.forEach(t => { if (restrictedIds.includes(t)) restrictedHitSet.add(t); });
+
+      hasRestrictedMatch = restrictedHitSet.size > 0;
+
+      if (isSeventhExceptionActive()) {
+        sidEl?.classList.remove('blocked-input');
+        tmEl?.classList.remove('blocked-input');
+        return;
+      }
+      sidEl?.classList.toggle('blocked-input', sidTokens.some(t => restrictedIds.includes(t)));
+      tmEl?.classList.toggle('blocked-input', tmTokens.some(t => restrictedIds.includes(t)));
+    }
+    function immediateWarnIfBlocked() {
+      updateRestrictedFlags();
+      if (isSeventhExceptionActive()) return;
+      if (hasRestrictedMatch) {
+        showCustomAlert(
+          '해당 학생은 실험실 사용 신청 불가합니다.<br>' +
+          '문의 사항은 과학기술과 학과사무실에 문의해주세요.<br><br>' +
+          '<b>※ 단, 7교시에는 신청이 가능합니다.</b>'
+        );
+      }
+    }
+
+    let _lastChemSearch = [];
+    function searchChemical(){
+      const q = (document.getElementById('chemicalSearch').value || '').trim().toLowerCase();
+      const table = document.getElementById('searchResults');
+
+      const header = `
+        <tr>
+          <th>물질명</th>
+          <th>화학식</th>
+          <th>분류1</th>
+          <th>교사임장여부</th>
+          <th>선택</th>
+        </tr>`;
+
+      if (!q || q.length < 2){
+        table.innerHTML = header + `<tr><td colspan="5">두 글자 이상 입력 후 [검색]을 누르세요.</td></tr>`;
+        return;
+      }
+
+      const rows = chemicalDB.filter(r=>{
+        const name=(r.name||'').toLowerCase();
+        const formula=(r.formula||'').toLowerCase();
+        const c1=(r.class1||'').toLowerCase();
+        const c2=(r.class2||'').toLowerCase();
+        return name.includes(q)||formula.includes(q)||c1.includes(q)||c2.includes(q);
+      });
+      _lastChemSearch = rows;
+
+      if(!rows.length){
+        table.innerHTML = header + `<tr><td colspan="5">검색 결과가 없습니다.</td></tr>`;
+        return;
+      }
+
+      const body = rows.map((r,i)=>`
+        <tr>
+          <td>${escapeHtml(r.name)}</td>
+          <td>${escapeHtml(r.formula)}</td>
+          <td>${escapeHtml(r.class1 || '')}</td>
+          <td>${r.guidance === '필요'
+                ? '<b style="color:#d93025">필요</b>'
+                : (r.guidance ? escapeHtml(r.guidance) : '-')
+              }</td>
+          <td><button type="button" onclick="selectFromSearch(${i})">선택</button></td>
+        </tr>`).join('');
+
+      table.innerHTML = header + body;
+    }
+
+    function selectFromSearch(idx){
+      const rec = _lastChemSearch[idx];
+      if(!rec) return;
+      addChemicalFromDB(rec);
+      markUnvalidated();
+    }
+    function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+    function addSelectedChemical(obj){
+      const rec = normalizeRecord(obj||{});
+      addChemicalFromDB(rec);
+      markUnvalidated();
+    }
+
+    function addChemicalFromDB(rec){
+      const tbl = document.getElementById('chemicalList');
+      if (tbl.rows.length - 1 >= MAX_CHEMICALS) { showCustomAlert(`시약은 한 번에 최대 ${MAX_CHEMICALS}개까지만 신청할 수 있습니다.`); return; }
+      const r = tbl.insertRow();
+
+      const inpName = document.createElement('input'); inpName.type='text'; inpName.value=rec.name; inpName.readOnly=true; r.insertCell().appendChild(inpName);
+
+      const inpFormula = document.createElement('input'); inpFormula.type='text'; inpFormula.value=rec.formula||''; inpFormula.readOnly=true; r.insertCell().appendChild(inpFormula);
+
+      const stateCell = r.insertCell(); const state = rec.state || ''; stateCell.innerText = state;
+
+      const inpConc = document.createElement('input'); inpConc.type='text'; inpConc.placeholder='농도 단위를 꼭 입력하세요.';
+      const isSolidLike = /고체/.test(state) || rec.isBio || rec.isIndicator;
+      if (isSolidLike) { inpConc.value=''; inpConc.disabled=true; inpConc.placeholder = rec.isBio ? '생물 시약(입력 불필요)' : '입력 불필요'; }
+      r.insertCell().appendChild(inpConc);
+
+      const inpVol = document.createElement('input'); inpVol.type='text'; inpVol.placeholder='사용량 단위를 꼭 입력하세요.'; r.insertCell().appendChild(inpVol);
+
+      const selDisp = document.createElement('select');
+      selDisp.innerHTML = '<option>선택하세요</option><option>유기</option><option>무기</option><option>산</option><option>염기</option>';
+      if (rec.disposal) selDisp.value = rec.disposal;
+      r.insertCell().appendChild(selDisp);
+
+      const inpMsds= document.createElement('input'); inpMsds.type='text'; inpMsds.placeholder='취급 주의/MSDS 핵심사항을 기록하세요.'; r.insertCell().appendChild(inpMsds);
+
+      const tdGuidance = r.insertCell();
+      tdGuidance.innerText = rec.guidance || '';
+      if (rec.guidance === '필요') tdGuidance.classList.add('guidance-required');
+
+      const del = document.createElement('button'); del.type='button'; del.textContent='삭제'; del.className='btn-del';
+      del.onclick = () => { tbl.deleteRow(r.rowIndex); markUnvalidated(); };
+      r.insertCell().appendChild(del);
+
+      r.dataset.state = state;
+      r.dataset.isBio = rec.isBio ? '1' : '0';
+      r.dataset.isIndicator = rec.isIndicator ? '1' : '0';
+      r.dataset.disposalDefault = rec.disposal || '';
+      r.dataset.guidance = rec.guidance || '';
+      r.dataset.class1 = rec.class1 || '';
+      r.dataset.class2 = rec.class2 || '';
+      r.dataset.studentOK = rec.studentOK || '';
+      r.dataset.hazard = rec.hazard || '';
+      r.dataset.cas = rec.cas || '';
+      r.dataset.formula = rec.formula || '';
+
+      markUnvalidated();
+    }
+
+    function addBlankChemical() {
+      const tbl = document.getElementById('chemicalList');
+      if (tbl.rows.length - 1 >= MAX_CHEMICALS) { showCustomAlert(`시약은 한 번에 최대 ${MAX_CHEMICALS}개까지만 신청할 수 있습니다.`); return; }
+      const r = tbl.insertRow();
+
+      const inpName = document.createElement('input'); inpName.type = 'text'; r.insertCell().appendChild(inpName);
+      const inpFormula = document.createElement('input'); inpFormula.type = 'text'; r.insertCell().appendChild(inpFormula);
+
+      const tdState = r.insertCell();
+      const inpState = document.createElement('input');
+      inpState.type = 'text';
+      inpState.placeholder = '상태';
+      inpState.addEventListener('input', function () {
+        r.dataset.state = this.value.trim();
+      });
+      tdState.appendChild(inpState);
+
+      const inpConc = document.createElement('input'); inpConc.type = 'text'; inpConc.placeholder = '농도 단위를 꼭 입력하세요.'; r.insertCell().appendChild(inpConc);
+      const inpVol = document.createElement('input'); inpVol  .type  = 'text'; inpVol.placeholder  = '사용량 단위를 꼭 입력하세요.'; r.insertCell().appendChild(inpVol);
+
+      const selDisp = document.createElement('select'); selDisp.innerHTML = '<option>선택하세요</option><option>유기</option><option>무기</option><option>산</option><option>염기</option>'; r.insertCell().appendChild(selDisp);
+
+      const inpMsds= document.createElement('input'); inpMsds.type = 'text'; inpMsds.placeholder = '취급 주의/MSDS 핵심사항을 기록하세요.'; r.insertCell().appendChild(inpMsds);
+
+      const tdGuidance = r.insertCell(); tdGuidance.innerText = '';
+
+      const del = document.createElement('button'); del.type='button'; del.textContent='삭제'; del.className='btn-del';
+      del.onclick = () => { tbl.deleteRow(r.rowIndex); markUnvalidated(); };
+      r.insertCell().appendChild(del);
+
+      r.dataset.state = ''; r.dataset.isBio='0'; r.dataset.isIndicator='0';
+      r.dataset.disposalDefault = ''; r.dataset.guidance=''; r.dataset.class1=''; r.dataset.class2='';
+      r.dataset.studentOK=''; r.dataset.hazard=''; r.dataset.cas=''; r.dataset.formula='';
+      markUnvalidated();
+    }
+
+    function showCustomAlert(msg){
+      document.getElementById('alertMessage').innerHTML = msg;
+      document.getElementById('customAlertOverlay').style.display = 'block';
+      document.getElementById('customAlert').style.display = 'block';
+    }
+    function closeCustomAlert(){
+      document.getElementById('customAlert').style.display = 'none';
+      document.getElementById('customAlertOverlay').style.display = 'none';
+    }
+
+    function markUnvalidated(){
+      validatedOk = false;
+      const badge = document.getElementById('chemValidateBadge');
+      if (badge){ badge.className = 'pill'; badge.textContent = '미검증'; }
+      const rep = document.getElementById('chemValidateReport');
+      if (rep){ rep.className='note'; rep.style.display='none'; rep.innerHTML=''; }
+      const guard = document.getElementById('submitGuard');
+      if (guard){ guard.className='danger'; guard.textContent='시약 정보 검증을 통과해야 제출할 수 있습니다.'; }
+
+      const cd = document.getElementById('cooldownMsg');
+      if (cd && cooldownRemain > 0) cd.style.display='inline-block';
+
+      const btn = document.getElementById('btnValidateChem');
+      if (btn) btn.disabled = (cooldownRemain > 0);
+    }
+
+    function collectChemsForValidation(){
+      const chems = [];
+      document.querySelectorAll('#chemicalList tr').forEach((tr,i) => {
+        if (i===0) return;
+        const c = tr.cells;
+        const state = (tr.dataset.state || c[2].innerText.trim() || '');
+        chems.push({
+          name: (c[0].querySelector('input').value || '').trim(),
+          disposal: normDisposal(c[5].querySelector('select') ? c[5].querySelector('select').value : ''),
+          guidance: (c[7].innerText || tr.dataset.guidance || '').trim(),
+          conc: (c[3].querySelector('input').value || '').trim(),
+          vol:  (c[4].querySelector('input').value || '').trim(),
+          msds: (c[6].querySelector('input').value || '').trim(),
+          state: state
+        });
+      });
+      return chems;
+    }
+
+    function preCheckChems(chems){
+      const errs = [];
+      chems.forEach(ch => {
+        if (!ch.name) errs.push('• 시약명 누락');
+        if (!ch.vol)  errs.push(`• ${ch.name||'시약'}: 사용량 누락`);
+        if (!ch.msds) errs.push(`• ${ch.name||'시약'}: MSDS/주의사항 누락`);
+        const isSolidLike = /고체/.test(ch.state) || /생물|지시약/.test((ch.state||'') + ' + ' + (ch.name||''));
+        if (/액체/.test(ch.state)) {
+          if (!ch.conc) errs.push(`• ${ch.name||'시약'}: 액체는 농도 필수`);
+        } else if (isSolidLike) {
+          if (ch.conc) errs.push(`• ${ch.name||'시약'}: 고체/생물/지시약은 농도 입력 금지`);
+        }
+        if (!ch.disposal || ch.disposal==='선택하세요') errs.push(`• ${ch.name||'시약'}: 폐기 방법 미선택`);
+      });
+      return errs;
+    }
+
+    function onValidateChem(){
+      if (cooldownRemain > 0) return;
+
+      const chems = collectChemsForValidation();
+      const pre = preCheckChems(chems);
+      const badge = document.getElementById('chemValidateBadge');
+      const btn = document.getElementById('btnValidateChem');
+
+      if (pre.length){
+        const box = document.getElementById('chemValidateReport');
+        box.className='danger'; box.style.display='block';
+        box.innerHTML = `<b>검증 실패(입력 누락)</b><br>${pre.join('<br>')}`;
+        badge.className = 'pill badge-err'; badge.textContent = '검증 실패';
+        validatedOk = false; return;
+      }
+
+      btn.disabled = true; badge.textContent = '검증 중…';
+
+      const key = keyForThrottle();
+
+      google.script.run
+        .withSuccessHandler(res => {
+          btn.disabled = false;
+          if (res.throttle && !res.ok) {
+            startCooldown(res.retryAfterSec || 30);
+            showReport([], true);
+            badge.className = 'pill badge-err';
+            badge.textContent = '검증 실패(잠금)';
+            validatedOk = false; return;
+          }
+          if (res.ok) {
+            badge.className = 'pill badge-ok';
+            badge.textContent = '검증 통과';
+            const guard = document.getElementById('submitGuard');
+            guard.className='ok';
+            guard.textContent='검증 통과: 제출 가능합니다.';
+            const rep = document.getElementById('chemValidateReport');
+            rep.style.display='none'; rep.innerHTML='';
+            validatedOk = true;
+          } else {
+            badge.className = 'pill badge-err';
+            badge.textContent = '검증 실패';
+            showReport(res.mismatches || [], false);
+            validatedOk = false;
+          }
+        })
+        .withFailureHandler(err => {
+          btn.disabled = false;
+          badge.className = 'pill';
+          badge.textContent = '미검증';
+          alert('검증 중 오류: ' + (err && err.message ? err.message : err));
+        })
+        .validateChemicalsWithThrottle(key, chems);
+    }
+
+    function keyForThrottle(){
+      const sid   = (document.getElementById('studentId').value || '').trim();
+      const sname = (document.getElementById('studentName').value || '').trim();
+      const date  = (document.getElementById('date').value || '').trim();
+      if (sid && sname && date) return `${sid}_${sname}_${date}`;
+
+      const today = new Date().toISOString().slice(0,10);
+      let anon = localStorage.getItem('anonThrottleKey');
+      if (!anon) { anon = 'anon_' + Math.random().toString(36).slice(2); localStorage.setItem('anonThrottleKey', anon); }
+      return `${anon}_${today}`;
+    }
+
+    function showReport(mismatches, throttled){
+      const box = document.getElementById('chemValidateReport');
+      if(!box) return;
+      if (throttled){
+        box.className='danger'; box.style.display='block';
+        box.innerHTML='관리대장 분류와 불일치 항목이 있어 <b>일시적으로 재검증이 잠금</b>되었습니다.';
+        return;
+      }
+      if (!mismatches.length){ box.style.display='none'; box.innerHTML=''; return; }
+      const lines = mismatches.map(m => `• ${m.name} → 기대 분류: <b>${m.expected}</b>, 입력: <b>${m.got}</b>`).join('<br>');
+      box.className='danger'; box.style.display='block';
+      box.innerHTML = `<b>검증 실패 항목</b><br>${lines}<br>'폐기 방법'을 수정한 뒤 다시 검증하세요.`;
+    }
+
+    function startCooldown(sec){
+      cooldownRemain = sec;
+      const msg = document.getElementById('cooldownMsg');
+      msg.style.display='inline-block';
+      tickCooldown();
+    }
+    function tickCooldown(){
+      const msg = document.getElementById('cooldownMsg');
+      msg.textContent = `재검증까지 ${cooldownRemain}초`;
+      const btn = document.getElementById('btnValidateChem'); btn.disabled = true;
+      if (cooldownRemain <= 0){ stopCooldown(); return; }
+      cooldownTimer = setTimeout(()=>{ cooldownRemain--; tickCooldown(); },1000);
+    }
+    function stopCooldown(){
+      if (cooldownTimer) clearTimeout(cooldownTimer);
+      cooldownTimer = null; cooldownRemain = 0;
+      const msg = document.getElementById('cooldownMsg'); if (msg) msg.style.display='none';
+      const btn = document.getElementById('btnValidateChem'); if (btn) btn.disabled = false;
+    }
+
+    function validateForm() {
+      const ids = ['studentId','studentName','lab','title','purpose','materials','process','cleanup','precautions','teacher','totalParticipants'];
+      for (let id of ids) { if (!document.getElementById(id).value.trim()) { showCustomAlert('필수 항목을 모두 입력/선택해주세요.'); return false; } }
+      if (!document.getElementById('date').value) { showCustomAlert('실험할 날짜를 선택해주세요.'); return false; }
+
+      const timeCbs = Array.from(document.querySelectorAll('input[name="timeSlot"]')).filter(cb => !cb.disabled);
+      const timeChecked = timeCbs.some(cb => cb.checked);
+      if (!timeChecked) {
+        showCustomAlert('신청 가능한 시간 중 하나 이상을 선택해주세요.');
+        return false;
+      }
+
+      if (document.getElementById('purpose').value==='기타' && !document.getElementById('otherPurpose').value.trim()) { showCustomAlert('사용 목적을 "기타"로 선택한 경우 내용을 입력해야 합니다.'); return false; }
+      const agr = document.querySelector('input[name="agreement"]:checked'); if (!agr || agr.value!=='yes') { showCustomAlert('실험실 사용 제약 안내에 동의해야 신청할 수 있습니다.'); return false; }
+      if (!document.querySelectorAll('.safety-item input:checked').length) { showCustomAlert('안전장구를 최소 하나 이상 선택해야 합니다.'); return false; }
+      if (document.getElementById('otherSafetyCheck').checked && !document.getElementById('otherSafety').value.trim()) { showCustomAlert('기타 안전장구를 선택한 경우 내용을 입력해야 합니다.'); return false; }
+
+      const labVal = (document.getElementById('lab')?.value || '').trim();
+      const advSel = document.getElementById('advancedLab');
+      const advReason = document.getElementById('advancedLabReason');
+      if (labVal === '첨단기기실험실') {
+        if (advSel.value !== '예') { showCustomAlert('첨단기기실험실은 "첨단기기실 이용 여부"가 예로 고정됩니다.'); return false; }
+        if (!advReason.value.trim()) { showCustomAlert('첨단기기실 이용 사유를 입력하세요.'); return false; }
+      } else {
+        if (advSel.value==='예' && !advReason.value.trim()) { showCustomAlert('첨단기기실 이용을 예로 선택하면 사유를 입력해야 합니다.'); return false; }
+      }
+
+      if (document.getElementById('hood').value==='예' && !document.getElementById('hoodReason').value.trim()) { showCustomAlert('후드 사용을 예로 선택하면 사유를 입력해야 합니다.'); return false; }
+
+      const rows = document.querySelectorAll('#chemicalList tr');
+      if (rows.length > (MAX_CHEMICALS + 1)) { showCustomAlert(`시약은 한 번에 최대 ${MAX_CHEMICALS}개까지만 신청할 수 있습니다.`); return false; }
+      if (rows.length > 1) {
+        for (let i = 1; i < rows.length; i++) {
+          const tr = rows[i];
+          const c = tr.cells;
+          const name  = c[0].querySelector('input').value.trim();
+          const state = (tr.dataset.state || c[2].innerText.trim() || '');
+          const vol   = c[4].querySelector('input').value.trim();
+          const disposal = c[5].querySelector('select') ? c[5].querySelector('select').value : '';
+          const msds  = c[6].querySelector('input').value.trim();
+
+          if (!name) { showCustomAlert('시약명을 입력해야 합니다.'); return false; }
+          if (!vol || !msds) { showCustomAlert('시약의 사용량과 MSDS를 모두 입력하세요.'); return false; }
+          if (!disposal || disposal === '선택하세요') { showCustomAlert('시약의 폐수 처리 분류(유기/무기/산/염기)를 선택하세요.'); return false; }
+
+          const isBio = tr.dataset.isBio === '1';
+          const isIndicator = tr.dataset.isIndicator === '1';
+          const conc  = c[3].querySelector('input').value.trim();
+
+          if (isBio || isIndicator || /고체/.test(state)) {
+            if (conc) { showCustomAlert('생물/지시약/고체 시약은 농도를 입력할 수 없습니다.'); return false; }
+          } else if (/액체/.test(state)) {
+            if (!conc) { showCustomAlert('액체 시약은 농도를 반드시 입력해야 합니다.'); return false; }
+          }
+        }
+      }
+
+      updateRestrictedFlags();
+      if (isSeventhExceptionActive()) {
+        document.getElementById('studentId')?.classList.remove('blocked-input');
+        document.getElementById('teamMembers')?.classList.remove('blocked-input');
+      } else if (hasRestrictedMatch) {
+        showCustomAlert(
+          '과학실험실 사용 신청이 불가능한 학생의 정보가 포함되어 있습니다.<br>' +
+          '과학실험실 사용 신청하려면 해당 정보를 수정 혹은 삭제한 뒤 다시 신청해주세요.<br><br>' +
+          '<b>※ 단, 7교시에는 신청이 가능합니다.</b>'
+        );
+        return false;
+      }
+
+      if (!validatedOk) {
+        showCustomAlert('시약 정보 검증을 먼저 통과하세요.');
+        return false;
+      }
+
+      return true;
+    }
+
+    function submitForm(){ if(!validateForm()) return; showConfirmDialog(); }
+    function showConfirmDialog() {
+      const dialog = document.getElementById('confirmDialog');
+      const overlay = document.getElementById('dialogOverlay');
+      const confirmBtn = document.getElementById('btnConfirmSubmit');
+      document.getElementById('confirmStudentCount').value = '';
+      document.querySelectorAll('#confirmDialog input[type="radio"]').forEach(radio => radio.checked = false);
+      confirmBtn.disabled = true; overlay.style.display = 'block'; dialog.style.display = 'block';
+    }
+    function closeConfirmDialog() {
+      document.getElementById('confirmDialog').style.display = 'none';
+      document.getElementById('dialogOverlay').style.display = 'none';
+    }
+    function checkAllConfirms() {
+      const studentCount = document.getElementById('confirmStudentCount').value;
+      const totalParticipants = document.getElementById('totalParticipants').value;
+      const confirm2 = document.querySelector('input[name="confirm2"]:checked');
+      const confirm3 = document.querySelector('input[name="confirm3"]:checked');
+      const confirm4 = document.querySelector('input[name="confirm4"]:checked');
+      const allYes =
+        studentCount && studentCount === totalParticipants &&
+        confirm2 && confirm2.value === 'yes' &&
+        confirm3 && confirm3.value === 'yes' &&
+        confirm4 && confirm4.value === 'yes';
+      document.getElementById('btnConfirmSubmit').disabled = !allYes;
+    }
+    function handleNo(q) {
+      document.getElementById('noWarningDialog').style.display = 'block';
+      setTimeout(() => {
+        document.querySelectorAll(`input[name="confirm${q}"]`).forEach(r => r.checked = false);
+        checkAllConfirms();
+      }, 100);
+    }
+    function closeNoWarning() { document.getElementById('noWarningDialog').style.display = 'none'; }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const confirmCount = document.getElementById('confirmStudentCount');
+      if (confirmCount) confirmCount.addEventListener('input', function() { this.value = this.value.replace(/[^0-9]/g, ''); checkAllConfirms(); });
+    });
+
+    function processSubmit() {
+      closeConfirmDialog();
+      showOverlayBlock("신청 중입니다.<br>잠시만 기다려주세요.<br>클릭은 한 번만 해주세요.");
+      const btn = document.querySelector('#applicationForm button'); if (btn) btn.disabled = true;
+
+      const timeSlots = Array.from(document.querySelectorAll('input[name="timeSlot"]:checked')).map(cb => cb.value);
+      const safety = Array.from(document.querySelectorAll('.safety-item input:checked')).map(cb => cb.id==='otherSafetyCheck' ? document.getElementById('otherSafety').value : cb.value);
+
+      const chems = [];
+      document.querySelectorAll('#chemicalList tr').forEach((tr,i) => {
+        if (i===0) return;
+        const c = tr.cells;
+        chems.push({
+          '시약명'       : c[0].querySelector('input').value.trim(),
+          '화학식'       : c[1].querySelector('input').value.trim(),
+          '상태'         : (tr.dataset.state || c[2].innerText.trim()),
+          '농도'         : c[3].querySelector('input').value.trim(),
+          '용량'         : c[4].querySelector('input').value.trim(),
+          '폐기 방법'    : c[5].querySelector('select') ? c[5].querySelector('select').value : '',
+          'MSDS 및 취급 주의사항' : c[6].querySelector('input').value.trim(),
+          '교사임장여부' : (c[7].innerText || tr.dataset.guidance || '').trim()
+        });
+      });
+
+      const data = {
+        studentId        : document.getElementById('studentId').value,
+        studentName      : document.getElementById('studentName').value,
+        teamMembers      : document.getElementById('teamMembers').value,
+        totalParticipants: document.getElementById('totalParticipants').value,
+        lab              : document.getElementById('lab').value,
+        date             : document.getElementById('date').value,
+        timeSlot         : timeSlots.join(', '),
+        title            : document.getElementById('title').value,
+        purpose          : document.getElementById('purpose').value,
+        otherPurpose     : document.getElementById('otherPurpose').value,
+        advancedLab      : document.getElementById('advancedLab').value,
+        advancedLabReason: document.getElementById('advancedLabReason').value,
+        materials        : document.getElementById('materials').value,
+        hood             : document.getElementById('hood').value,
+        hoodReason       : document.getElementById('hoodReason').value,
+        process          : document.getElementById('process').value,
+        cleanup          : document.getElementById('cleanup').value,
+        precautions      : document.getElementById('precautions').value,
+        safety           : safety.join(', '),
+        teacher          : document.getElementById('teacher').value,
+        teacherEmail     : document.getElementById('teacherEmail').value,
+        chemicals        : chems,
+        is7thPeriod      : timeSlots.includes('7교시')
+      };
+
+      google.script.run
+        .withSuccessHandler(res => {
+          hideOverlayBlock(); alert(res);
+          document.getElementById('statusMessage').textContent = '';
+          if (btn) btn.disabled = false; document.getElementById('applicationForm').reset();
+          resetChemicalTable(); resetSearchResults();
+          markUnvalidated();
+        })
+        .withFailureHandler(err => {
+          hideOverlayBlock();
+          console.error(err);
+          const raw = (err && err.message ? err.message : String(err) || '');
+          const note = '\n\n※ 단, 7교시에는 신청이 가능합니다.';
+          const finalMsg = /7교시에는 신청이 가능합니다/.test(raw) ? raw : (raw + note);
+          alert('오류 발생: ' + finalMsg);
+          if (btn) btn.disabled = false;
+          document.getElementById('statusMessage').textContent = '';
+        })
+        .submitApplication(data);
+    }
+
+    /* ====================== 통합 불러오기 다이얼로그 ====================== */
+    function openLoadDialog(tabIndex) {
+      // 초기화
+      document.getElementById('loadSid').value  = '';
+      document.getElementById('loadName').value = '';
+      document.getElementById('loadDate').value = '';
+      document.getElementById('approvedSid').value  = '';
+      document.getElementById('approvedName').value = '';
+      document.getElementById('approvedResults').innerHTML = '';
+
+      document.getElementById('loadOverlay').style.display = 'block';
+      document.getElementById('loadDialog').style.display  = 'block';
+
+      // 탭 전환
+      switchLoadTab(tabIndex || 0);
+
+      if (tabIndex === 1) {
+        setTimeout(() => document.getElementById('approvedSid').focus(), 0);
+      } else {
+        setTimeout(() => document.getElementById('loadSid').focus(), 0);
+      }
+    }
+    function closeLoadDialog() {
+      document.getElementById('loadOverlay').style.display = 'none';
+      document.getElementById('loadDialog').style.display  = 'none';
+    }
+
+    function switchLoadTab(idx) {
+      const tabs = document.querySelectorAll('.load-tab');
+      const panels = document.querySelectorAll('.load-panel');
+      tabs.forEach((tab, i) => {
+        tab.classList.remove('active', 'active-green');
+        panels[i].classList.remove('active');
+        if (i === idx) {
+          tab.classList.add(i === 1 ? 'active-green' : 'active');
+          panels[i].classList.add('active');
+        }
+      });
+    }
+
+    function snapshotForm() {
+      const sid  = (document.getElementById('studentId').value || '').trim();
+      const name = (document.getElementById('studentName').value || '').trim();
+      const date = (document.getElementById('date').value || '').trim();
+      if (!sid || !name || !date) { showCustomAlert('임시저장: 학번·이름·날짜는 반드시 입력해야 합니다.'); return; }
+
+      showOverlayBlock("임시 저장 중입니다…");
+      const timeSlots = Array.from(document.querySelectorAll('input[name="timeSlot"]:checked')).map(cb => cb.value);
+      const safety = Array.from(document.querySelectorAll('.safety-item input:checked')).map(cb => cb.id==='otherSafetyCheck' ? document.getElementById('otherSafety').value : cb.value);
+      const chems = [];
+      document.querySelectorAll('#chemicalList tr').forEach((tr,i) => {
+        if (i===0) return;
+        const c = tr.cells;
+        chems.push({
+          '시약명' : c[0].querySelector('input').value.trim(),
+          '화학식' : c[1].querySelector('input').value.trim(),
+          '상태'   : (tr.dataset.state || c[2].innerText.trim()),
+          '농도'   : c[3].querySelector('input').value.trim(),
+          '용량'   : c[4].querySelector('input').value.trim(),
+          '폐기 방법' : c[5].querySelector('select') ? c[5].querySelector('select').value : '',
+          'MSDS 및 취급 주의사항' : c[6].querySelector('input').value.trim(),
+          '교사임장여부': (c[7].innerText || tr.dataset.guidance || '').trim()
+        });
+      });
+      const payload = {
+        studentId   : sid,
+        studentName : name,
+        date        : date,
+        timeSlot    : timeSlots.join(', '),
+        lab         : document.getElementById('lab').value,
+        title       : document.getElementById('title').value,
+        purpose     : document.getElementById('purpose').value,
+        otherPurpose: document.getElementById('otherPurpose').value,
+        advancedLab : document.getElementById('advancedLab').value,
+        advancedLabReason: document.getElementById('advancedLabReason').value,
+        materials   : document.getElementById('materials').value,
+        hood        : document.getElementById('hood').value,
+        hoodReason  : document.getElementById('hoodReason').value,
+        process     : document.getElementById('process').value,
+        cleanup     : document.getElementById('cleanup').value,
+        precautions : document.getElementById('precautions').value,
+        safety      : safety.join(', '),
+        teacher     : document.getElementById('teacher').value,
+        teacherEmail: document.getElementById('teacherEmail').value,
+        chemicals   : chems,
+        teamMembers      : document.getElementById('teamMembers').value,
+        totalParticipants: document.getElementById('totalParticipants').value
+      };
+      google.script.run.withSuccessHandler(msg => {
+        hideOverlayBlock(); alert(msg || '임시저장 완료');
+      }).withFailureHandler(err => {
+        hideOverlayBlock(); alert('임시저장 실패: ' + (err && err.message || err));
+      }).saveDraft(payload);
+    }
+
+    function normalizeYMD(s){
+      const m = String(s||'').match(/(\d{4})[-./](\d{1,2})[-./](\d{1,2})/);
+      if(!m) return '';
+      const y=m[1], mm=('0'+m[2]).slice(-2), dd=('0'+m[3]).slice(-2);
+      return `${y}-${mm}-${dd}`;
+    }
+
+    function loadDraftSubmit(){
+      const sid  = (document.getElementById('loadSid').value || '').replace(/\D/g,'');
+      const name = (document.getElementById('loadName').value || '').trim();
+      const date = normalizeYMD(document.getElementById('loadDate').value || '');
+
+      if(sid.length !== 5){ alert('대표자 학번(5자리)을 정확히 입력하세요.'); return; }
+      if(!name){ alert('대표자 이름을 입력하세요.'); return; }
+      if(!date){ alert('신청 날짜(YYYY-MM-DD)를 선택하세요.'); return; }
+
+      showOverlayBlock('불러오는 중입니다…', true);
+
+      google.script.run.withSuccessHandler(data=>{
+        hideOverlayBlock();
+        try {
+          applyLoadedData(data);
+          closeLoadDialog();
+          alert('임시저장 내역을 불러왔습니다.');
+          markUnvalidated();
+        } catch(e) {
+          alert('불러오기 적용 중 오류: ' + e);
+        }
+      }).withFailureHandler(err => {
+        hideOverlayBlock();
+        alert((err && err.message) ? err.message : '임시저장 불러오기 실패');
+      }).loadDraft(sid, name, date);
+    }
+
+    /* ===== 승인된 신청서 조회 ===== */
+    function searchApproved() {
+      const sid  = (document.getElementById('approvedSid').value || '').replace(/\D/g, '');
+      const name = (document.getElementById('approvedName').value || '').trim();
+      if (sid.length !== 5) { alert('학번(5자리)을 정확히 입력하세요.'); return; }
+      if (!name) { alert('이름을 입력하세요.'); return; }
+
+      const container = document.getElementById('approvedResults');
+      container.innerHTML = '<div style="text-align:center;padding:12px;color:#666;">검색 중...</div>';
+
+      google.script.run
+        .withSuccessHandler(list => {
+          if (!list || !list.length) {
+            container.innerHTML = '<div style="text-align:center;padding:12px;color:#999;">승인된 신청서가 없습니다.</div>';
+            return;
+          }
+          container.innerHTML = list.map((item, i) => `
+            <div class="result-item">
+              <div class="result-info">
+                <b>${escapeHtml(item.title || '(제목없음)')}</b><br>
+                ${escapeHtml(item.lab)} / ${escapeHtml(item.date)} / ${escapeHtml(item.time)}<br>
+                <span style="color:#888;font-size:11px;">제출: ${escapeHtml(item.submit)}</span>
+              </div>
+              <button type="button" style="padding:6px 14px;background:#34a853;color:#fff;border:none;border-radius:4px;cursor:pointer;font-weight:bold;white-space:nowrap;"
+                      onclick="loadApprovedItem('${escapeHtml(item.id)}')">불러오기</button>
+            </div>`).join('');
+        })
+        .withFailureHandler(err => {
+          container.innerHTML = '<div style="color:#d32f2f;padding:12px;">검색 실패: ' + escapeHtml(err.message || String(err)) + '</div>';
+        })
+        .getApprovedApplications(sid, name);
+    }
+
+    function loadApprovedItem(appId) {
+      showOverlayBlock('승인된 신청서를 불러오는 중…', true);
+      google.script.run
+        .withSuccessHandler(data => {
+          hideOverlayBlock();
+          try {
+            // 승인된 신청서는 날짜를 비워둠 (새로 선택해야 함)
+            applyLoadedData(data, true);
+            closeLoadDialog();
+            alert('승인된 신청서를 불러왔습니다.\n실험 날짜와 시간을 새로 선택해 주세요.');
+            markUnvalidated();
+          } catch(e) {
+            alert('불러오기 적용 중 오류: ' + e);
+          }
+        })
+        .withFailureHandler(err => {
+          hideOverlayBlock();
+          alert((err && err.message) ? err.message : '신청서 불러오기 실패');
+        })
+        .loadApprovedApplication(appId);
+    }
+
+    /** 임시저장 / 승인 신청서 공통 폼 복원 함수 */
+    function applyLoadedData(data, clearDate) {
+      document.getElementById('studentId').value    = data.studentId || '';
+      document.getElementById('studentName').value  = data.studentName || '';
+      document.getElementById('date').value         = clearDate ? '' : (data.date || '');
+      showDayOfWeek();
+
+      document.getElementById('teamMembers').value       = data.teamMembers || '';
+      document.getElementById('totalParticipants').value = data.totalParticipants || '';
+      document.getElementById('lab').value = data.lab || '';
+      handleLabChange(document.getElementById('lab'));
+      document.getElementById('title').value       = data.title || '';
+      document.getElementById('purpose').value     = data.purpose || '';
+      handlePurposeChange(document.getElementById('purpose'));
+      document.getElementById('otherPurpose').value = data.otherPurpose || '';
+
+      document.getElementById('advancedLab').value = data.advancedLab || '';
+      handleAdvancedLabChange(document.getElementById('advancedLab'));
+      document.getElementById('advancedLabReason').value = data.advancedLabReason || '';
+
+      document.getElementById('materials').value   = data.materials || '';
+      document.getElementById('hood').value        = data.hood || '';
+      handleHoodChange(document.getElementById('hood'));
+      document.getElementById('hoodReason').value  = data.hoodReason || '';
+      document.getElementById('process').value     = data.process || '';
+      document.getElementById('cleanup').value     = data.cleanup || '';
+      document.getElementById('precautions').value = data.precautions || '';
+
+      // 안전장구
+      document.querySelectorAll('.safety-item input[type="checkbox"]').forEach(cb => cb.checked = false);
+      const safetyItems = (data.safety || '').split(',').map(s => s.trim()).filter(Boolean);
+      const safetyMap = {
+        '실험복':'실험복','보안경':'보안경','덮개신발(슬리퍼 금지)':'덮개신발(슬리퍼 금지)',
+        '라텍스 장갑(흰색)':'라텍스 장갑(흰색)','내열장갑(주황색)':'내열장갑(주황색)','산 방호장갑(초록색)':'산 방호장갑(초록색)'
+      };
+      let otherUsed = false;
+      safetyItems.forEach(item => {
+        const key = safetyMap[item];
+        if (key) {
+          const sel = Array.from(document.querySelectorAll('.safety-item input[type="checkbox"]')).find(cb => cb.value === key);
+          if (sel) sel.checked = true;
+        } else if (item) {
+          otherUsed = true;
+          const otherCb = document.getElementById('otherSafetyCheck');
+          otherCb.checked = true; handleSafetyOtherChange(otherCb);
+          document.getElementById('otherSafety').value = item;
+        }
+      });
+      if (!otherUsed) {
+        const otherCb = document.getElementById('otherSafetyCheck');
+        otherCb.checked = false; handleSafetyOtherChange(otherCb);
+      }
+
+      // 시간
+      document.querySelectorAll('input[name="timeSlot"]').forEach(cb => cb.checked = false);
+      if (!clearDate) {
+        (data.timeSlot || '').split(',').map(s=>s.trim()).filter(Boolean).forEach(v => {
+          const el = Array.from(document.querySelectorAll('input[name="timeSlot"]')).find(cb => cb.value === v);
+          if (el && !el.disabled) el.checked = true;
+        });
+      }
+
+      document.getElementById('teacher').value     = data.teacher || '';
+      document.getElementById('teacherEmail').value = data.teacherEmail || '';
+
+      // 시약
+      resetChemicalTable();
+      (data.chemicals || []).forEach(c => {
+        const tbl = document.getElementById('chemicalList');
+        const r = tbl.insertRow();
+        const inpName = document.createElement('input'); inpName.type='text'; inpName.value=c['시약명']||''; r.insertCell().appendChild(inpName);
+        const inpFormula = document.createElement('input'); inpFormula.type='text'; inpFormula.value=c['화학식']||''; r.insertCell().appendChild(inpFormula);
+        const tdState = r.insertCell(); tdState.innerText = c['상태'] || c['분류1'] || '';
+        const inpConc = document.createElement('input'); inpConc.type='text'; inpConc.value=c['농도']||''; r.insertCell().appendChild(inpConc);
+        const inpVol  = document.createElement('input'); inpVol.type='text'; inpVol.value=c['용량']||''; r.insertCell().appendChild(inpVol);
+        const selDisp = document.createElement('select'); selDisp.innerHTML='<option>선택하세요</option><option>유기</option><option>무기</option><option>산</option><option>염기</option>'; r.insertCell().appendChild(selDisp);
+        selDisp.value = normDisposal(c['폐기 방법']||'');
+        const inpMsds = document.createElement('input'); inpMsds.type='text'; inpMsds.value=c['MSDS 및 취급 주의사항']||c['MSDS']||''; r.insertCell().appendChild(inpMsds);
+        const tdG = r.insertCell(); tdG.innerText = normalizeGuidance(c['교사임장여부']||'');
+        const del = document.createElement('button'); del.type='button'; del.textContent='삭제'; del.className='btn-del'; del.onclick=()=>{ tbl.deleteRow(r.rowIndex); markUnvalidated(); }; r.insertCell().appendChild(del);
+        r.dataset.state = tdState.innerText;
+        r.dataset.isBio='0'; r.dataset.isIndicator='0'; r.dataset.disposalDefault='';
+        r.dataset.guidance = tdG.innerText; r.dataset.class1 = c['분류1']||'';
+        r.dataset.class2=''; r.dataset.studentOK=''; r.dataset.hazard=''; r.dataset.cas='';
+        r.dataset.formula = inpFormula.value;
+      });
+
+      if (document.getElementById('lab').value === '첨단기기실험실') {
+        document.getElementById('advancedLab').value = '예';
+        document.getElementById('advancedLab').disabled = true;
+        document.getElementById('advancedLabNote').style.display = 'block';
+        document.getElementById('advancedLabReason').style.display = 'block';
+      }
+    }
+
+    function resetChemicalTable() { const tbl = document.getElementById('chemicalList'); while (tbl.rows.length > 1) tbl.deleteRow(1); markUnvalidated(); }
+    function resetSearchResults() {
+      document.getElementById('chemicalSearch').value = '';
+      document.getElementById('searchResults').innerHTML = `
+        <tr>
+          <th>물질명</th><th>화학식</th><th>분류1</th><th>교사임장여부</th><th>선택</th>
+        </tr>`;
+    }
+
+    function scrollToTopSmooth(){ window.scrollTo({top:0, behavior:'smooth'}); }
+    function scrollToBottomSmooth(){ window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'}); }
+
+    function createRipple(e){
+      const btn = e.currentTarget;
+      const rect = btn.getBoundingClientRect();
+      const ripple = document.createElement('span');
+      const size = Math.max(rect.width, rect.height);
+      ripple.className = 'ripple';
+      ripple.style.width = ripple.style.height = size + 'px';
+      const x = e.clientX - rect.left - size/2;
+      const y = e.clientY - rect.top  - size/2;
+      ripple.style.left = x + 'px'; ripple.style.top  = y + 'px';
+      btn.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 500);
+    }
+    function initFabFeedback(){
+      document.querySelectorAll('.fab, button').forEach(btn=>{
+        btn.addEventListener('click', createRipple);
+        btn.addEventListener('keydown', (ev)=>{ if(ev.key === ' ' || ev.key === 'Enter'){ ev.preventDefault(); btn.click(); }});
+      });
+    }
+
+    function handlePurposeChange(sel) {
+      const other = document.getElementById('otherPurpose');
+      if (sel.value === '기타') {
+        other.style.display = 'block';
+      } else {
+        other.style.display = 'none';
+        other.value = '';
+      }
+      updatePeriod7Availability();
+      markUnvalidated();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const labSel = document.getElementById('lab');
+      if (labSel) {
+        [...labSel.options].forEach(opt => {
+          if (opt.value) {
+            labOriginalLabels[opt.value] = opt.textContent;
+          }
+        });
+      }
+    });
+  </script>
+</head>
+<body>
+  <div id="overlayBlock">
+    <div class="block-msg">신청 중입니다.<br>잠시만 기다려주세요.<br>클릭은 한 번만 해주세요.</div>
+  </div>
+
+  <!-- 조회 중 UI -->
+  <div id="lookupLoading"
+       style="display:none; position:fixed; inset:0;
+              align-items:center; justify-content:center;
+              background:rgba(0,0,0,0.25);
+              backdrop-filter:blur(2px);
+              z-index:11000;">
+    <div style="background:#fff; padding:20px 28px; border-radius:10px;
+                box-shadow:0 8px 25px rgba(0,0,0,0.25); text-align:center;">
+      신청 가능 여부를 조회 중입니다...<br>잠시만 기다려주세요.
+    </div>
+  </div>
+
+  <form id="applicationForm" onsubmit="return false;">
+    <h1>과학실험실 사용 신청서</h1>
+
+    <h3>대표자 정보</h3>
+    학번: <input type="text" id="studentId" placeholder="대표 학생의 학번을 입력하세요.(나이스학번)" required>
+    이름: <input type="text" id="studentName" placeholder="대표 학생의 이름을 입력하세요." required>
+
+    <h3>동반자 정보(선택)</h3>
+    <textarea id="teamMembers" rows="2" placeholder="참석하는 모든 학생의 학번 이름을 입력해주세요.(예시: 학번 이름, 학번 이름)"></textarea>
+
+    <h3>총 인원수(대표자 포함, 숫자만 쓰세요.)</h3>
+    <input type="number" id="totalParticipants" min="1" required placeholder="대표자 포함해서 참석하는 총 인원수를 입력하세요.">
+
+    <h3>사용 목적</h3>
+    <select id="purpose" onchange="handlePurposeChange(this)" required>
+      <option value="">선택</option>
+      <option>과제연구</option>
+      <option>학급활동</option>
+      <option>동아리 활동</option>
+      <option>기타</option>
+    </select>
+    <input type="text" id="otherPurpose" placeholder="기타 목적 입력" style="display:none;">
+
+    <h3>실험할 날짜(신청하고자 하는 연도-월-일 잘 보고 선택하세요.)</h3>
+    <input type="date" id="date" required onchange="showDayOfWeek();">
+    <span id="dayOfWeek" style="margin-left:8px; font-weight:bold;"></span>
+
+    <h3>신청 실험실</h3>
+    <select id="lab" onchange="handleLabChange(this)" required>
+      <option value="">선택</option>
+      <option>화학실험실</option>
+      <option>생물실험실</option>
+      <option>프로젝트실험실</option>
+      <option>첨단기기실험실</option>
+      <option>오픈랩</option>
+    </select>
+
+    <h3>신청 시간</h3>
+    <div class="time-row">
+      <label class="time-item"><input type="checkbox" name="timeSlot" value="ET"> ET</label>
+      <label class="time-item"><input type="checkbox" name="timeSlot" value="EP1"> EP1</label>
+      <label class="time-item" id="period7Label" style="display:none;">
+        <input type="checkbox" name="timeSlot" value="7교시" id="period7"> 7교시
+      </label>
+    </div>
+
+    <h3>실험 제목</h3>
+    <input type="text" id="title" placeholder="실험 제목" required>
+
+    <h3>첨단기기실 이용 여부</h3>
+    <div id="advancedLabNote" style="display:none; margin:6px 0 8px 0; padding:8px 10px; background:#FFF3CD; border:1px solid #FFEEA5; border-radius:6px; font-size:13px; color:#7A5D00;">
+      '첨단기기실험실'을 선택하면 이 항목은 자동으로 <b>예</b>로 고정되며, <b>이용 사유</b>를 반드시 입력해야 합니다.
+    </div>
+    <select id="advancedLab" onchange="handleAdvancedLabChange(this)" required>
+      <option value="">선택</option>
+      <option>예</option>
+      <option>아니오</option>
+    </select>
+    <input type="text" id="advancedLabReason" placeholder="사유 입력" style="display:none;">
+
+    <h3>후드 사용 여부</h3>
+    <select id="hood" onchange="handleHoodChange(this)" required>
+      <option value="">선택</option>
+      <option>예</option>
+      <option>아니오</option>
+    </select>
+    <input type="text" id="hoodReason" placeholder="사유 입력" style="display:none;">
+
+    <h3>실험 준비물(시약 제외)</h3>
+    <textarea id="materials" rows="2" placeholder="실험에 사용할 시약을 제외하고 실험에 필요한 모든 장치와 도구를 입력하세요." required></textarea>
+
+    <h3>시약 검색 및 추가(교내 구비된 시약만 검색 가능)</h3>
+    <div id="chemicalSearchGroup">
+      <input type="text" id="chemicalSearch" placeholder="시약명 또는 화학식입력하세요. 두글자 이상 검색 가능합니다.">
+      <button type="button" onclick="searchChemical()">검색</button>
+    </div>
+    <table id="searchResults">
+      <tr>
+        <th>물질명</th><th>화학식</th><th>분류1</th><th>교사임장여부</th><th>선택</th>
+      </tr>
+    </table>
+
+    <h4>
+      추가된 시약 목록
+      <button type="button" onclick="addBlankChemical()">+ 행 추가</button>
+      <div class="unit-hint">
+        <strong>단위 입력 가이드</strong> — 농도: M, m, %, 질량: g, kg, mg, 부피: mL, L, cc, 방울 등 단위를 꼭 입력해주세요.
+      </div>
+    </h4>
+    <table id="chemicalList" class="chem-table">
+      <colgroup>
+        <col style="width:18%;"><col style="width:13%;"><col style="width:10%;"><col style="width:10%;"><col style="width:10%;">
+        <col style="width:11%;"><col style="width:18%;"><col style="width:6%;"><col style="width:4%;">
+      </colgroup>
+      <tr>
+        <th>시약명</th><th>화학식</th><th>상태</th><th>농도(단위를 기록하세요.)</th><th>사용량(단위를 기록하세요.)</th>
+        <th>폐기 방법</th><th>MSDS 및 취급 주의사항</th><th>교사 임장 여부</th><th>삭제</th>
+      </tr>
+    </table>
+
+    <div style="display:flex; align-items:center; gap:12px; margin:10px 0;">
+      <button type="button" id="btnValidateChem" onclick="onValidateChem()">시약 정보 검증</button>
+      <span id="chemValidateBadge" class="pill">미검증</span>
+      <span id="cooldownMsg" style="display:none; font-size:12px; color:#666;"></span>
+    </div>
+    <div style="font-size:12px;color:#9a3412;margin:4px 0 10px 0;">
+      ※ 시약 목록을 수정(추가/삭제/수정)하면 검증 상태가 자동으로 해제됩니다. 제출 전 다시 '시약 정보 검증'을 눌러주세요.
+    </div>
+    <div id="chemValidateReport" class="note" style="display:none;"></div>
+    <div id="submitGuard" class="danger">시약 정보 검증을 통과해야 제출할 수 있습니다.</div>
+
+    <h3>실험 과정</h3>
+    <textarea id="process" rows="6" style="height:140px;" placeholder="실험 과정을 기록할 때 번호를 붙여서 나열하시오." required></textarea>
+
+    <h3>실험 뒷정리</h3>
+    <textarea id="cleanup" rows="6" style="height:100px;" placeholder="실험 후 뒷정리 방법을 기록하세요." required></textarea>
+
+    <h3>실험시 주의사항</h3>
+    <textarea id="precautions" rows="6" style="height:100px;" placeholder="실험시 반드시 주의해야 할 사항을 기록하세요." required></textarea>
+
+    <h3>안전장구 선택</h3>
+    <div class="safety-row">
+      <label class="safety-item"><input type="checkbox" value="실험복"> 실험복</label>
+      <label class="safety-item"><input type="checkbox" value="보안경"> 보안경</label>
+      <label class="safety-item"><input type="checkbox" value="덮개신발(슬리퍼 금지)"> 덮개신발(슬리퍼 금지)</label>
+      <label class="safety-item"><input type="checkbox" value="라텍스 장갑(흰색)"> 라텍스 장갑(흰색)</label>
+      <label class="safety-item"><input type="checkbox" value="내열장갑(주황색)"> 내열장갑(주황색)</label>
+      <label class="safety-item"><input type="checkbox" value="산 방호장갑(초록색)"> 산 방호장갑(초록색)</label>
+      <label class="safety-item"><input type="checkbox" id="otherSafetyCheck" onchange="handleSafetyOtherChange(this)"> 기타</label>
+      <input type="text" id="otherSafety" placeholder="기타 입력" style="display:none;width:120px;">
+    </div>
+
+    <h3>지도교사 선택</h3>
+    <select id="teacher" required>
+      <option value="">선택</option>
+    </select>
+    <input type="hidden" id="teacherEmail">
+
+    <h3>실험실 사용 제약 안내</h3>
+    <p style="color:red;">
+      작성된 문서에 위배되거나 실험실 안전 수칙에 위배될 경우(특히, 안전 장구 미착용, 사전 지도교사 협의 없이 신청한 경우 등)<br>
+      1개월간 과학실험실 사용에 제한됩니다.
+    </p>
+    <div class="radio-row">
+      <label class="radio-item"><input type="radio" name="agreement" value="yes"> 동의합니다</label>
+      <label class="radio-item"><input type="radio" name="agreement" value="no"> 동의하지 않습니다</label>
+    </div>
+
+    <button type="button" onclick="submitForm()">신청하기</button>
+    <span id="statusMessage"></span>
+  </form>
+
+  <div id="customAlert">
+    <p id="alertMessage"></p>
+    <button type="button" onclick="closeCustomAlert()">확인</button>
+  </div>
+
+  <div id="dialogOverlay"></div>
+
+  <div id="confirmDialog">
+    <h3 style="text-align: center;">신청하기 전 한번 더 확인하기</h3>
+    <div class="content-wrapper">
+      <p style="margin-bottom: 15px; font-size: 14px;">
+        아래의 내용을 읽고 정확히 입력하고 동의하지 않을 수 있으나<br>
+        동의하지 않으면 실험실 사용 신청이 거부될 수 있습니다.
+      </p>
+
+      <div class="question-item">
+        <strong>1. 대표자 정보(학번과 이름)과 동반자 정보를 모두 정확히 입력하셨나요?</strong>
+        <div class="input-group">
+          이번 실험에 참여하는 총 인원수를 다시 써주세요.
+          <input type="number" id="confirmStudentCount" style="width: 80px;" placeholder="숫자만"> 명
+        </div>
+      </div>
+
+      <div class="question-item">
+        <strong>2. 실험할 날짜와 신청할 실험실을 정확히 입력하셨나요?</strong>
+        <div class="radio-group">
+          <label><input type="radio" name="confirm2" value="yes" onchange="checkAllConfirms()"> 예</label>
+          <label><input type="radio" name="confirm2" value="no"  onchange="handleNo(2)"> 아니오</label>
+        </div>
+      </div>
+
+      <div class="question-item">
+        <strong>3. 실험 과정, 실험 준비물, 실험 뒷정리, 실험시 주의사항, 폐수 및 폐시약 처리 방법을 모두 정확히 숙지하였나요?</strong>
+        <p class="sub-text">
+          만약 이를 제대로 숙지하지 않고 실험을 수행하는 경우 실험실 사용 신청이 제한될 수 있습니다. 이에 동의하시나요?
+        </p>
+        <div class="radio-group">
+          <label><input type="radio" name="confirm3" value="yes" onchange="checkAllConfirms()"> 예</label>
+          <label><input type="radio" name="confirm3" value="no"  onchange="handleNo(3)"> 아니오</label>
+        </div>
+      </div>
+
+      <div class="question-item">
+        <strong>4. 실험실 안전 수칙 위반(안전 장구 미착용 등) 시 1개월간 과학실험실 사용 제한에 동의하시나요?</strong>
+        <div class="radio-group">
+          <label><input type="radio" name="confirm4" value="yes" onchange="checkAllConfirms()"> 예</label>
+          <label><input type="radio" name="confirm4" value="no"  onchange="handleNo(4)"> 아니오</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="button-group">
+      <button type="button" class="btn-confirm" id="btnConfirmSubmit" onclick="processSubmit()" disabled>신청하기</button>
+      <button type="button" class="btn-cancel" onclick="closeConfirmDialog()">다시 확인하기</button>
+    </div>
+  </div>
+
+  <div id="noWarningDialog"
+       style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%);
+              background:white; border:2px solid #dc3545; padding:20px; z-index:10001;
+              box-shadow:0 4px 20px rgba(0,0,0,0.3); border-radius:8px; width:400px; max-width:90%;">
+    <button type="button" onclick="closeNoWarning()"
+            style="position:absolute; top:10px; right:10px; background:none; border:none;
+                   font-size:20px; cursor:pointer; padding:0; width:30px; height:30px;">✕</button>
+    <h4 style="color:#dc3545; margin-top:10px;">경고</h4>
+    <p style="margin: 20px 0;">
+      아니오를 체크하셨습니다.<br>
+      <strong>실험실 사용 신청이 거부됩니다.</strong><br>
+      실험실 사용을 신청하려면 '예'를 체크해주세요.
+    </p>
+    <button type="button" onclick="closeNoWarning()"
+            style="width:100%; padding:10px; background:#dc3545; color:white; border:none; border-radius:4px; cursor:pointer;">
+      확인
+    </button>
+  </div>
+
+  <!-- ===== 통합 불러오기 다이얼로그 ===== -->
+  <div id="loadOverlay" onclick="closeLoadDialog()"></div>
+  <div id="loadDialog" role="dialog" aria-modal="true" aria-labelledby="loadDialogTitle">
+    <div class="load-header">
+      <h3 id="loadDialogTitle">📂 불러오기</h3>
+    </div>
+    <div class="load-tabs">
+      <button type="button" class="load-tab active" onclick="switchLoadTab(0)">임시저장 불러오기</button>
+      <button type="button" class="load-tab" onclick="switchLoadTab(1)">승인된 신청서 불러오기</button>
+    </div>
+
+    <!-- 탭 1: 임시저장 불러오기 -->
+    <div class="load-panel active" id="panelDraft">
+      <p style="font-size:13px;color:#666;margin:0 0 10px;">임시저장한 신청서를 불러옵니다.</p>
+      <div class="form-row">
+        <div>
+          <label for="loadSid">대표자 학번(5자리)</label>
+          <input type="text" id="loadSid" placeholder="예: 12034" inputmode="numeric" maxlength="5">
+        </div>
+        <div>
+          <label for="loadName">대표자 이름</label>
+          <input type="text" id="loadName" placeholder="예: 홍길동">
+        </div>
+      </div>
+      <div class="form-row">
+        <div>
+          <label for="loadDate">신청 날짜</label>
+          <input type="date" id="loadDate">
+        </div>
+      </div>
+      <div class="btns">
+        <button class="btn" type="button" onclick="closeLoadDialog()" style="background:#e0e0e0;color:#333;">취소</button>
+        <button class="btn" type="button" onclick="loadDraftSubmit()" style="background:#4285F4;color:#fff;">불러오기</button>
+      </div>
+    </div>
+
+    <!-- 탭 2: 승인된 신청서 불러오기 -->
+    <div class="load-panel" id="panelApproved">
+      <p style="font-size:13px;color:#666;margin:0 0 10px;">이전에 최종 승인된 신청서를 불러와 새 신청서의 기본 내용으로 사용할 수 있습니다.</p>
+      <div class="form-row">
+        <div>
+          <label for="approvedSid">대표자 학번(5자리)</label>
+          <input type="text" id="approvedSid" placeholder="예: 12034" inputmode="numeric" maxlength="5">
+        </div>
+        <div>
+          <label for="approvedName">대표자 이름</label>
+          <input type="text" id="approvedName" placeholder="예: 홍길동">
+        </div>
+      </div>
+      <div class="btns">
+        <button class="btn" type="button" onclick="closeLoadDialog()" style="background:#e0e0e0;color:#333;">취소</button>
+        <button class="btn" type="button" onclick="searchApproved()" style="background:#34a853;color:#fff;">검색</button>
+      </div>
+      <div id="approvedResults" class="result-list"></div>
+    </div>
+  </div>
+
+  <div class="fab-container" aria-label="빠른 작업">
+    <button class="fab" onclick="snapshotForm()" type="button" title="임시저장">💾 임시저장</button>
+    <button class="fab" onclick="openLoadDialog(0)" type="button" title="불러오기">📂 불러오기</button>
+    <button class="fab secondary" onclick="scrollToTopSmooth()" type="button" title="맨 위로">⬆Top</button>
+    <button class="fab secondary" onclick="scrollToBottomSmooth()" type="button" title="맨 아래로">⬇Bottom</button>
+  </div>
+
+  <div id="customAlertOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.25); z-index:999;"></div>
+</body>
+</html>

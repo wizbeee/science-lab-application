@@ -57,7 +57,7 @@ function escapeHtml_(s) {
 
 function getHeaderMap_(sheet) {
   const lastCol = sheet.getLastColumn();
-  if (lastCol === 0) throw new Error('시트 헤더가 비어있습니다: ' + sheet.getName());
+  if (lastCol === 0) throw new Error('시트 헤더가 비어있습니다.');
   const header = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
   const map = {};
   header.forEach((h, i) => { map[String(h).trim()] = i; });
@@ -1317,7 +1317,7 @@ function submitApproval_(info) {
   if (approvalCol != null) {
     const existing = String(rows[idx][approvalCol] || '').trim();
     if (existing === '승인' || existing === '반려') {
-      throw new Error('이미 1차 처리(' + existing + ')된 신청입니다. 중복 처리는 불가합니다.');
+      throw new Error('이미 1차 처리(승인/반려)된 신청입니다.');
     }
   }
 
@@ -1413,7 +1413,7 @@ function submitFinalApproval_(info) {
   if (finalApprovalCol != null) {
     const existing = String(rows[idx][finalApprovalCol] || '').trim();
     if (existing === '승인' || existing === '반려') {
-      throw new Error('이미 최종 처리(' + existing + ')된 신청입니다. 중복 처리는 불가합니다.');
+      throw new Error('이미 최종 처리(승인/반려)된 신청입니다.');
     }
   }
 

@@ -249,6 +249,14 @@
       btn.innerHTML = '<span class="spinner"></span>이동 중...';
 
       const url = webAppUrl + '?page=' + encodeURIComponent(page);
+
+      // B-NEW-9: 네비게이션 실패 시 5초 후 복구
+      setTimeout(function() {
+        isNavigating = false;
+        card.classList.remove('loading');
+        btn.innerHTML = btn.dataset.originalText || '신청하기 →';
+      }, 5000);
+
       window.top.location.href = url;
     }
   </script>

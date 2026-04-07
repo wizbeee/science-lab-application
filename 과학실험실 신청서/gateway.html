@@ -173,6 +173,37 @@
       line-height: 1.6;
     }
 
+    .skip-link {
+      position: absolute;
+      top: -40px;
+      left: 0;
+      background: #1a237e;
+      color: #fff;
+      padding: 8px 16px;
+      z-index: 100;
+      transition: top 0.2s;
+    }
+    .skip-link:focus {
+      top: 0;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); }
+      .card { background: #1e1e2e; color: #e0e0e0; }
+      .card:hover { box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
+      .card-header h2 { color: #e0e0e0; }
+      .card-header .subtitle { color: #aaa; }
+      .lab-list .lab-label, .lab-list .lab-names { color: #ccc; }
+      .footer-note { color: #888; }
+      .header h1 { color: #90caf9; }
+      .header p { color: #aaa; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .card { transition: none; }
+      .btn .spinner { animation: none; }
+    }
+
     @media (max-width: 768px) {
       body { padding: 20px 12px; }
       .header h1 { font-size: 1.5rem; }
@@ -184,15 +215,19 @@
 </head>
 <body>
 
+  <a href="#main-content" class="skip-link">본문으로 건너뛰기</a>
+
+  <main>
+
   <div class="header">
     <h1>과학 실험·실습실 사용 신청</h1>
     <p>신청하려는 실험·실습실이 위치한 층을 선택해 주세요.</p>
   </div>
 
-  <div class="card-container">
+  <div class="card-container" id="main-content">
 
     <!-- 1층 과학실험실 -->
-    <div class="card floor1" onclick="goToForm('form', event)">
+    <div class="card floor1" role="button" tabindex="0" aria-label="1층 화학·생물 계열 실험·실습실 신청 페이지로 이동" onclick="goToForm('form', event)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
       <div class="card-header">
         <div class="floor-badge">S동 1층</div>
         <h2>1층 과학 실험·실습실 신청</h2>
@@ -208,7 +243,7 @@
     </div>
 
     <!-- 2, 3층 과학실험실 -->
-    <div class="card floor23" onclick="goToForm('form2f', event)">
+    <div class="card floor23" role="button" tabindex="0" aria-label="2, 3층 물리 계열 실험·실습실 신청 페이지로 이동" onclick="goToForm('form2f', event)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
       <div class="card-header">
         <div class="floor-badge">S동 2·3층</div>
         <h2>2, 3층 과학 실험·실습실 신청</h2>
@@ -230,6 +265,8 @@
     실험·실습실 안전 수칙을 반드시 숙지한 후 신청해 주세요.
   </div>
 
+  </main>
+
   <script>
     // 서버에서 주입
     const webAppUrl = <?!= JSON.stringify(webAppUrl || '') ?>;
@@ -245,6 +282,7 @@
 
       const card = (e || window.event).currentTarget;
       const btn = card.querySelector('.btn');
+      const originalText = btn.textContent;
       card.classList.add('loading');
       btn.innerHTML = '<span class="spinner"></span>이동 중...';
 
@@ -254,7 +292,7 @@
       setTimeout(function() {
         isNavigating = false;
         card.classList.remove('loading');
-        btn.innerHTML = btn.dataset.originalText || '신청하기 →';
+        btn.innerHTML = originalText;
       }, 5000);
 
       window.top.location.href = url;

@@ -47,11 +47,27 @@
     /* A-2: Elapsed time & urgency */
     .elapsed { font-size: 13px; font-weight: 600; margin-left: 6px; }
     .urgent-high { color: #dc2626; }
-    .urgent-mid { color: #f59e0b; }
+    .urgent-mid { color: #b45309; }
     .urgent-low { color: #16a34a; }
 
     /* A-4: Chemical hazard */
     .chem-danger { background: #fef2f2 !important; border-left: 3px solid #dc2626; }
+
+    /* Fieldset/legend */
+    fieldset { border: none; padding: 0; margin: 0; }
+    fieldset legend { font-weight: bold; margin-bottom: 8px; }
+
+    /* Skip link */
+    .skip-link:focus { top: 0; }
+
+    /* Quick rejection chips */
+    .chip { background: #e3f2fd; border: 1px solid #90caf9; border-radius: 16px; padding: 4px 12px; cursor: pointer; font-size: 13px; color: #1565c0; }
+    .chip:hover { background: #bbdefb; }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
 
     /* 모바일 대응 */
     @media (max-width: 768px) {
@@ -71,6 +87,7 @@
   </style>
 </head>
 <body>
+  <a href="#judgmentSection" class="skip-link" style="position:absolute;top:-40px;left:0;background:#4285F4;color:#fff;padding:8px 16px;z-index:100;text-decoration:none;font-weight:bold;">판단 영역으로 건너뛰기</a>
   <form id="approvalForm" onsubmit="return false;">
     <h2>실험·실습실 신청 승인</h2>
 
@@ -83,7 +100,7 @@
     </div>
 
     <!-- Accordion: Detail -->
-    <button type="button" class="accordion-toggle" onclick="toggleAccordion('detailSection', this)">
+    <button type="button" class="accordion-toggle" aria-expanded="false" aria-controls="detailSection" onclick="toggleAccordion('detailSection', this)">
       📋 상세 정보 보기 <span class="arrow">▶</span>
     </button>
     <div class="accordion-content" id="detailSection">
@@ -137,10 +154,10 @@
     </div>
 
     <!-- Accordion: Chemicals -->
-    <button type="button" class="accordion-toggle" onclick="toggleAccordion('chemSection', this)">
-      🧪 시약 목록 <span id="chemBadge"></span> <span class="arrow">▶</span>
+    <button type="button" class="accordion-toggle" aria-expanded="true" aria-controls="chemSection" onclick="toggleAccordion('chemSection', this)">
+      🧪 시약 목록 <span id="chemBadge"></span> <span class="arrow">▼</span>
     </button>
-    <div class="accordion-content" id="chemSection">
+    <div class="accordion-content open" id="chemSection">
       <table id="chemicalTable">
         <thead>
           <tr>
@@ -152,7 +169,7 @@
     </div>
 
     <!-- Teacher Judgment (always visible) -->
-    <div class="judgment-card">
+    <div class="judgment-card" id="judgmentSection">
       <h3>교사 판단</h3>
 
       <label>1. 직접 실험실에 가셔서 지도해야 하나요?</label>
@@ -182,19 +199,27 @@
       </div>
 
       <div class="section">
-        <label>승인 / 반려</label>
-        <div class="radio-group">
-          <label><input type="radio" name="decision" value="승인"> 승인</label>
-          <label><input type="radio" name="decision" value="반려"> 반려</label>
-        </div>
+        <fieldset>
+          <legend>승인 / 반려</legend>
+          <div class="radio-group">
+            <label><input type="radio" name="decision" value="승인"> 승인</label>
+            <label><input type="radio" name="decision" value="반려"> 반려</label>
+          </div>
+        </fieldset>
         <div id="commentDiv" class="hidden">
           <label id="commentLabel">반려 사유</label>
+          <div class="quick-chips" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+            <button type="button" class="chip" onclick="appendReason('안전 규정 미준수')">안전 규정 미준수</button>
+            <button type="button" class="chip" onclick="appendReason('시약 사용 부적절')">시약 사용 부적절</button>
+            <button type="button" class="chip" onclick="appendReason('실험 계획 보완 필요')">실험 계획 보완 필요</button>
+            <button type="button" class="chip" onclick="appendReason('일정 충돌')">일정 충돌</button>
+          </div>
           <textarea id="comment" rows="3" cols="50" style="width: 100%;" placeholder="반려 사유를 입력하세요."></textarea>
         </div>
       </div>
 
       <button id="saveBtn" onclick="submitApproval()">저장하기</button>
-      <div id="statusMsg"></div>
+      <div id="statusMsg" aria-live="polite"></div>
     </div>
   </form>
 
@@ -206,7 +231,14 @@
       const el = document.getElementById(id);
       const arrow = btn.querySelector('.arrow');
       el.classList.toggle('open');
-      arrow.textContent = el.classList.contains('open') ? '▼' : '▶';
+      const isOpen = el.classList.contains('open');
+      arrow.textContent = isOpen ? '▼' : '▶';
+      btn.setAttribute('aria-expanded', String(isOpen));
+    }
+
+    function appendReason(text) {
+      const ta = document.querySelector('.judgment-card textarea');
+      if (ta) { ta.value = ta.value ? ta.value + ', ' + text : text; }
     }
 
     // ===== 1) 서버 주입 값 =====

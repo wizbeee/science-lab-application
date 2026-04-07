@@ -190,14 +190,26 @@ function sendMail_(to, subject, htmlBody) {
     return { ok: false, error: msg };
   }
   try {
-    GmailApp.sendEmail(addr, subject, '', {
-      from: SCIENCE_EMAIL,
-      htmlBody: htmlBody
-    });
+    // from 옵션: SCIENCE_EMAIL이 Gmail "보내기 주소(Send As)"로 등록된 경우에만 사용
+    // 미등록 시 from을 지정하면 에러가 발생하거나 무시될 수 있으므로 조건부 적용
+    const opts = { htmlBody: htmlBody };
+    try {
+      const aliases = GmailApp.getAliases();
+      if (aliases.indexOf(SCIENCE_EMAIL) !== -1) {
+        opts.from = SCIENCE_EMAIL;
+      } else {
+        Logger.log('[sendMail_] SCIENCE_EMAIL(' + SCIENCE_EMAIL + ')이 Gmail 별칭에 미등록 → from 생략 (기본 계정으로 발송)');
+      }
+    } catch (aliasErr) {
+      Logger.log('[sendMail_] getAliases 실패 → from 생략: ' + String(aliasErr.message || aliasErr));
+    }
+    GmailApp.sendEmail(addr, subject, '', opts);
+    Logger.log('[sendMail_] 발송 성공 → ' + addr + ' / 제목: ' + subject);
     return { ok: true };
   } catch (e) {
     const msg = String(e.message || e);
     Logger.log('[sendMail_] 발송 실패 (' + addr + '): ' + msg);
+    console.error('[sendMail_] 발송 실패 (' + addr + '): ' + msg);
     return { ok: false, error: msg };
   }
 }
@@ -233,7 +245,12 @@ function sendStudentSubmitEmail_(data, appId) {
 /** 지도교사에게 1차 승인 요청 */
 function sendTeacherApprovalEmail_(data, appId) {
   const email = String(data.teacherEmail || '').trim();
-  if (!email) return { ok: false, error: '지도교사 이메일 누락' };
+  if (!email) {
+    Logger.log('[sendTeacherApprovalEmail_] 지도교사 이메일 누락 - appId: ' + appId +
+      ', teacher: ' + (data.teacher || '(이름없음)') +
+      ', studentId: ' + (data.studentId || ''));
+    return { ok: false, error: '지도교사 이메일 누락 (교사명: ' + (data.teacher || '미지정') + ')' };
+  }
   const e = escapeHtml_;
   const url = ScriptApp.getService().getUrl() + '?id=' + encodeURIComponent(appId);
   const subject = `[실험·실습실 1차 승인 요청] ${e(data.studentName)} (${e(data.studentId)})`;
@@ -386,7 +403,11 @@ function sendStudentFinalRejectEmail_(rec, comment) {
 /** 지도교사에게 최종 결과 안내 */
 function sendTeacherFinalResultEmail_(rec, decision, comment) {
   const email = String(rec['지도교사이메일'] || '').trim();
-  if (!email) return { ok: false, error: '지도교사 이메일 누락' };
+  if (!email) {
+    Logger.log('[sendTeacherFinalResultEmail_] 지도교사 이메일 누락 - appId: ' + (rec['신청ID'] || '') +
+      ', teacher: ' + (rec['지도교사이름'] || '(이름없음)'));
+    return { ok: false, error: '지도교사 이메일 누락 (교사명: ' + (rec['지도교사이름'] || '미지정') + ')' };
+  }
   const e = escapeHtml_;
   const isApproved = decision === '승인';
   const subject = isApproved
@@ -1161,10 +1182,15 @@ function submitApplication_(data) {
 
   // ====== 메일 발송 ======
   const warnings = [];
+  Logger.log('[submitApplication_] 메일 발송 시작 - appId: ' + id +
+    ', studentId: ' + data.studentId + ', teacherEmail: ' + (data.teacherEmail || '(비어있음)'));
   const r1 = sendStudentSubmitEmail_(data, id);
   if (!r1.ok) warnings.push('학생 신청완료 메일 발송 실패: ' + (r1.error || ''));
   const r2 = sendTeacherApprovalEmail_(data, id);
-  if (!r2.ok) warnings.push('지도교사 1차 승인요청 메일 발송 실패: ' + (r2.error || ''));
+  if (!r2.ok) {
+    Logger.log('[submitApplication_] 지도교사 메일 발송 실패 - appId: ' + id + ', error: ' + (r2.error || ''));
+    warnings.push('지도교사 1차 승인요청 메일 발송 실패: ' + (r2.error || ''));
+  }
 
   const suffixMsg = (hasRestricted && seventhValid)
     ? ' (신청제한 학생이 있지만 7교시에는 신청이 가능합니다)'

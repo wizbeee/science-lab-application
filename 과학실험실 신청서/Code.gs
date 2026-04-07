@@ -1081,7 +1081,7 @@ function submitApplication_(data) {
   const dupTimeCol = map['신청시간'];
   if (dupSidCol != null && dupDateCol != null && dupLabCol != null && dupTimeCol != null) {
     const allRows = sh.getDataRange().getValues().slice(1);
-    const normSid  = String(data.studentId || '').trim();
+    const normSid  = String(data.studentId || '').replace(/\D/g, '').padStart(5, '0');
     const normDate = normalizeDateYMD_(data.date);
     const normLab  = String(data.lab || '').trim();
     const normSlots = requestedSlots.sort().join(',');

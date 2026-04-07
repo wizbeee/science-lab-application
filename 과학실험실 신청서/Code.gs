@@ -168,7 +168,7 @@ function buildEmailHtml_(title, bodyLines, linkUrl, linkLabel) {
     <div style="line-height:1.8;color:#444;">${rows}</div>
     ${linkBlock}
     <hr style="border:none;border-top:1px solid #eee;margin:24px 0 8px;">
-    <div style="font-size:12px;color:#999;">본 메일은 과학실험실 신청 시스템에서 자동 발송되었습니다.</div>
+    <div style="font-size:12px;color:#999;">본 메일은 과학 실험·실습실 신청 시스템에서 자동 발송되었습니다.</div>
   </div>`;
 }
 
@@ -214,9 +214,9 @@ function sendStudentSubmitEmail_(data, appId) {
   const email = getStudentEmail_(data.studentId);
   if (!email) return { ok: false, error: '학번 누락' };
   const e = escapeHtml_;
-  const subject = `[실험실 신청 완료] ${e(data.studentName)}님의 신청이 접수되었습니다`;
-  const body = buildEmailHtml_('실험실 신청 완료 안내', [
-    `${e(data.studentName)}님, 과학실험실 사용 신청이 정상적으로 접수되었습니다.`,
+  const subject = `[실험·실습실 신청 완료] ${e(data.studentName)}님의 신청이 접수되었습니다`;
+  const body = buildEmailHtml_('실험·실습실 신청 완료 안내', [
+    `${e(data.studentName)}님, 과학 실험·실습실 사용 신청이 정상적으로 접수되었습니다.`,
     '',
     `• 신청 ID: ${e(appId)}`,
     `• 실험실: ${e(data.lab)}`,
@@ -236,9 +236,9 @@ function sendTeacherApprovalEmail_(data, appId) {
   if (!email) return { ok: false, error: '지도교사 이메일 누락' };
   const e = escapeHtml_;
   const url = ScriptApp.getService().getUrl() + '?id=' + encodeURIComponent(appId);
-  const subject = `[과학실험실 1차 승인 요청] ${e(data.studentName)} (${e(data.studentId)})`;
-  const body = buildEmailHtml_('실험실 1차 승인 요청', [
-    '학생이 과학실험실 사용을 신청했습니다. 확인 후 승인/반려 처리를 해주세요.',
+  const subject = `[실험·실습실 1차 승인 요청] ${e(data.studentName)} (${e(data.studentId)})`;
+  const body = buildEmailHtml_('실험·실습실 1차 승인 요청', [
+    '학생이 과학 실험·실습실 사용을 신청했습니다. 확인 후 승인/반려 처리를 해주세요.',
     '',
     `• 대표자: ${e(data.studentName)} (${e(data.studentId)})`,
     `• 실험실: ${e(data.lab)}`,
@@ -255,7 +255,7 @@ function sendStudentFirstApproveEmail_(rec, comment) {
   const e = escapeHtml_;
   const subject = `[실험실 1차 승인] ${e(rec['대표자이름'])}님의 신청이 1차 승인되었습니다`;
   const lines = [
-    `${e(rec['대표자이름'])}님, 과학실험실 사용 신청이 지도교사에 의해 1차 승인되었습니다.`,
+    `${e(rec['대표자이름'])}님, 과학 실험·실습실 사용 신청이 지도교사에 의해 1차 승인되었습니다.`,
     '',
     `• 신청 ID: ${e(rec['신청ID'])}`,
     `• 실험실: ${e(rec['신청실험실'])}`,
@@ -275,9 +275,9 @@ function sendStudentRejectEmail_(rec, comment) {
   const email = getStudentEmail_(rec['대표자학번']);
   if (!email) return { ok: false, error: '학번 누락' };
   const e = escapeHtml_;
-  const subject = `[실험실 신청 반려] ${e(rec['대표자이름'])}님의 신청이 반려되었습니다`;
-  const body = buildEmailHtml_('실험실 신청 1차 반려 안내', [
-    `${e(rec['대표자이름'])}님, 과학실험실 사용 신청이 지도교사에 의해 반려되었습니다.`,
+  const subject = `[실험·실습실 신청 반려] ${e(rec['대표자이름'])}님의 신청이 반려되었습니다`;
+  const body = buildEmailHtml_('실험·실습실 신청 1차 반려 안내', [
+    `${e(rec['대표자이름'])}님, 과학 실험·실습실 사용 신청이 지도교사에 의해 반려되었습니다.`,
     '',
     `• 신청 ID: ${e(rec['신청ID'])}`,
     `• 실험실: ${e(rec['신청실험실'])}`,
@@ -339,9 +339,9 @@ function sendStudentFinalApproveEmail_(rec, comment) {
   const email = getStudentEmail_(rec['대표자학번']);
   if (!email) return { ok: false, error: '학번 누락' };
   const e = escapeHtml_;
-  const subject = `[실험실 최종 승인] ${e(rec['대표자이름'])}님의 실험실 사용이 승인되었습니다`;
+  const subject = `[실험·실습실 최종 승인] ${e(rec['대표자이름'])}님의 실험·실습실 사용이 승인되었습니다`;
   const lines = [
-    `${e(rec['대표자이름'])}님, 과학실험실 사용 신청이 최종 승인되었습니다.`,
+    `${e(rec['대표자이름'])}님, 과학 실험·실습실 사용 신청이 최종 승인되었습니다.`,
     '',
     `• 신청 ID: ${e(rec['신청ID'])}`,
     `• 실험실: ${e(rec['신청실험실'])}`,
@@ -352,7 +352,7 @@ function sendStudentFinalApproveEmail_(rec, comment) {
   if (comment && String(comment).trim()) {
     lines.push('', `<b>담당교사 의견:</b> ${e(comment)}`);
   }
-  lines.push('', '실험 당일 안전장구를 반드시 착용하시고, 실험실 안전 수칙을 준수해 주세요.', '실험실 사용 후 반드시 뒷정리를 완료해 주세요.');
+  lines.push('', '실험 당일 안전장구를 반드시 착용하시고, 실험·실습실 안전 수칙을 준수해 주세요.', '실험·실습실 사용 후 반드시 뒷정리를 완료해 주세요.');
   const body = buildEmailHtml_('실험실 최종 승인 완료', lines);
   return sendMail_(email, subject, body);
 }
@@ -364,7 +364,7 @@ function sendStudentFinalRejectEmail_(rec, comment) {
   const e = escapeHtml_;
   const subject = `[실험실 최종 반려] ${e(rec['대표자이름'])}님의 신청이 반려되었습니다`;
   const body = buildEmailHtml_('실험실 최종 반려 안내', [
-    `${e(rec['대표자이름'])}님, 과학실험실 사용 신청이 실험실 담당교사에 의해 최종 반려되었습니다.`,
+    `${e(rec['대표자이름'])}님, 과학 실험·실습실 사용 신청이 담당교사에 의해 최종 반려되었습니다.`,
     '',
     `• 신청 ID: ${e(rec['신청ID'])}`,
     `• 실험실: ${e(rec['신청실험실'])}`,
@@ -393,7 +393,7 @@ function sendTeacherFinalResultEmail_(rec, decision, comment) {
     ? `[실험실 최종 승인 완료] ${e(rec['대표자이름'])} (${e(rec['대표자학번'])})`
     : `[실험실 최종 반려] ${e(rec['대표자이름'])} (${e(rec['대표자학번'])})`;
   const lines = [
-    `${e(rec['대표자이름'])} (${e(rec['대표자학번'])}) 학생의 실험실 사용 신청이 최종 ${isApproved ? '승인' : '반려'}되었습니다.`,
+    `${e(rec['대표자이름'])} (${e(rec['대표자학번'])}) 학생의 실험·실습실 사용 신청이 최종 ${isApproved ? '승인' : '반려'}되었습니다.`,
     '',
     `• 실험실: ${e(rec['신청실험실'])}`,
     `• 날짜/시간: ${normalizeDateYMD_(rec['실험할날짜'])} / ${e(rec['신청시간'])}`,
@@ -432,7 +432,7 @@ function doGet(e) {
     tpl.webAppUrl = ScriptApp.getService().getUrl();
     return tpl.evaluate()
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-      .setTitle(e.parameter.stage === 'final' ? '최종 승인/반려' : '실험실 신청 승인');
+      .setTitle(e.parameter.stage === 'final' ? '최종 승인/반려' : '실험·실습실 신청 승인');
   }
 
   // ── 2) 1층 실험실 신청서
@@ -442,7 +442,7 @@ function doGet(e) {
     tpl.webAppUrl = ScriptApp.getService().getUrl();
     return tpl.evaluate()
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-      .setTitle('과학실험실 사용 신청서(S동 1층)');
+      .setTitle('과학 실험·실습실 사용 신청서(S동 1층)');
   }
 
   // ── 3) 2·3층 실험실 신청서
@@ -452,7 +452,7 @@ function doGet(e) {
     tpl.webAppUrl = ScriptApp.getService().getUrl();
     return tpl.evaluate()
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-      .setTitle('과학실험실 사용 신청서(S동 2·3층)');
+      .setTitle('과학 실험·실습실 사용 신청서(S동 2·3층)');
   }
 
   // ── 4) 기본: 게이트웨이
@@ -460,7 +460,7 @@ function doGet(e) {
   tpl.webAppUrl = ScriptApp.getService().getUrl();
   return tpl.evaluate()
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-    .setTitle('과학실험실 사용 신청');
+    .setTitle('과학 실험·실습실 사용 신청');
 }
 function include(filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
@@ -975,8 +975,8 @@ function submitApplication_(data) {
   const seventhValid = isSeventhCheckedAndValid_(data);
   if (hasRestricted && !seventhValid) {
     throw new Error(
-      '과학실험실 사용 신청이 불가능한 학생의 정보가 포함되어 있습니다.\n' +
-      '과학실험실 사용 신청하려면 해당 정보를 수정 혹은 삭제한 뒤 다시 신청해주세요.\n' +
+      '과학 실험·실습실 사용 신청이 불가능한 학생의 정보가 포함되어 있습니다.\n' +
+      '과학 실험·실습실 사용 신청하려면 해당 정보를 수정 혹은 삭제한 뒤 다시 신청해주세요.\n' +
       '문의 사항은 과학기술과 학과사무실에 문의하세요.\n' +
       '\n※ 단, 7교시에는 신청이 가능합니다.'
     );

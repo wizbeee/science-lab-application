@@ -2,7 +2,7 @@
 <html>
 <head>
   <base target="_top">
-  <title>과학실험실 사용 신청서(S동 2·3층 실험실)</title>
+  <title>과학실험·실습실 사용 신청서(S동 2·3층 실험·실습실)</title>
   <style>
     body {
       display: flex;
@@ -208,6 +208,16 @@
     let calendarFetchSeq = 0;
     let currentCalendarBlocks = null;
 
+    // A-5: Page unload warning
+    let formDirty = false;
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('applicationForm').addEventListener('input', () => { formDirty = true; });
+      document.getElementById('applicationForm').addEventListener('change', () => { formDirty = true; });
+    });
+    window.addEventListener('beforeunload', (e) => {
+      if (formDirty) { e.preventDefault(); e.returnValue = ''; }
+    });
+
     let lastCopyTime = 0, lastPasteTime = 0, copyCount = 0, pasteCount = 0;
     const ACTION_DELAY = 1000, MAX_ACTIONS_PER_MINUTE = 10;
     setInterval(() => { copyCount = Math.max(0, copyCount - 1); pasteCount = Math.max(0, pasteCount - 1); }, 6000);
@@ -289,6 +299,10 @@
       document.querySelectorAll('input[name="timeSlot"]').forEach(cb => { cb.disabled = false; });
 
       initFabFeedback();
+
+      // A-7: Hook auto-save and check for saved data
+      document.getElementById('applicationForm').addEventListener('input', scheduleAutoSave);
+      checkAutoSave();
     }
     document.addEventListener('DOMContentLoaded', initApp);
 
@@ -383,7 +397,7 @@
           labSel.value = '';
         }
         disableAllTimeSlots();
-        showCustomAlert(info.notice || '해당 날짜에는 과학실험실 사용이 불가능합니다.');
+        showCustomAlert(info.notice || '해당 날짜에는 과학실험·실습실 사용이 불가능합니다.');
         return;
       }
 
@@ -440,6 +454,7 @@
           if (mySeq !== calendarFetchSeq) return;
           currentCalendarBlocks = info;
           applyCalendarBlocksForSelectedLab();
+          if (info) renderAvailabilityTable(info);
           if (info && info.notice && !info.allBlocked) showCustomAlert(info.notice);
           hideLookupLoading();
         })
@@ -461,7 +476,7 @@
       const d = new Date(input.value);
       const dayOfWeek = d.getDay();
       if (dayOfWeek === 0 || dayOfWeek === 6) {
-        showCustomAlert('주말은 실험실을 이용할 수 없습니다.');
+        showCustomAlert('주말은 실험·실습실을 이용할 수 없습니다.');
         input.value = ''; span.textContent = '';
         updatePeriod7Availability(); recomputeTeacherOptions();
         immediateWarnIfBlocked(); resetCalendarBlocks(); currentCalendarBlocks = null; return;
@@ -554,7 +569,7 @@
       if (isSeventhExceptionActive()) return;
       if (hasRestrictedMatch) {
         showCustomAlert(
-          '해당 학생은 실험실 사용 신청 불가합니다.<br>' +
+          '해당 학생은 실험·실습실 사용 신청 불가합니다.<br>' +
           '문의 사항은 과학기술과 학과사무실에 문의해주세요.<br><br>' +
           '<b>※ 단, 7교시에는 신청이 가능합니다.</b>'
         );
@@ -581,7 +596,7 @@
       if (!timeChecked) { showCustomAlert('신청 가능한 시간 중 하나 이상을 선택해주세요.'); return false; }
 
       if (document.getElementById('purpose').value==='기타' && !document.getElementById('otherPurpose').value.trim()) { showCustomAlert('사용 목적을 "기타"로 선택한 경우 내용을 입력해야 합니다.'); return false; }
-      const agr = document.querySelector('input[name="agreement"]:checked'); if (!agr || agr.value!=='yes') { showCustomAlert('실험실 사용 제약 안내에 동의해야 신청할 수 있습니다.'); return false; }
+      const agr = document.querySelector('input[name="agreement"]:checked'); if (!agr || agr.value!=='yes') { showCustomAlert('실험·실습실 사용 제약 안내에 동의해야 신청할 수 있습니다.'); return false; }
       if (!document.querySelectorAll('.safety-item input:checked').length) { showCustomAlert('안전장구를 최소 하나 이상 선택해야 합니다.'); return false; }
       if (document.getElementById('otherSafetyCheck').checked && !document.getElementById('otherSafety').value.trim()) { showCustomAlert('기타 안전장구를 선택한 경우 내용을 입력해야 합니다.'); return false; }
 
@@ -591,7 +606,7 @@
         document.getElementById('teamMembers')?.classList.remove('blocked-input');
       } else if (hasRestrictedMatch) {
         showCustomAlert(
-          '과학실험실 사용 신청이 불가능한 학생의 정보가 포함되어 있습니다.<br>' +
+          '과학실험·실습실 사용 신청이 불가능한 학생의 정보가 포함되어 있습니다.<br>' +
           '해당 정보를 수정 혹은 삭제한 뒤 다시 신청해주세요.<br><br>' +
           '<b>※ 단, 7교시에는 신청이 가능합니다.</b>'
         );
@@ -678,10 +693,38 @@
       google.script.run
         .withSuccessHandler(res => {
           hideOverlayBlock();
-          document.getElementById('statusMessage').textContent = '';
-          alert(res);
-          document.getElementById('applicationForm').reset();
-          if (btn) btn.disabled = false;
+          formDirty = false;
+          localStorage.removeItem('lab-form2f-autosave');
+          const idMatch = String(res).match(/ID:\s*([^\s)]+)/);
+          const appId = idMatch ? idMatch[1] : '';
+          const form = document.getElementById('applicationForm');
+          form.style.display = 'none';
+
+          let completionDiv = document.getElementById('completionScreen');
+          if (!completionDiv) {
+            completionDiv = document.createElement('div');
+            completionDiv.id = 'completionScreen';
+            form.parentNode.insertBefore(completionDiv, form.nextSibling);
+          }
+
+          const lab = document.getElementById('lab') ? document.getElementById('lab').value : '';
+          const date = document.getElementById('date') ? document.getElementById('date').value : '';
+          const title = document.getElementById('title') ? document.getElementById('title').value : '';
+
+          completionDiv.innerHTML =
+            '<div style="text-align:center;max-width:600px;margin:60px auto;padding:30px;">' +
+            '<div style="font-size:3rem;margin-bottom:16px;">✅</div>' +
+            '<h2 style="color:#16a34a;margin-bottom:12px;">신청이 완료되었습니다!</h2>' +
+            '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:20px;margin:20px 0;text-align:left;">' +
+            '<div style="margin-bottom:8px;"><b>신청 ID:</b> <code style="background:#e2e8f0;padding:2px 8px;border-radius:4px;user-select:all;">' + (appId || '(확인 중)') + '</code></div>' +
+            (lab ? '<div style="margin-bottom:8px;"><b>실험·실습실:</b> ' + lab + '</div>' : '') +
+            (date ? '<div style="margin-bottom:8px;"><b>실험 날짜:</b> ' + date + '</div>' : '') +
+            (title ? '<div style="margin-bottom:8px;"><b>실험 제목:</b> ' + title + '</div>' : '') +
+            '</div>' +
+            '<p style="color:#555;margin:16px 0;">지도교사의 1차 승인 → 담당교사의 최종 승인을 거쳐 확정됩니다.<br>승인/반려 결과는 이메일로 안내됩니다.</p>' +
+            '<button onclick="resetToNewForm()" style="padding:12px 24px;background:#4285F4;color:#fff;border:none;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;">새 신청서 작성</button>' +
+            '</div>';
+          completionDiv.style.display = 'block';
         })
         .withFailureHandler(err => {
           hideOverlayBlock();
@@ -693,6 +736,123 @@
           document.getElementById('statusMessage').textContent = '';
         })
         .submitApplication(data);
+    }
+
+    function resetToNewForm() {
+      const form = document.getElementById('applicationForm');
+      const completion = document.getElementById('completionScreen');
+      if (completion) completion.style.display = 'none';
+      form.style.display = '';
+      form.reset();
+      const btn = document.querySelector('#applicationForm button[type="button"]');
+      if (btn) btn.disabled = false;
+      document.getElementById('statusMessage').textContent = '';
+      formDirty = false;
+      window.scrollTo(0, 0);
+    }
+
+    // ---- A-7: Browser auto-save (localStorage) ----
+    let autoSaveTimer = null;
+    const AUTO_SAVE_KEY = 'lab-form2f-autosave';
+
+    function scheduleAutoSave() {
+      if (autoSaveTimer) clearTimeout(autoSaveTimer);
+      autoSaveTimer = setTimeout(doAutoSave, 3000);
+    }
+
+    function doAutoSave() {
+      try {
+        const sid = (document.getElementById('studentId')?.value || '').trim();
+        if (!sid) return;
+        const snapshot = {
+          studentId: sid,
+          studentName: document.getElementById('studentName')?.value || '',
+          date: document.getElementById('date')?.value || '',
+          lab: document.getElementById('lab')?.value || '',
+          title: document.getElementById('title')?.value || '',
+          purpose: document.getElementById('purpose')?.value || '',
+          materials: document.getElementById('materials')?.value || '',
+          process: document.getElementById('process')?.value || '',
+          cleanup: document.getElementById('cleanup')?.value || '',
+          precautions: document.getElementById('precautions')?.value || '',
+          savedAt: new Date().toISOString()
+        };
+        localStorage.setItem(AUTO_SAVE_KEY, JSON.stringify(snapshot));
+      } catch(e) {}
+    }
+
+    function checkAutoSave() {
+      try {
+        const saved = localStorage.getItem(AUTO_SAVE_KEY);
+        if (!saved) return;
+        const data = JSON.parse(saved);
+        if (!data.studentId) return;
+        const savedAt = new Date(data.savedAt);
+        if (Date.now() - savedAt.getTime() > 30 * 60 * 1000) {
+          localStorage.removeItem(AUTO_SAVE_KEY);
+          return;
+        }
+        const bar = document.createElement('div');
+        bar.id = 'autoSaveBar';
+        bar.style.cssText = 'background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;';
+        bar.innerHTML = '<span style="font-weight:600;color:#1d4ed8;">💾 이전에 작성 중이던 내용이 있습니다 (' + data.studentId + ')</span>' +
+          '<span><button onclick="loadAutoSave()" style="padding:6px 14px;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;margin-right:6px;">불러오기</button>' +
+          '<button onclick="dismissAutoSave()" style="padding:6px 14px;background:#e5e7eb;color:#374151;border:none;border-radius:6px;cursor:pointer;font-weight:600;">무시</button></span>';
+        const form = document.getElementById('applicationForm');
+        form.insertBefore(bar, form.firstChild);
+      } catch(e) {}
+    }
+
+    function loadAutoSave() {
+      try {
+        const saved = localStorage.getItem(AUTO_SAVE_KEY);
+        if (!saved) return;
+        const data = JSON.parse(saved);
+        ['studentId','studentName','date','lab','title','purpose','materials','process','cleanup','precautions'].forEach(field => {
+          const el = document.getElementById(field);
+          if (el && data[field]) el.value = data[field];
+        });
+        dismissAutoSave();
+      } catch(e) {}
+    }
+
+    function dismissAutoSave() {
+      const bar = document.getElementById('autoSaveBar');
+      if (bar) bar.remove();
+      localStorage.removeItem(AUTO_SAVE_KEY);
+    }
+
+    // ---- A-8: Date availability table ----
+    function renderAvailabilityTable(unavail) {
+      let tableDiv = document.getElementById('availabilityTable');
+      if (!tableDiv) {
+        tableDiv = document.createElement('div');
+        tableDiv.id = 'availabilityTable';
+        tableDiv.style.cssText = 'margin:12px 0;font-size:13px;';
+        const labSel = document.getElementById('lab');
+        if (labSel) labSel.parentNode.insertBefore(tableDiv, labSel.nextSibling);
+      }
+      if (unavail.allBlocked) {
+        tableDiv.innerHTML = '<div style="background:#fef2f2;color:#dc2626;padding:8px 12px;border-radius:6px;font-weight:600;">⚠️ 해당 날짜는 전체 사용 불가입니다.</div>';
+        return;
+      }
+      const labs = [...document.getElementById('lab').options].filter(o => o.value).map(o => o.value);
+      const slots = ['ET','EP1','7교시'];
+      let html = '<table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;">';
+      html += '<tr><th style="border:1px solid #ddd;padding:6px;background:#f3f4f6;">실험·실습실</th>';
+      slots.forEach(s => { html += '<th style="border:1px solid #ddd;padding:6px;background:#f3f4f6;">' + s + '</th>'; });
+      html += '</tr>';
+      labs.forEach(lab => {
+        html += '<tr><td style="border:1px solid #ddd;padding:6px;font-weight:600;">' + lab + '</td>';
+        slots.forEach(slot => {
+          const blocked = (unavail.blockedLabs||[]).includes(lab) || (unavail.blockedTimes||[]).includes(slot) || (unavail.perLabTimes && unavail.perLabTimes[lab] && unavail.perLabTimes[lab].includes(slot));
+          const style = blocked ? 'border:1px solid #ddd;padding:6px;text-align:center;background:#fef2f2;color:#dc2626;' : 'border:1px solid #ddd;padding:6px;text-align:center;background:#f0fdf4;color:#16a34a;';
+          html += '<td style="' + style + '">' + (blocked ? '❌' : '✅') + '</td>';
+        });
+        html += '</tr>';
+      });
+      html += '</table>';
+      tableDiv.innerHTML = html;
     }
 
     // ---- 임시저장 ----
@@ -982,7 +1142,7 @@
   </div>
 
   <form id="applicationForm" onsubmit="return false;">
-    <h1>과학실험실 사용 신청서 <span style="color:#2e7d32;">(S동 2·3층)</span></h1>
+    <h1>과학실험·실습실 사용 신청서 <span style="color:#2e7d32;">(S동 2·3층)</span></h1>
 
     <h3>대표자 정보</h3>
     학번: <input type="text" id="studentId" placeholder="대표 학생의 학번을 입력하세요.(나이스학번)" required>
@@ -1008,7 +1168,7 @@
     <input type="date" id="date" required onchange="showDayOfWeek();">
     <span id="dayOfWeek" style="margin-left:8px; font-weight:bold;"></span>
 
-    <h3>신청 실험실</h3>
+    <h3>신청 실험·실습실</h3>
     <select id="lab" onchange="handleLabChange(this)" required>
       <option value="">선택</option>
       <option>물리실험실</option>
@@ -1058,10 +1218,10 @@
     </select>
     <input type="hidden" id="teacherEmail">
 
-    <h3>실험실 사용 제약 안내</h3>
+    <h3>실험·실습실 사용 제약 안내</h3>
     <p style="color:red;">
-      작성된 문서에 위배되거나 실험실 안전 수칙에 위배될 경우(특히, 안전 장구 미착용, 사전 지도교사 협의 없이 신청한 경우 등)<br>
-      1개월간 과학실험실 사용에 제한됩니다.
+      작성된 문서에 위배되거나 실험·실습실 안전 수칙에 위배될 경우(특히, 안전 장구 미착용, 사전 지도교사 협의 없이 신청한 경우 등)<br>
+      1개월간 과학실험·실습실 사용에 제한됩니다.
     </p>
     <div class="radio-row">
       <label class="radio-item"><input type="radio" name="agreement" value="yes"> 동의합니다</label>
@@ -1084,7 +1244,7 @@
     <div class="content-wrapper">
       <p style="margin-bottom: 15px; font-size: 14px;">
         아래의 내용을 읽고 정확히 입력하고 동의하지 않을 수 있으나<br>
-        동의하지 않으면 실험실 사용 신청이 거부될 수 있습니다.
+        동의하지 않으면 실험·실습실 사용 신청이 거부될 수 있습니다.
       </p>
       <div class="question-item">
         <strong>1. 대표자 정보(학번과 이름)과 동반자 정보를 모두 정확히 입력하셨나요?</strong>
@@ -1094,7 +1254,7 @@
         </div>
       </div>
       <div class="question-item">
-        <strong>2. 실험할 날짜와 신청할 실험실을 정확히 입력하셨나요?</strong>
+        <strong>2. 실험할 날짜와 신청할 실험·실습실을 정확히 입력하셨나요?</strong>
         <div class="radio-group">
           <label><input type="radio" name="confirm2" value="yes" onchange="checkAllConfirms()"> 예</label>
           <label><input type="radio" name="confirm2" value="no"  onchange="handleNo(2)"> 아니오</label>
@@ -1103,7 +1263,7 @@
       <div class="question-item">
         <strong>3. 실험 과정, 실험 준비물, 실험 뒷정리, 실험시 주의사항을 모두 정확히 숙지하였나요?</strong>
         <p class="sub-text">
-          만약 이를 제대로 숙지하지 않고 실험을 수행하는 경우 실험실 사용 신청이 제한될 수 있습니다. 이에 동의하시나요?
+          만약 이를 제대로 숙지하지 않고 실험을 수행하는 경우 실험·실습실 사용 신청이 제한될 수 있습니다. 이에 동의하시나요?
         </p>
         <div class="radio-group">
           <label><input type="radio" name="confirm3" value="yes" onchange="checkAllConfirms()"> 예</label>
@@ -1111,7 +1271,7 @@
         </div>
       </div>
       <div class="question-item">
-        <strong>4. 실험실 안전 수칙 위반(안전 장구 미착용 등) 시 1개월간 과학실험실 사용 제한에 동의하시나요?</strong>
+        <strong>4. 실험·실습실 안전 수칙 위반(안전 장구 미착용 등) 시 1개월간 과학실험·실습실 사용 제한에 동의하시나요?</strong>
         <div class="radio-group">
           <label><input type="radio" name="confirm4" value="yes" onchange="checkAllConfirms()"> 예</label>
           <label><input type="radio" name="confirm4" value="no"  onchange="handleNo(4)"> 아니오</label>
@@ -1134,8 +1294,8 @@
     <h4 style="color:#dc3545; margin-top:10px;">경고</h4>
     <p style="margin: 20px 0;">
       아니오를 체크하셨습니다.<br>
-      <strong>실험실 사용 신청이 거부됩니다.</strong><br>
-      실험실 사용을 신청하려면 '예'를 체크해주세요.
+      <strong>실험·실습실 사용 신청이 거부됩니다.</strong><br>
+      실험·실습실 사용을 신청하려면 '예'를 체크해주세요.
     </p>
     <button type="button" onclick="closeNoWarning()"
             style="width:100%; padding:10px; background:#dc3545; color:white; border:none; border-radius:4px; cursor:pointer;">

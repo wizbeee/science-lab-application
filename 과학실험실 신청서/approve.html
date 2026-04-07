@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>실험실 신청 승인</title>
+  <title>실험·실습실 신청 승인</title>
   <style>
     body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 40px; display: flex; justify-content: center; }
     #approvalForm { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); width: 1000px; max-width: 100%; box-sizing: border-box; }
@@ -21,6 +21,37 @@
     .output { padding: 8px; background: #fafafa; border: 1px solid #ddd; border-radius: 4px; word-break: break-word; white-space: pre-wrap; }
     .inline-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
     .time-input { width: 120px; }
+
+    /* A-1: Accordion UI */
+    .summary-card { background: #e8f4fd; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+    .summary-card .summary-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
+    .summary-item { display: flex; gap: 8px; padding: 4px 0; }
+    .summary-label { font-weight: 600; color: #555; min-width: 80px; }
+
+    .accordion-toggle {
+      background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px;
+      padding: 12px 16px; width: 100%; text-align: left; cursor: pointer;
+      font-size: 1rem; font-weight: 600; margin-bottom: 8px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .accordion-toggle:hover { background: #e9ecef; }
+    .accordion-content { display: none; padding: 0 8px; }
+    .accordion-content.open { display: block; }
+
+    .judgment-card {
+      background: #fff; border: 2px solid #4285F4; border-radius: 10px;
+      padding: 20px; margin-top: 16px;
+    }
+    .judgment-card h3 { color: #4285F4; margin: 0 0 16px 0; }
+
+    /* A-2: Elapsed time & urgency */
+    .elapsed { font-size: 13px; font-weight: 600; margin-left: 6px; }
+    .urgent-high { color: #dc2626; }
+    .urgent-mid { color: #f59e0b; }
+    .urgent-low { color: #16a34a; }
+
+    /* A-4: Chemical hazard */
+    .chem-danger { background: #fef2f2 !important; border-left: 3px solid #dc2626; }
 
     /* 모바일 대응 */
     @media (max-width: 768px) {
@@ -41,70 +72,75 @@
 </head>
 <body>
   <form id="approvalForm" onsubmit="return false;">
-    <h2>실험실 신청 승인</h2>
+    <h2>실험·실습실 신청 승인</h2>
 
-    <label>신청 ID</label>
-    <div id="appId" class="output"></div>
+    <!-- Summary (always visible) -->
+    <div class="summary-card" id="summaryCard">
+      <div class="summary-item"><span class="summary-label">대표자</span><span id="student"></span></div>
+      <div class="summary-item"><span class="summary-label">실험·실습실</span><span id="labTime"></span></div>
+      <div class="summary-item"><span class="summary-label">실험 날짜</span><span id="appDateOnly"></span></div>
+      <div class="summary-item"><span class="summary-label">실험 제목</span><span id="title"></span></div>
+    </div>
 
-    <label>제출 일시</label>
-    <div id="submittedAt" class="output"></div>
+    <!-- Accordion: Detail -->
+    <button type="button" class="accordion-toggle" onclick="toggleAccordion('detailSection', this)">
+      📋 상세 정보 보기 <span class="arrow">▶</span>
+    </button>
+    <div class="accordion-content" id="detailSection">
+      <label>신청 ID</label>
+      <div id="appId" class="output"></div>
 
-    <label>실험 날짜</label>
-    <div id="appDateOnly" class="output"></div>
+      <label>제출 일시</label>
+      <div id="submittedAt" class="output"></div>
 
-    <label>대표자</label>
-    <div id="student" class="output"></div>
+      <label>동반자 명단</label>
+      <div id="teamMembers" class="output"></div>
 
-    <label>동반자 명단</label>
-    <div id="teamMembers" class="output"></div>
+      <label>총 인원수</label>
+      <div id="totalParticipants" class="output"></div>
 
-    <label>총 인원수</label>
-    <div id="totalParticipants" class="output"></div>
+      <label>사용 목적</label>
+      <div id="purpose" class="output"></div>
 
-    <label>신청 실험실 / 시간</label>
-    <div id="labTime" class="output"></div>
+      <label>첨단기기실 이용 여부</label>
+      <div id="advancedLab" class="output"></div>
 
-    <label>실험 제목</label>
-    <div id="title" class="output"></div>
+      <label>첨단기기실 이용 사유</label>
+      <div id="advancedLabReason" class="output"></div>
 
-    <label>사용 목적</label>
-    <div id="purpose" class="output"></div>
+      <label>후드 사용 여부</label>
+      <div id="hoodUse" class="output"></div>
 
-    <label>첨단기기실 이용 여부</label>
-    <div id="advancedLab" class="output"></div>
+      <label>후드 사용 사유</label>
+      <div id="hoodReason" class="output"></div>
 
-    <label>첨단기기실 이용 사유</label>
-    <div id="advancedLabReason" class="output"></div>
+      <label>실험 준비물</label>
+      <div id="materials" class="output"></div>
 
-    <label>후드 사용 여부</label>
-    <div id="hoodUse" class="output"></div>
+      <label>실험 과정</label>
+      <div id="process" class="output"></div>
 
-    <label>후드 사용 사유</label>
-    <div id="hoodReason" class="output"></div>
+      <label>실험 뒷정리</label>
+      <div id="cleanup" class="output"></div>
 
-    <label>실험 준비물</label>
-    <div id="materials" class="output"></div>
+      <label>실험시 주의사항</label>
+      <div id="precautions" class="output"></div>
 
-    <label>실험 과정</label>
-    <div id="process" class="output"></div>
+      <label>안전장구</label>
+      <div id="safety" class="output"></div>
 
-    <label>실험 뒷정리</label>
-    <div id="cleanup" class="output"></div>
+      <label>지도교사</label>
+      <div id="teacherName" class="output"></div>
 
-    <label>실험시 주의사항</label>
-    <div id="precautions" class="output"></div>
+      <label>지도교사 이메일</label>
+      <div id="teacherEmail" class="output"></div>
+    </div>
 
-    <label>안전장구</label>
-    <div id="safety" class="output"></div>
-
-    <label>지도교사</label>
-    <div id="teacherName" class="output"></div>
-
-    <label>지도교사 이메일</label>
-    <div id="teacherEmail" class="output"></div>
-
-    <div class="section">
-      <label>시약 목록</label>
+    <!-- Accordion: Chemicals -->
+    <button type="button" class="accordion-toggle" onclick="toggleAccordion('chemSection', this)">
+      🧪 시약 목록 <span id="chemBadge"></span> <span class="arrow">▶</span>
+    </button>
+    <div class="accordion-content" id="chemSection">
       <table id="chemicalTable">
         <thead>
           <tr>
@@ -115,7 +151,10 @@
       </table>
     </div>
 
-    <div class="section">
+    <!-- Teacher Judgment (always visible) -->
+    <div class="judgment-card">
+      <h3>교사 판단</h3>
+
       <label>1. 직접 실험실에 가셔서 지도해야 하나요?</label>
       <div class="radio-group">
         <label><input type="radio" name="guidance" value="Yes"> Yes</label>
@@ -141,26 +180,34 @@
         <label><input type="radio" name="processOk" value="Yes"> Yes</label>
         <label><input type="radio" name="processOk" value="No"> No</label>
       </div>
-    </div>
 
-    <div class="section">
-      <label>승인 / 반려</label>
-      <div class="radio-group">
-        <label><input type="radio" name="decision" value="승인"> 승인</label>
-        <label><input type="radio" name="decision" value="반려"> 반려</label>
+      <div class="section">
+        <label>승인 / 반려</label>
+        <div class="radio-group">
+          <label><input type="radio" name="decision" value="승인"> 승인</label>
+          <label><input type="radio" name="decision" value="반려"> 반려</label>
+        </div>
+        <div id="commentDiv" class="hidden">
+          <label id="commentLabel">반려 사유</label>
+          <textarea id="comment" rows="3" cols="50" style="width: 100%;" placeholder="반려 사유를 입력하세요."></textarea>
+        </div>
       </div>
-      <div id="commentDiv" class="hidden">
-        <label id="commentLabel">반려 사유</label>
-        <textarea id="comment" rows="3" cols="50" style="width: 100%;" placeholder="반려 사유를 입력하세요."></textarea>
-      </div>
-    </div>
 
-    <button id="saveBtn" onclick="submitApproval()">저장하기</button>
-    <div id="statusMsg"></div>
+      <button id="saveBtn" onclick="submitApproval()">저장하기</button>
+      <div id="statusMsg"></div>
+    </div>
   </form>
 
   <script>
     'use strict';
+
+    // ===== Accordion toggle =====
+    function toggleAccordion(id, btn) {
+      const el = document.getElementById(id);
+      const arrow = btn.querySelector('.arrow');
+      el.classList.toggle('open');
+      arrow.textContent = el.classList.contains('open') ? '▼' : '▶';
+    }
 
     // ===== 1) 서버 주입 값 =====
     const templateId = <?!= JSON.stringify(id || '') ?>;
@@ -238,6 +285,37 @@
       document.getElementById('teacherName').innerText      = data['지도교사이름'] || '';
       document.getElementById('teacherEmail').innerText     = data['지도교사이메일'] || '';
 
+      // A-2: 경과 시간 표시
+      const now = new Date();
+      if (data['제출일시']) {
+        const submitted = new Date(data['제출일시']);
+        if (!isNaN(submitted.getTime())) {
+          const diffMs = now - submitted;
+          const diffDays = Math.floor(diffMs / (1000*60*60*24));
+          const diffHours = Math.floor(diffMs / (1000*60*60));
+          let elapsed = '';
+          let elapsedClass = '';
+          if (diffDays > 0) { elapsed = diffDays + '일 전'; }
+          else { elapsed = diffHours + '시간 전'; }
+          if (diffDays >= 3) elapsedClass = 'urgent-high';
+          else if (diffDays >= 1) elapsedClass = 'urgent-mid';
+          else elapsedClass = 'urgent-low';
+          document.getElementById('submittedAt').innerHTML += ' <span class="elapsed ' + elapsedClass + '">(' + elapsed + ')</span>';
+        }
+      }
+
+      if (data['실험할날짜']) {
+        const expDate = new Date(data['실험할날짜']);
+        if (!isNaN(expDate.getTime())) {
+          const dDay = Math.ceil((expDate - now) / (1000*60*60*24));
+          let ddayText = 'D' + (dDay >= 0 ? '-' + dDay : '+' + Math.abs(dDay));
+          let ddayClass = dDay <= 2 ? 'urgent-high' : (dDay <= 5 ? 'urgent-mid' : 'urgent-low');
+          if (dDay <= 2) ddayText += ', 긴급!';
+          document.getElementById('appDateOnly').innerHTML += ' <span class="elapsed ' + ddayClass + '">(' + ddayText + ')</span>';
+        }
+      }
+
+      // 시약 목록 렌더링
       const tbody = document.querySelector('#chemicalTable tbody');
       tbody.innerHTML = '';
       let hasGuidanceRequired = false;
@@ -258,11 +336,20 @@
         tdGuid.innerText = need;
         if (need === '필요') {
           hasGuidanceRequired = true;
+          tr.classList.add('chem-danger');
         }
         tr.appendChild(tdGuid);
 
         tbody.appendChild(tr);
       });
+
+      // A-4: Chemical hazard badge
+      if (hasGuidanceRequired) {
+        const count = (data.chemicals || []).filter(c => (c['교사임장여부']||'').trim() === '필요').length;
+        document.getElementById('chemBadge').innerHTML = '<span style="background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600;">🔴 임장 필요 ' + count + '건</span>';
+      } else {
+        document.getElementById('chemBadge').innerHTML = '<span style="background:#dcfce7;color:#16a34a;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600;">✅ 모두 안전</span>';
+      }
 
       // 시약 중 하나라도 '필요'면 1번을 Yes로 고정
       const yesRadio = document.querySelector('input[name="guidance"][value="Yes"]');
@@ -437,6 +524,12 @@
       if (!processOk) { alert('3번을 선택하세요.'); return; }
       if (!decision) { alert('승인/반려를 선택하세요.'); return; }
       if (decision === '반려' && !comment) { alert('반려 사유를 입력하세요.'); return; }
+
+      // A-3: Confirmation dialog before save
+      const confirmMsg = decision === '승인'
+        ? '승인 처리하시겠습니까?\n학생에게 승인 안내 메일이 발송되고,\n담당교사에게 최종 승인 요청 메일이 발송됩니다.'
+        : '반려 처리하시겠습니까?\n학생에게 반려 안내 메일이 발송됩니다.\n\n반려 사유: ' + comment;
+      if (!confirm(confirmMsg)) return;
 
       const chemicalsGuidance = collectChemicalsGuidance();
 

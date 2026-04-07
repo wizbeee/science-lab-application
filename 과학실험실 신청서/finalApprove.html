@@ -24,6 +24,7 @@
     #saveBtn { margin-top: 24px; padding: 12px; width: 100%; background: #4285F4; color: #fff; border: none; font-size: 16px; border-radius: 5px; cursor: pointer; }
     #saveBtn:disabled { background: #aaa; cursor: default; }
     #statusMsg { margin-top: 12px; font-size: 14px; color: #333; }
+    .already-processed { background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; text-align: center; font-weight: bold; color: #856404; }
     .output { padding: 8px; background: #fafafa; border: 1px solid #ddd; border-radius: 4px; word-break: break-word; white-space: pre-wrap; }
 
     /* 모바일 대응 */
@@ -144,14 +145,18 @@
     const templateId = <?!= JSON.stringify(id || '') ?>;
     const serverData = <?!= JSON.stringify(typeof appData === 'undefined' ? null : appData) ?>;
 
-    // URL(백업)
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlId = urlParams.get('id');
-
-    // 사용할 ID
-    const appId = (templateId && String(templateId).trim()) ? String(templateId).trim()
-                : (urlId && String(urlId).trim()) ? String(urlId).trim()
-                : '';
+    // URL에서 id 파싱 (query, hash 모두 지원)
+    function getIdFromLocation() {
+      const qs = new URLSearchParams(location.search);
+      const qid = (qs.get('id') || '').trim();
+      const hs = new URLSearchParams(location.hash.replace(/^#/, ''));
+      const hid = (hs.get('id') || '').trim();
+      if (templateId && String(templateId).trim()) return String(templateId).trim();
+      if (qid) return qid;
+      if (hid) return hid;
+      return '';
+    }
+    const appId = getIdFromLocation();
 
     // ---- 유틸 ----
     function z(n){ return String(n).padStart(2,'0'); }
@@ -189,8 +194,26 @@
       return String(val);
     }
 
+    // ---- 유틸 ----
+    function disableAllInputs_() {
+      document.querySelectorAll('#finalApproveForm input, #finalApproveForm textarea, #finalApproveForm select, #finalApproveForm button').forEach(el => { el.disabled = true; });
+    }
+
     // ---- 렌더링 ----
     function fillForm(data) {
+      // 이미 처리된 건인지 확인
+      const existingDecision = String(data['최종승인여부'] || '').trim();
+      if (existingDecision === '승인' || existingDecision === '반려') {
+        const banner = document.createElement('div');
+        banner.className = 'already-processed';
+        banner.textContent = '\u26a0\ufe0f 이미 최종 처리된 신청입니다 (' + existingDecision + ')';
+        const form = document.getElementById('finalApproveForm');
+        form.insertBefore(banner, form.querySelector('h2').nextSibling);
+        document.getElementById('saveBtn').disabled = true;
+        document.getElementById('saveBtn').textContent = '\u2705 처리 완료 (' + existingDecision + ')';
+        setTimeout(disableAllInputs_, 100);
+      }
+
       document.getElementById('appId').innerText       = data['신청ID'] || '';
       if (data['제출일시'])    document.getElementById('submittedAt').innerText = formatDateTime(data['제출일시']);
       if (data['실험할날짜'])  document.getElementById('appDateOnly').innerText = formatDateOnly(data['실험할날짜']);
@@ -302,11 +325,15 @@
       google.script.run
         .withSuccessHandler(msg => {
           status.innerText = msg;
-          btn.disabled = false;
+          btn.disabled = true;
+          btn.textContent = '\u2705 처리 완료';
+          disableAllInputs_();
+          alert(msg);
         })
         .withFailureHandler(e => {
           status.innerText = '오류: ' + (e.message || e);
           btn.disabled = false;
+          alert('오류: ' + (e.message || e));
         })
         .submitFinalApproval({ id: appId, decision, comment });
     }

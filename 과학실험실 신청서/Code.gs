@@ -56,7 +56,9 @@ function escapeHtml_(s) {
 }
 
 function getHeaderMap_(sheet) {
-  const header = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const lastCol = sheet.getLastColumn();
+  if (lastCol === 0) throw new Error('시트 헤더가 비어있습니다: ' + sheet.getName());
+  const header = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
   const map = {};
   header.forEach((h, i) => { map[String(h).trim()] = i; });
   return { header, map };
@@ -157,8 +159,9 @@ function buildEmailHtml_(title, bodyLines, linkUrl, linkLabel) {
     if (l.startsWith('•')) return `<div style="padding:2px 0 2px 12px;">${l}</div>`;
     return `<div style="padding:2px 0;">${l}</div>`;
   }).join('');
-  const linkBlock = linkUrl
-    ? `<div style="margin:18px 0;"><a href="${linkUrl}" style="display:inline-block;padding:10px 24px;background:#4285F4;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;">${linkLabel || '바로가기'}</a></div>`
+  const safeUrl = linkUrl ? escapeHtml_(linkUrl) : '';
+  const linkBlock = safeUrl
+    ? `<div style="margin:18px 0;"><a href="${safeUrl}" style="display:inline-block;padding:10px 24px;background:#4285F4;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;">${linkLabel || '바로가기'}</a></div>`
     : '';
   return `<div style="font-family:'맑은 고딕',Arial,sans-serif;max-width:620px;margin:0 auto;padding:20px;">
     <h2 style="color:#333;border-bottom:2px solid #4285F4;padding-bottom:8px;">${title}</h2>
@@ -1068,12 +1071,40 @@ function submitApplication_(data) {
 
   const ss = SpreadsheetApp.openById(MAIN_SSID);
   const sh = ss.getSheets()[0];
+  const { header, map } = getHeaderMap_(sh);
+
+  // ====== 중복 신청 방지 ======
+  const dupIdCol   = map['신청ID'];
+  const dupSidCol  = map['대표자학번'];
+  const dupDateCol = map['실험할날짜'];
+  const dupLabCol  = map['신청실험실'];
+  const dupTimeCol = map['신청시간'];
+  if (dupSidCol != null && dupDateCol != null && dupLabCol != null && dupTimeCol != null) {
+    const allRows = sh.getDataRange().getValues().slice(1);
+    const normSid  = String(data.studentId || '').trim();
+    const normDate = normalizeDateYMD_(data.date);
+    const normLab  = String(data.lab || '').trim();
+    const normSlots = requestedSlots.sort().join(',');
+    const dupRow = allRows.find(r => {
+      const rSid  = String(r[dupSidCol] || '').replace(/\D/g, '').padStart(5, '0');
+      const rDate = normalizeDateYMD_(r[dupDateCol]);
+      const rLab  = String(r[dupLabCol] || '').trim();
+      const rTime = String(r[dupTimeCol] || '').split(',').map(s => normalizeSlot_(s.trim())).filter(Boolean).sort().join(',');
+      return rSid === normSid && rDate === normDate && rLab === normLab && rTime === normSlots;
+    });
+    if (dupRow) {
+      const existingId = dupIdCol != null ? String(dupRow[dupIdCol] || '') : '';
+      throw new Error(
+        '해당 날짜/실험실/시간에 이미 신청한 내역이 있습니다.' +
+        (existingId ? '\n기존 신청 ID: ' + existingId : '') +
+        '\n중복 신청은 불가합니다.'
+      );
+    }
+  }
 
   const now = new Date();
   const ts  = Utilities.formatDate(now, Session.getScriptTimeZone(), 'yyyyMMdd_HHmmss');
   const id  = `${data.studentId}_${ts}`;
-
-  const { header, map } = getHeaderMap_(sh);
   const row = new Array(header.length).fill('');
   const put = (col, val) => { if (map[col] != null) row[map[col]] = val; };
 
@@ -1147,6 +1178,7 @@ function getApplication(id) {
   const ss = SpreadsheetApp.openById(MAIN_SSID);
   const sh = ss.getSheets()[0];
   const vals = sh.getDataRange().getValues();
+  if (vals.length < 2) throw new Error('신청 데이터 시트가 비어있습니다.');
   const [hdr, ...rows] = vals;
   const idCol = hdr.indexOf('신청ID');
   if (idCol === -1) throw new Error('시트 헤더에 "신청ID" 열이 없습니다.');
@@ -1176,10 +1208,14 @@ function getApplication(id) {
   const chemSS = SpreadsheetApp.openById(CHEM_RECORD_SSID);
   const chemSh = chemSS.getSheets()[0];
   const chemVals = chemSh.getDataRange().getValues();
-  const [chemHdr, ...chemRows] = chemVals;
-  rec.chemicals = chemRows
-    .filter(r => String(r[0]) === String(id))
-    .map(r => chemHdr.reduce((o, h, j) => (o[h] = r[j], o), {}));
+  if (chemVals.length < 2) {
+    rec.chemicals = [];
+  } else {
+    const [chemHdr, ...chemRows] = chemVals;
+    rec.chemicals = chemRows
+      .filter(r => String(r[0]) === String(id))
+      .map(r => chemHdr.reduce((o, h, j) => (o[h] = r[j], o), {}));
+  }
   return rec;
 }
 
@@ -1276,6 +1312,15 @@ function submitApproval_(info) {
   if (idx < 0) throw new Error('신청 정보를 찾을 수 없습니다.');
   const rowNum = idx + 2;
 
+  // ====== 중복 승인/반려 방지 ======
+  const approvalCol = map['지도승인여부'];
+  if (approvalCol != null) {
+    const existing = String(rows[idx][approvalCol] || '').trim();
+    if (existing === '승인' || existing === '반려') {
+      throw new Error('이미 1차 처리(' + existing + ')된 신청입니다. 중복 처리는 불가합니다.');
+    }
+  }
+
   const put = (col, val) => { if (map[col] != null) sh.getRange(rowNum, map[col] + 1).setValue(val); };
   put('지도승인여부', decision);
   put('지도승인의견', comment || '');
@@ -1362,6 +1407,15 @@ function submitFinalApproval_(info) {
   const idx = rows.findIndex(r => String(r[idCol]) === String(id));
   if (idx < 0) throw new Error('신청 정보를 찾을 수 없습니다.');
   const rowNum = idx + 2;
+
+  // ====== 중복 최종 승인/반려 방지 ======
+  const finalApprovalCol = map['최종승인여부'];
+  if (finalApprovalCol != null) {
+    const existing = String(rows[idx][finalApprovalCol] || '').trim();
+    if (existing === '승인' || existing === '반려') {
+      throw new Error('이미 최종 처리(' + existing + ')된 신청입니다. 중복 처리는 불가합니다.');
+    }
+  }
 
   const put = (col, val) => { if (map[col] != null) sh.getRange(rowNum, map[col] + 1).setValue(val); };
   put('최종승인여부', decision);

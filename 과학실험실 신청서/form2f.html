@@ -677,9 +677,11 @@
 
       google.script.run
         .withSuccessHandler(res => {
-          hideOverlayBlock(); alert(res);
+          hideOverlayBlock();
           document.getElementById('statusMessage').textContent = '';
-          if (btn) btn.disabled = false; document.getElementById('applicationForm').reset();
+          alert(res);
+          document.getElementById('applicationForm').reset();
+          if (btn) btn.disabled = false;
         })
         .withFailureHandler(err => {
           hideOverlayBlock();

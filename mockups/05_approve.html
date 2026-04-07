@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1차 승인 리디자인</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --primary: #4285F4;
+    --primary-light: #e8f0fe;
+    --success: #34a853;
+    --success-light: #e6f4ea;
+    --danger: #ea4335;
+    --danger-light: #fce8e6;
+    --warning: #f59e0b;
+    --warning-light: #fef3c7;
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --text: #1a1a2e;
+    --text-sec: #5f6368;
+    --text-muted: #9ca3af;
+    --border: #e5e7eb;
+    --radius: 12px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  }
+  body {
+    font-family: 'Pretendard','Apple SD Gothic Neo','Segoe UI',sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 24px 16px;
+  }
+
+  /* Header */
+  .page-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .page-header .icon {
+    width: 48px; height: 48px;
+    background: var(--primary-light);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+  }
+  .page-header h1 { font-size: 22px; font-weight: 700; }
+  .page-header .sub { font-size: 13px; color: var(--text-sec); }
+
+  /* Status Banner */
+  .status-banner {
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .status-banner.pending {
+    background: var(--warning-light);
+    color: #92400e;
+    border: 1px solid #fde68a;
+  }
+
+  /* Collapsible Section */
+  .section {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .section-header {
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .section-header:hover { background: rgba(0,0,0,0.02); }
+  .section-header h3 {
+    font-size: 15px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-toggle {
+    font-size: 12px;
+    color: var(--text-muted);
+    transition: transform 0.2s;
+  }
+  .section-body {
+    padding: 0 18px 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* Info Grid */
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding-top: 14px;
+  }
+  .info-item label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+    font-weight: 500;
+  }
+  .info-item .val {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .info-full { grid-column: 1 / -1; }
+  .info-item .val.multiline {
+    font-size: 14px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    background: var(--bg);
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin-top: 4px;
+  }
+
+  /* Chemical Table */
+  .chem-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-top: 14px;
+  }
+  .chem-table th {
+    padding: 10px 12px;
+    text-align: left;
+    background: var(--bg);
+    font-weight: 600;
+    color: var(--text-sec);
+    font-size: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .chem-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .chem-table tr:last-child td { border-bottom: none; }
+  .guidance-badge {
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .guidance-badge.required { background: var(--danger-light); color: #991b1b; }
+  .guidance-badge.not-required { background: #f1f3f5; color: var(--text-sec); }
+
+  /* Evaluation Section */
+  .eval-section {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    padding: 20px;
+    margin-bottom: 12px;
+    border: 2px solid var(--primary);
+  }
+  .eval-section h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .eval-question {
+    margin-bottom: 18px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .eval-question:last-of-type { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .eval-question .q-label {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: start;
+    gap: 6px;
+  }
+  .q-number {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* Radio Pills */
+  .radio-pills {
+    display: flex;
+    gap: 8px;
+  }
+  .radio-pill {
+    flex: 1;
+    max-width: 160px;
+  }
+  .radio-pill input { display: none; }
+  .radio-pill label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 2px solid var(--border);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: var(--card);
+  }
+  .radio-pill label:hover { border-color: var(--primary); }
+  .radio-pill input:checked + label.yes-label {
+    background: var(--success-light);
+    border-color: var(--success);
+    color: #065f46;
+  }
+  .radio-pill input:checked + label.no-label {
+    background: var(--danger-light);
+    border-color: var(--danger);
+    color: #991b1b;
+  }
+
+  /* Time Input */
+  .time-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    padding: 12px;
+    background: var(--primary-light);
+    border-radius: 10px;
+  }
+  .time-row label { font-size: 13px; font-weight: 500; color: var(--primary); }
+  .time-row input[type="time"] {
+    padding: 8px 10px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    background: var(--card);
+    color: var(--text);
+  }
+
+  /* Auto Decision Banner */
+  .auto-decision {
+    margin-top: 16px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .auto-decision.approve {
+    background: var(--success-light);
+    border: 1px solid #86efac;
+  }
+  .auto-decision .decision-text {
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .auto-decision.approve .decision-text { color: #065f46; }
+  .auto-decision .decision-hint {
+    font-size: 12px;
+    color: var(--text-sec);
+  }
+
+  /* Comment Area */
+  .comment-section {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+  .comment-section label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .comment-section textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 80px;
+    outline: none;
+    background: var(--bg);
+    color: var(--text);
+  }
+  .comment-section textarea:focus { border-color: var(--primary); }
+  .comment-hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+  /* Submit */
+  .submit-bar {
+    display: flex;
+    gap: 10px;
+  }
+  .submit-btn {
+    flex: 1;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .submit-btn:active { transform: scale(0.98); }
+  .btn-approve { background: var(--success); color: white; }
+  .btn-reject { background: #f1f3f5; color: var(--danger); border: 2px solid var(--danger); }
+
+  @media (max-width: 600px) {
+    .info-grid { grid-template-columns: 1fr; }
+    .chem-table { display: block; overflow-x: auto; }
+    .radio-pills { flex-direction: column; }
+    .radio-pill { max-width: 100%; }
+    .time-row { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="page-header">
+  <div class="icon">📋</div>
+  <div>
+    <h1>1차 승인 심사</h1>
+    <div class="sub">신청번호 #2026-0410-003 · 김민준 (10512)</div>
+  </div>
+</div>
+
+<div class="status-banner pending">
+  ⏳ 이 신청은 1차 승인을 대기 중입니다
+</div>
+
+<!-- Section: Student Info (collapsed) -->
+<div class="section">
+  <div class="section-header">
+    <h3>👤 학생 정보</h3>
+    <span class="section-toggle">▾</span>
+  </div>
+  <div class="section-body">
+    <div class="info-grid">
+      <div class="info-item">
+        <label>신청 대표</label>
+        <div class="val">김민준 (10512)</div>
+      </div>
+      <div class="info-item">
+        <label>참여 인원</label>
+        <div class="val">3명</div>
+      </div>
+      <div class="info-item info-full">
+        <label>팀원</label>
+        <div class="val">이서연 (10823), 정우진 (11102)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Section: Schedule -->
+<div class="section">
+  <div class="section-header">
+    <h3>📅 일정</h3>
+    <span class="section-toggle">▾</span>
+  </div>
+  <div class="section-body">
+    <div class="info-grid">
+      <div class="info-item">
+        <label>실험 날짜</label>
+        <div class="val">2026-04-10 (금)</div>
+      </div>
+      <div class="info-item">
+        <label>실험실</label>
+        <div class="val">화학실험실</div>
+      </div>
+      <div class="info-item">
+        <label>사용 시간</label>
+        <div class="val">6교시, 7교시</div>
+      </div>
+      <div class="info-item">
+        <label>목적</label>
+        <div class="val">교과 실험</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Section: Experiment -->
+<div class="section">
+  <div class="section-header">
+    <h3>🧪 실험 내용</h3>
+    <span class="section-toggle">▾</span>
+  </div>
+  <div class="section-body">
+    <div class="info-grid">
+      <div class="info-item info-full">
+        <label>실험 제목</label>
+        <div class="val">산-염기 적정 실험</div>
+      </div>
+      <div class="info-item info-full">
+        <label>실험 과정</label>
+        <div class="val multiline">1. 0.1M NaOH 표준용액 조제
+2. 식초 시료 정량 채취 (10mL)
+3. 페놀프탈레인 지시약 2~3방울 첨가
+4. 뷰렛으로 NaOH 용액 적정
+5. 종말점 도달 시 소비된 NaOH 부피 기록</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Section: Chemicals -->
+<div class="section">
+  <div class="section-header">
+    <h3>⚗️ 시약 목록 <span style="background:var(--danger-light);color:#991b1b;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600;margin-left:4px;">지도 필요</span></h3>
+    <span class="section-toggle">▾</span>
+  </div>
+  <div class="section-body" style="padding-top:0;">
+    <table class="chem-table">
+      <thead>
+        <tr>
+          <th>시약명</th>
+          <th>상태</th>
+          <th>농도</th>
+          <th>사용량</th>
+          <th>지도 필요</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>NaOH</strong> (수산화나트륨)</td>
+          <td>고체</td>
+          <td>-</td>
+          <td>4g</td>
+          <td><span class="guidance-badge required">필요</span></td>
+        </tr>
+        <tr>
+          <td><strong>CH₃COOH</strong> (아세트산)</td>
+          <td>액체</td>
+          <td>0.1M</td>
+          <td>50mL</td>
+          <td><span class="guidance-badge not-required">불필요</span></td>
+        </tr>
+        <tr>
+          <td><strong>페놀프탈레인</strong></td>
+          <td>액체</td>
+          <td>1%</td>
+          <td>5mL</td>
+          <td><span class="guidance-badge not-required">불필요</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Evaluation -->
+<div class="eval-section">
+  <h3>✅ 승인 평가</h3>
+
+  <div class="eval-question">
+    <div class="q-label">
+      <span class="q-number">1</span>
+      직접 임장지도가 필요합니까?
+    </div>
+    <div class="radio-pills">
+      <div class="radio-pill">
+        <input type="radio" name="q1" id="q1y" checked>
+        <label for="q1y" class="yes-label">예, 필요합니다</label>
+      </div>
+      <div class="radio-pill">
+        <input type="radio" name="q1" id="q1n" disabled>
+        <label for="q1n" class="no-label" style="opacity:0.4;cursor:not-allowed;">아니오</label>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--danger);margin-top:6px;">⚠️ NaOH 시약에 교사 지도가 필요하여 자동 설정됨</div>
+    <div class="time-row">
+      <label>임장 시작</label>
+      <input type="time" value="13:30">
+      <span style="color:var(--text-muted);">~</span>
+      <label>종료</label>
+      <input type="time" value="15:20">
+    </div>
+  </div>
+
+  <div class="eval-question">
+    <div class="q-label">
+      <span class="q-number">2</span>
+      도구 및 장비가 적절합니까?
+    </div>
+    <div class="radio-pills">
+      <div class="radio-pill">
+        <input type="radio" name="q2" id="q2y" checked>
+        <label for="q2y" class="yes-label">예, 적절</label>
+      </div>
+      <div class="radio-pill">
+        <input type="radio" name="q2" id="q2n">
+        <label for="q2n" class="no-label">아니오, 부적절</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="eval-question">
+    <div class="q-label">
+      <span class="q-number">3</span>
+      실험 과정 및 주의사항이 적절합니까?
+    </div>
+    <div class="radio-pills">
+      <div class="radio-pill">
+        <input type="radio" name="q3" id="q3y" checked>
+        <label for="q3y" class="yes-label">예, 적절</label>
+      </div>
+      <div class="radio-pill">
+        <input type="radio" name="q3" id="q3n">
+        <label for="q3n" class="no-label">아니오, 부적절</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Auto Decision -->
+  <div class="auto-decision approve">
+    <span style="font-size:24px;">✅</span>
+    <div>
+      <div class="decision-text">자동 판정: 승인</div>
+      <div class="decision-hint">3개 평가 항목 모두 "예"로 선택되어 자동 승인 판정됩니다</div>
+    </div>
+  </div>
+</div>
+
+<!-- Comment -->
+<div class="comment-section">
+  <label>승인 의견 (선택)</label>
+  <textarea placeholder="학생에게 전달할 의견이 있으면 입력하세요."></textarea>
+  <div class="comment-hint">반려 시 사유는 필수입니다</div>
+</div>
+
+<!-- Submit -->
+<div class="submit-bar">
+  <button class="submit-btn btn-reject">반려</button>
+  <button class="submit-btn btn-approve">✓ 승인</button>
+</div>
+
+</body>
+</html>

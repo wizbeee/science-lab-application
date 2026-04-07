@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>학생 조회 리디자인</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --primary: #4285F4;
+    --primary-light: #e8f0fe;
+    --success: #34a853;
+    --success-light: #e6f4ea;
+    --danger: #ea4335;
+    --danger-light: #fce8e6;
+    --warning: #f59e0b;
+    --warning-light: #fef3c7;
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --text: #1a1a2e;
+    --text-sec: #5f6368;
+    --text-muted: #9ca3af;
+    --border: #e5e7eb;
+    --radius: 12px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  }
+  [data-theme="dark"] {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --text: #f1f5f9;
+    --text-sec: #94a3b8;
+    --text-muted: #64748b;
+    --border: #334155;
+    --primary-light: #1e3a5f;
+    --success-light: #14532d;
+    --danger-light: #451a1a;
+    --warning-light: #451a03;
+  }
+  body {
+    font-family: 'Pretendard','Apple SD Gothic Neo','Segoe UI',sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    max-width: 420px;
+    margin: 0 auto;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .header {
+    background: var(--card);
+    padding: 16px 16px 0;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .header h1 { font-size: 18px; font-weight: 700; }
+  .header-actions { display: flex; gap: 8px; }
+  .icon-btn {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-sec);
+  }
+
+  /* Search Bar */
+  .search-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .search-input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-size: 15px;
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+  }
+  .search-input:focus { border-color: var(--primary); }
+  .search-btn {
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: none;
+    background: var(--primary);
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* Summary Stats */
+  .summary-bar {
+    display: flex;
+    gap: 6px;
+    padding-bottom: 12px;
+    overflow-x: auto;
+  }
+  .summary-chip {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    border: 1.5px solid transparent;
+    transition: all 0.15s;
+  }
+  .summary-chip.all { background: var(--primary-light); color: var(--primary); border-color: var(--primary); }
+  .summary-chip.approved { background: var(--success-light); color: #065f46; }
+  .summary-chip.pending { background: var(--warning-light); color: #92400e; }
+  .summary-chip.rejected { background: var(--danger-light); color: #991b1b; }
+
+  /* View Toggle */
+  .view-toggle {
+    display: flex;
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 3px;
+    margin-bottom: 16px;
+    margin-top: 8px;
+  }
+  .view-btn {
+    flex: 1;
+    padding: 8px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    background: transparent;
+    color: var(--text-sec);
+    transition: all 0.15s;
+  }
+  .view-btn.active {
+    background: var(--card);
+    color: var(--primary);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+
+  /* Content */
+  .content { padding: 0 16px 24px; }
+
+  /* Application Cards */
+  .app-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 10px;
+    box-shadow: var(--shadow-sm);
+    cursor: pointer;
+    transition: all 0.15s;
+    border-left: 4px solid transparent;
+  }
+  .app-card:hover { box-shadow: var(--shadow-md); }
+  .app-card:active { transform: scale(0.99); }
+  .app-card.status-approved { border-left-color: var(--success); }
+  .app-card.status-pending { border-left-color: var(--warning); }
+  .app-card.status-final { border-left-color: var(--primary); }
+  .app-card.status-rejected { border-left-color: var(--danger); }
+
+  .card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .card-date {
+    font-size: 13px;
+    color: var(--text-sec);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .card-badge {
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .card-badge.approved { background: var(--success-light); color: #065f46; }
+  .card-badge.pending { background: var(--warning-light); color: #92400e; }
+  .card-badge.final { background: #dbeafe; color: #1e3a8a; }
+  .card-badge.rejected { background: var(--danger-light); color: #991b1b; }
+
+  .card-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .card-meta {
+    display: flex;
+    gap: 12px;
+    font-size: 13px;
+    color: var(--text-sec);
+  }
+  .card-meta span {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  /* Progress Stepper (inline compact) */
+  .mini-stepper {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .mini-step {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .mini-step.done { color: var(--success); }
+  .mini-step.current { color: var(--primary); font-weight: 600; }
+  .mini-dot {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    border: 2px solid var(--border);
+    background: var(--card);
+  }
+  .mini-step.done .mini-dot {
+    background: var(--success);
+    border-color: var(--success);
+    color: white;
+  }
+  .mini-step.current .mini-dot {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+  }
+  .mini-line {
+    width: 20px;
+    height: 2px;
+    background: var(--border);
+    margin: 0 2px;
+  }
+  .mini-line.done { background: var(--success); }
+
+  /* Expanded Detail (accordion) */
+  .card-detail {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .detail-item label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+    font-weight: 500;
+  }
+  .detail-item .value {
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .detail-full { grid-column: 1 / -1; }
+  .detail-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .detail-btn {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text-sec);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+  .detail-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+  /* Empty State */
+  .empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+  }
+  .empty .icon { font-size: 48px; margin-bottom: 12px; }
+  .empty p { font-size: 14px; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-top">
+    <h1>🔬 내 실험실 신청</h1>
+    <div class="header-actions">
+      <button class="icon-btn" title="다크모드">🌙</button>
+    </div>
+  </div>
+
+  <div class="search-bar">
+    <input class="search-input" type="text" placeholder="학번 + 이름" value="10512 김민준">
+    <button class="search-btn">조회</button>
+  </div>
+
+  <div class="summary-bar">
+    <span class="summary-chip all">전체 8</span>
+    <span class="summary-chip approved">승인 3</span>
+    <span class="summary-chip pending">대기 2</span>
+    <span class="summary-chip rejected">반려 1</span>
+  </div>
+</div>
+
+<!-- View Toggle -->
+<div style="padding: 12px 16px 0;">
+  <div class="view-toggle">
+    <button class="view-btn active">📋 목록</button>
+    <button class="view-btn">📅 캘린더</button>
+  </div>
+</div>
+
+<!-- Content: Card List -->
+<div class="content">
+
+  <!-- Card 1: Expanded with detail -->
+  <div class="app-card status-pending">
+    <div class="card-top">
+      <span class="card-date">📅 04/10 (금)</span>
+      <span class="card-badge pending">대기중</span>
+    </div>
+    <div class="card-title">산-염기 적정 실험</div>
+    <div class="card-meta">
+      <span>🧪 화학실험실</span>
+      <span>⏰ 6,7교시</span>
+      <span>👥 3명</span>
+    </div>
+    <div class="mini-stepper">
+      <div class="mini-step done">
+        <span class="mini-dot">✓</span> 신청
+      </div>
+      <div class="mini-line done"></div>
+      <div class="mini-step current">
+        <span class="mini-dot">2</span> 1차 승인
+      </div>
+      <div class="mini-line"></div>
+      <div class="mini-step">
+        <span class="mini-dot">3</span> 최종
+      </div>
+    </div>
+
+    <!-- Expanded detail -->
+    <div class="card-detail">
+      <div class="detail-grid">
+        <div class="detail-item">
+          <label>지도교사</label>
+          <div class="value">박지영 T</div>
+        </div>
+        <div class="detail-item">
+          <label>실험 목적</label>
+          <div class="value">교과 실험</div>
+        </div>
+        <div class="detail-item detail-full">
+          <label>실험 과정</label>
+          <div class="value" style="font-size:13px;">0.1M NaOH 표준용액으로 식초 중 아세트산 정량 분석</div>
+        </div>
+        <div class="detail-item">
+          <label>시약</label>
+          <div class="value">NaOH, CH₃COOH, 페놀프탈레인</div>
+        </div>
+        <div class="detail-item">
+          <label>신청일</label>
+          <div class="value">04/07 14:32</div>
+        </div>
+      </div>
+      <div class="detail-actions">
+        <button class="detail-btn">📄 PDF 저장</button>
+        <button class="detail-btn">🖨️ 인쇄</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 2: Final approved -->
+  <div class="app-card status-final">
+    <div class="card-top">
+      <span class="card-date">📅 04/08 (화)</span>
+      <span class="card-badge final">최종승인</span>
+    </div>
+    <div class="card-title">분광기 스펙트럼 분석</div>
+    <div class="card-meta">
+      <span>🔬 첨단기기실험실</span>
+      <span>⏰ 5,6교시</span>
+      <span>👥 2명</span>
+    </div>
+    <div class="mini-stepper">
+      <div class="mini-step done">
+        <span class="mini-dot">✓</span> 신청
+      </div>
+      <div class="mini-line done"></div>
+      <div class="mini-step done">
+        <span class="mini-dot">✓</span> 1차 승인
+      </div>
+      <div class="mini-line done"></div>
+      <div class="mini-step done">
+        <span class="mini-dot">✓</span> 최종
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 3: 1st approved -->
+  <div class="app-card status-approved">
+    <div class="card-top">
+      <span class="card-date">📅 04/05 (토)</span>
+      <span class="card-badge approved">1차 승인</span>
+    </div>
+    <div class="card-title">DNA 전기영동 실습</div>
+    <div class="card-meta">
+      <span>🧬 생물실험실</span>
+      <span>⏰ 야자1</span>
+      <span>👥 4명</span>
+    </div>
+    <div class="mini-stepper">
+      <div class="mini-step done">
+        <span class="mini-dot">✓</span> 신청
+      </div>
+      <div class="mini-line done"></div>
+      <div class="mini-step done">
+        <span class="mini-dot">✓</span> 1차 승인
+      </div>
+      <div class="mini-line"></div>
+      <div class="mini-step current">
+        <span class="mini-dot">3</span> 최종
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 4: Rejected -->
+  <div class="app-card status-rejected">
+    <div class="card-top">
+      <span class="card-date">📅 04/03 (목)</span>
+      <span class="card-badge rejected">반려</span>
+    </div>
+    <div class="card-title">에스터 합성 반응</div>
+    <div class="card-meta">
+      <span>🧪 화학실험실</span>
+      <span>⏰ 야자2</span>
+      <span>👥 2명</span>
+    </div>
+    <div class="mini-stepper">
+      <div class="mini-step done">
+        <span class="mini-dot">✓</span> 신청
+      </div>
+      <div class="mini-line done"></div>
+      <div class="mini-step" style="color:var(--danger);">
+        <span class="mini-dot" style="background:var(--danger);border-color:var(--danger);color:white;">✕</span> 반려
+      </div>
+      <div class="mini-line"></div>
+      <div class="mini-step">
+        <span class="mini-dot">3</span> 최종
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

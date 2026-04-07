@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>신청서 위저드 (모바일)</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --primary: #4285F4;
+    --primary-light: #e8f0fe;
+    --success: #34a853;
+    --success-light: #e6f4ea;
+    --danger: #ea4335;
+    --danger-light: #fce8e6;
+    --warning: #fbbc04;
+    --warning-light: #fef7e0;
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --text: #1a1a2e;
+    --text-sec: #5f6368;
+    --border: #e0e0e0;
+    --radius: 12px;
+  }
+  body {
+    font-family: 'Pretendard','Apple SD Gothic Neo','Segoe UI',sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    max-width: 420px;
+    margin: 0 auto;
+    min-height: 100vh;
+  }
+
+  /* Top Bar */
+  .top-bar {
+    background: var(--card);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .top-bar .back { font-size: 20px; cursor: pointer; color: var(--text-sec); text-decoration: none; }
+  .top-bar h1 { font-size: 17px; font-weight: 600; }
+  .top-bar .floor-chip {
+    margin-left: auto;
+    background: var(--primary-light);
+    color: var(--primary);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  /* Step Indicator */
+  .step-indicator {
+    background: var(--card);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .step-dot {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 600;
+    border: 2px solid var(--border);
+    color: var(--text-sec);
+    background: var(--card);
+    flex-shrink: 0;
+  }
+  .step-dot.completed {
+    background: var(--success);
+    border-color: var(--success);
+    color: white;
+  }
+  .step-dot.current {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+  }
+  .step-line {
+    width: 24px; height: 2px;
+    background: var(--border);
+    flex-shrink: 0;
+  }
+  .step-line.done { background: var(--success); }
+
+  .step-labels {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px 0;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+  }
+  .step-label {
+    font-size: 10px;
+    color: var(--text-sec);
+    text-align: center;
+    width: 56px;
+  }
+  .step-label.current { color: var(--primary); font-weight: 600; }
+
+  /* Content */
+  .content {
+    padding: 20px 16px;
+    padding-bottom: 100px;
+  }
+
+  .section-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .section-desc {
+    font-size: 13px;
+    color: var(--text-sec);
+    margin-bottom: 20px;
+  }
+
+  /* Form Fields */
+  .field { margin-bottom: 20px; }
+  .field label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+  .field label .required { color: var(--danger); margin-left: 2px; }
+
+  .field input, .field select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-size: 16px;
+    background: var(--card);
+    color: var(--text);
+    transition: border-color 0.2s;
+    outline: none;
+  }
+  .field input:focus, .field select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(66,133,244,0.15);
+  }
+
+  .field .hint {
+    font-size: 12px;
+    color: var(--text-sec);
+    margin-top: 4px;
+  }
+
+  /* Error State */
+  .field.error input {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 3px rgba(234,67,53,0.1);
+  }
+  .field-error {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--danger);
+    margin-top: 4px;
+  }
+  .field-error svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+  /* Inline member list */
+  .member-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .member-tag {
+    background: var(--primary-light);
+    color: var(--primary);
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .member-tag .remove {
+    cursor: pointer;
+    font-size: 14px;
+    opacity: 0.6;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 88px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #323232;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    z-index: 200;
+  }
+
+  /* Bottom Nav */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 420px;
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    gap: 12px;
+    z-index: 100;
+  }
+  .btn {
+    flex: 1;
+    padding: 14px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-secondary {
+    background: #f1f3f5;
+    color: var(--text-sec);
+  }
+  .btn-primary {
+    background: var(--primary);
+    color: white;
+  }
+  .btn-primary:active { transform: scale(0.98); }
+
+  .autosave {
+    font-size: 11px;
+    color: var(--success);
+    text-align: center;
+    padding: 4px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="top-bar">
+  <a class="back" href="#">←</a>
+  <h1>실험실 사용 신청</h1>
+  <span class="floor-chip">🧪 1층</span>
+</div>
+
+<!-- Step Indicator -->
+<div class="step-indicator">
+  <div class="step-dot completed">✓</div>
+  <div class="step-line done"></div>
+  <div class="step-dot current">2</div>
+  <div class="step-line"></div>
+  <div class="step-dot">3</div>
+  <div class="step-line"></div>
+  <div class="step-dot">4</div>
+  <div class="step-line"></div>
+  <div class="step-dot">5</div>
+  <div class="step-line"></div>
+  <div class="step-dot">6</div>
+</div>
+<div class="step-labels">
+  <span class="step-label">기본정보</span>
+  <span class="step-label current">일정</span>
+  <span class="step-label">실험</span>
+  <span class="step-label">시약</span>
+  <span class="step-label">안전</span>
+  <span class="step-label">확인</span>
+</div>
+
+<!-- Content: Step 2 - Schedule -->
+<div class="content">
+  <div class="section-title">일정 선택</div>
+  <div class="section-desc">실험 날짜와 실험실, 사용 시간을 선택하세요</div>
+
+  <div class="field">
+    <label>실험 날짜 <span class="required">*</span></label>
+    <input type="date" value="2026-04-10" style="color: var(--text);">
+    <div class="hint">📅 금요일 · 사용 가능</div>
+  </div>
+
+  <div class="field">
+    <label>실험실 <span class="required">*</span></label>
+    <select>
+      <option value="">실험실을 선택하세요</option>
+      <option value="chem" selected>화학실험실</option>
+      <option value="bio">생물실험실</option>
+      <option value="adv">첨단기기실험실</option>
+      <option value="proj">프로젝트실험실</option>
+      <option value="open">OPEN Lab</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label>사용 시간 <span class="required">*</span></label>
+    <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:4px;">
+      <label style="display:flex;align-items:center;gap:6px;background:#f1f3f5;padding:10px 14px;border-radius:8px;font-size:14px;font-weight:400;cursor:pointer;">
+        <input type="checkbox" style="width:18px;height:18px;accent-color:var(--primary)"> 5교시
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;background:var(--primary-light);padding:10px 14px;border-radius:8px;font-size:14px;font-weight:400;cursor:pointer;border:2px solid var(--primary);">
+        <input type="checkbox" checked style="width:18px;height:18px;accent-color:var(--primary)"> 6교시
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;background:#f1f3f5;padding:10px 14px;border-radius:8px;font-size:14px;font-weight:400;cursor:pointer;opacity:0.4;pointer-events:none;">
+        <input type="checkbox" disabled style="width:18px;height:18px;"> 7교시
+        <span style="font-size:11px;color:var(--danger);">차단</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;background:var(--primary-light);padding:10px 14px;border-radius:8px;font-size:14px;font-weight:400;cursor:pointer;border:2px solid var(--primary);">
+        <input type="checkbox" checked style="width:18px;height:18px;accent-color:var(--primary)"> 야자1
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;background:#f1f3f5;padding:10px 14px;border-radius:8px;font-size:14px;font-weight:400;cursor:pointer;">
+        <input type="checkbox" style="width:18px;height:18px;accent-color:var(--primary)"> 야자2
+      </label>
+    </div>
+  </div>
+
+  <div class="field error">
+    <label>실험 목적 <span class="required">*</span></label>
+    <select style="border-color:var(--danger);">
+      <option value="">목적을 선택하세요</option>
+    </select>
+    <div class="field-error">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+      실험 목적을 선택해주세요
+    </div>
+  </div>
+
+  <!-- Toast notification -->
+  <div class="toast">
+    ✅ 자동 저장됨
+  </div>
+</div>
+
+<!-- Bottom Navigation -->
+<div class="bottom-nav">
+  <button class="btn btn-secondary">← 이전</button>
+  <button class="btn btn-primary">다음 →</button>
+</div>
+
+</body>
+</html>

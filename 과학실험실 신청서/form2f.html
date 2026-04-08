@@ -62,6 +62,7 @@
     /* ===== Progress Bar ===== */
     .progress-section {
       background: var(--card); border-bottom: 1px solid var(--border); padding: 20px 0;
+      position: sticky; top: 57px; z-index: 99;
     }
     .progress-inner { max-width: 900px; margin: 0 auto; padding: 0 24px; }
     .progress-steps {
@@ -1392,8 +1393,14 @@
 
     /* ===== Step Navigation ===== */
     var currentStep = 1;
+    var highestStep = 1;
+
+    function clickStep(n) {
+      if (n <= highestStep) goStep(n);
+    }
 
     function goStep(n) {
+      highestStep = Math.max(highestStep, n);
       currentStep = n;
       for (var i = 1; i <= 5; i++) {
         document.getElementById('step' + i).classList.toggle('active', i === n);
@@ -1517,23 +1524,23 @@
   <div class="progress-section">
     <div class="progress-inner">
       <div class="progress-steps step-1" id="progressSteps">
-        <div class="step-item active" id="si1">
+        <div class="step-item active" id="si1" onclick="clickStep(1)" style="cursor:pointer">
           <div class="step-circle">1</div>
           <div class="step-label">기본 정보</div>
         </div>
-        <div class="step-item" id="si2">
+        <div class="step-item" id="si2" onclick="clickStep(2)" style="cursor:pointer">
           <div class="step-circle">2</div>
           <div class="step-label">일정 선택</div>
         </div>
-        <div class="step-item" id="si3">
+        <div class="step-item" id="si3" onclick="clickStep(3)" style="cursor:pointer">
           <div class="step-circle">3</div>
           <div class="step-label">실험 내용</div>
         </div>
-        <div class="step-item" id="si4">
+        <div class="step-item" id="si4" onclick="clickStep(4)" style="cursor:pointer">
           <div class="step-circle">4</div>
           <div class="step-label">안전 계획</div>
         </div>
-        <div class="step-item" id="si5">
+        <div class="step-item" id="si5" onclick="clickStep(5)" style="cursor:pointer">
           <div class="step-circle">5</div>
           <div class="step-label">확인/제출</div>
         </div>

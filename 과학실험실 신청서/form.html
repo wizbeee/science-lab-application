@@ -6,57 +6,229 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>과학 실험·실습실 사용 신청서(S동 1층 실험·실습실)</title>
   <style>
+    /* ===== Design System Variables ===== */
+    :root {
+      --primary: #4361ee;
+      --primary-light: #eef2ff;
+      --primary-dark: #3730a3;
+      --success: #10b981;
+      --success-light: #ecfdf5;
+      --warning: #f59e0b;
+      --warning-light: #fffbeb;
+      --danger: #ef4444;
+      --danger-light: #fef2f2;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --text-light: #94a3b8;
+      --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      display: flex;
-      justify-content: center;
-      padding: 20px;
-      background: #f5f5f5;
-      font-family: Arial, sans-serif;
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.6;
     }
-    #applicationForm {
-      max-width: 1200px; width: 100%;
-      background: #fff;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+
+    /* ===== Header ===== */
+    .header {
+      background: var(--card); border-bottom: 1px solid var(--border);
+      padding: 16px 0; position: sticky; top: 0; z-index: 100;
+      box-shadow: var(--shadow);
     }
-    h1, h3, h4 { color: #333; margin-bottom: 8px; }
+    .header-inner {
+      max-width: 900px; margin: 0 auto; padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .header-logo {
+      display: flex; align-items: center; gap: 12px;
+      font-size: 18px; font-weight: 700; color: var(--primary);
+    }
+    .header-logo .icon { font-size: 28px; }
+    .header-actions { display: flex; gap: 8px; }
+    .header-btn {
+      padding: 8px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+      background: var(--card); color: var(--text-muted); font-size: 13px; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; gap: 6px;
+      transition: all 0.15s;
+    }
+    .header-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+    /* ===== Progress Bar ===== */
+    .progress-section {
+      background: var(--card); border-bottom: 1px solid var(--border); padding: 20px 0;
+    }
+    .progress-inner { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+    .progress-steps {
+      display: flex; align-items: center; justify-content: space-between; position: relative;
+    }
+    .progress-steps::before {
+      content: ''; position: absolute; top: 20px; left: 40px; right: 40px;
+      height: 3px; background: var(--border); z-index: 0;
+    }
+    .progress-steps::after {
+      content: ''; position: absolute; top: 20px; left: 40px;
+      height: 3px; background: var(--primary); z-index: 1;
+      transition: width 0.3s;
+    }
+    .progress-steps.step-1::after { width: 0%; }
+    .progress-steps.step-2::after { width: 25%; }
+    .progress-steps.step-3::after { width: 50%; }
+    .progress-steps.step-4::after { width: 75%; }
+    .progress-steps.step-5::after { width: calc(100% - 80px); }
+
+    .step-item {
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      z-index: 2; position: relative;
+    }
+    .step-circle {
+      width: 40px; height: 40px; border-radius: 50%; display: flex;
+      align-items: center; justify-content: center; font-weight: 700; font-size: 14px;
+      background: var(--card); border: 3px solid var(--border); color: var(--text-muted);
+      transition: all 0.2s;
+    }
+    .step-item.active .step-circle { background: var(--primary); border-color: var(--primary); color: white; }
+    .step-item.done .step-circle { background: var(--success); border-color: var(--success); color: white; }
+    .step-label { font-size: 12px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+    .step-item.active .step-label { color: var(--primary); }
+    .step-item.done .step-label { color: var(--success); }
+
+    /* ===== Main Content ===== */
+    .main { max-width: 900px; margin: 0 auto; padding: 32px 24px 120px; }
+
+    .form-card {
+      background: var(--card); border-radius: var(--radius); border: 1px solid var(--border);
+      padding: 32px; margin-bottom: 24px; box-shadow: var(--shadow);
+    }
+    .form-card-title {
+      font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 4px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .form-card-desc { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+
+    .form-group { margin-bottom: 20px; }
+    .form-label {
+      display: block; font-size: 13px; font-weight: 600; color: var(--text);
+      margin-bottom: 6px;
+    }
+    .form-label .required { color: var(--danger); margin-left: 2px; }
+    .form-label .hint { font-weight: 400; color: var(--text-muted); margin-left: 8px; font-size: 12px; }
+
     input, select, textarea, button, label { font-size: 14px; }
-    input, select, textarea {
-      width: 100%; padding: 6px; margin-bottom: 12px; box-sizing: border-box;
+    .form-input, .form-select, .form-textarea,
+    input[type="text"], input[type="number"], input[type="date"], select, textarea {
+      width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      font-size: 14px; color: var(--text); background: var(--card);
+      transition: border-color 0.15s, box-shadow 0.15s;
+      outline: none; box-sizing: border-box;
     }
-    button { padding: 8px 16px; cursor: pointer; margin-top: 10px; }
+    input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus, select:focus, textarea:focus,
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      border-color: var(--primary); box-shadow: 0 0 0 3px rgba(67,97,238,0.1);
+    }
+    input::placeholder, textarea::placeholder { color: var(--text-light); }
+    textarea { min-height: 100px; resize: vertical; }
+    select { cursor: pointer; }
+    button { padding: 8px 16px; cursor: pointer; }
 
-    table { width: 100%; border-collapse: collapse; margin: 10px 0; table-layout: fixed; }
-    th, td { border: 1px solid #ccc; padding: 6px; text-align: center; word-break: keep-all; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
+    /* ===== Step Visibility ===== */
+    .step-view { display: none; }
+    .step-view.active { display: block; }
+
+    /* ===== Info box ===== */
+    .info-box {
+      background: var(--primary-light); border: 1px solid #c7d2fe; border-radius: var(--radius-sm);
+      padding: 12px 16px; font-size: 13px; color: var(--primary-dark); margin-bottom: 20px;
+      display: flex; align-items: flex-start; gap: 10px; line-height: 1.5;
+    }
+    .info-box .icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .info-box.warning { background: var(--warning-light); border-color: #fde68a; color: #92400e; }
+    .info-box.success { background: var(--success-light); border-color: #a7f3d0; color: #065f46; }
+    .info-box.danger { background: var(--danger-light); border-color: #fecaca; color: #991b1b; }
+
+    /* ===== Checkbox & Radio ===== */
+    input[type="checkbox"], input[type="radio"] {
+      width: 20px !important; height: 20px; min-width: 20px;
+      padding: 0 !important; margin: 0 !important; margin-right: 6px !important;
+      flex-shrink: 0; cursor: pointer;
+    }
+    .safety-row {
+      display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+    }
+    .safety-item {
+      display: flex; align-items: center; gap: 8px; padding: 12px 16px;
+      border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      cursor: pointer; transition: all 0.15s; font-size: 13px; font-weight: 500;
+    }
+    .safety-item:hover { border-color: var(--primary); }
+    .safety-item input[type="text"] { flex: 1; margin-left: 8px; box-sizing: border-box; }
+    .radio-row {
+      display: flex; gap: 16px; align-items: center;
+    }
+    .radio-item {
+      display: flex; align-items: center; gap: 6px; padding: 10px 16px;
+      border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      cursor: pointer; transition: all 0.15s; font-size: 14px; font-weight: 500;
+    }
+    .radio-item:hover { border-color: var(--primary); }
+
+    /* ===== Tables ===== */
+    table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+    th, td { border: 1px solid var(--border); padding: 8px; text-align: center; word-break: keep-all; }
+    th { background: #f8fafc; font-weight: 600; font-size: 12px; color: var(--text-muted); }
+
+    .chem-table { table-layout: fixed; }
+    #chemicalList input[type="text"], #chemicalList input[type="number"], #chemicalList select {
+      width: 100%; box-sizing: border-box; padding: 6px 8px; font-size: 13px;
+    }
+    .btn-del {
+      display: inline-block; width: 100%; max-width: 56px; padding: 4px 6px;
+      font-size: 12px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      background: none; border: 1px solid var(--danger); color: var(--danger); border-radius: 6px; cursor: pointer;
+    }
+    .btn-del:hover { background: var(--danger-light); }
     #chemicalSearchGroup { display: flex; gap: 8px; margin-bottom: 8px; }
     #chemicalSearchGroup input { flex: 1; }
-
-    .time-row, .safety-row, .radio-row {
-      display: flex; gap: 24px; margin-bottom: 16px; flex-wrap: wrap; align-items: center;
+    #chemicalSearchGroup button {
+      padding: 10px 20px; background: var(--primary); color: white; border: none;
+      border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; white-space: nowrap;
     }
-    input[type="checkbox"], input[type="radio"] {
-      width: 24px !important;
-      height: 24px;
-      min-width: 24px;
-      padding: 0 !important;
-      margin: 0 !important;
-      margin-right: 6px !important;
-      margin-bottom: 0 !important;
-      flex-shrink: 0;
-      cursor: pointer;
-    }
-    .safety-row input[type="text"] { flex: 1; margin-left: 8px; box-sizing: border-box; }
-    #statusMessage { display: inline-block; font-weight: bold; margin-left: 16px; color: #555; }
 
+    .guidance-required { color: #d32f2f !important; font-weight: bold; }
+
+    /* ===== Status badges ===== */
+    .pill { display: inline-block; padding: 4px 10px; border-radius: 999px; background: var(--primary-light); color: var(--primary-dark); font-size: 12px; font-weight: 600; }
+    .badge-ok { color: #065f46; background: var(--success-light); border: 1px solid #a7f3d0; }
+    .badge-err { color: #991b1b; background: var(--danger-light); border: 1px solid #fecaca; }
+    .note { background: var(--warning-light); color: #9a3412; border: 1px solid #fed7aa; padding: 10px 14px; border-radius: var(--radius-sm); font-size: 13px; }
+    .danger { background: var(--danger-light); color: #991b1b; border: 1px solid #fecaca; padding: 10px 14px; border-radius: var(--radius-sm); font-size: 13px; }
+    .ok { background: var(--success-light); color: #065f46; border: 1px solid #a7f3d0; padding: 10px 14px; border-radius: var(--radius-sm); font-size: 13px; }
+
+    .unit-hint { font-size: .85rem; color: #d32f2f; margin-top: 6px; }
+    .unit-hint code { background: #f3f4f6; padding: 2px 6px; border-radius: 6px; }
+
+    .blocked-input { outline: 2px solid #d32f2f; background: #fff6f6; }
+
+    /* ===== Overlays & Dialogs ===== */
     #customAlert {
       display: none; position: fixed; top: 30%; left: 50%;
-      transform: translate(-50%,-30%); background: white; border: 1px solid #333;
-      padding: 20px; z-index:1000; box-shadow:0 0 10px black; text-align:center;
+      transform: translate(-50%,-30%); background: white; border-radius: var(--radius);
+      padding: 28px 32px; z-index: 10002; box-shadow: var(--shadow-lg); text-align: center;
+      max-width: 500px; width: 90%;
     }
-    #customAlert button { margin-top: 15px; }
-    .guidance-required { color: #d32f2f !important; font-weight: bold; }
+    #customAlert p { margin-bottom: 16px; line-height: 1.6; font-size: 14px; }
+    #customAlert button {
+      padding: 10px 24px; background: var(--primary); color: white; border: none;
+      border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;
+    }
+    #customAlertOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.3); z-index: 10001; }
 
     #dialogOverlay {
       display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(2px); z-index: 9999;
@@ -67,180 +239,174 @@
       z-index: 10000; text-align: center;
     }
     #overlayBlock .block-msg {
-      margin-top: 180px; font-size: 1.6rem; font-weight: bold; color: #333;
-      background: #fff; display: inline-block; padding: 32px 60px; border-radius: 16px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+      margin-top: 180px; font-size: 1.6rem; font-weight: bold; color: var(--text);
+      background: var(--card); display: inline-block; padding: 32px 60px; border-radius: 16px;
+      box-shadow: var(--shadow-lg);
     }
 
     #confirmDialog {
       display: none; position: fixed; top: 50%; left: 50%;
-      transform: translate(-50%, -50%); background: white; border: 1px solid #ddd;
-      padding: 20px; z-index: 10001; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-      border-radius: 8px; width: 600px; max-width: 90%; max-height: 80vh; overflow-y: auto;
+      transform: translate(-50%, -50%); background: white; border: 1px solid var(--border);
+      padding: 24px; z-index: 10001; box-shadow: var(--shadow-lg);
+      border-radius: var(--radius); width: 600px; max-width: 90%; max-height: 80vh; overflow-y: auto;
     }
     #confirmDialog h3 {
-      margin-top: 0; color: #333; border-bottom: 2px solid #4285F4; padding-bottom: 10px;
-      position: sticky; top: -20px; background: white; z-index: 1;
+      margin-top: 0; color: var(--text); border-bottom: 2px solid var(--primary); padding-bottom: 10px;
+      position: sticky; top: -24px; background: white; z-index: 1;
     }
     #confirmDialog .content-wrapper { padding: 10px 0; line-height: 1.8; }
-    #confirmDialog .question-item { margin-bottom: 15px; padding: 10px; background: #f9f9f9; border-radius: 5px; }
+    #confirmDialog .question-item { margin-bottom: 15px; padding: 12px; background: #f8fafc; border-radius: var(--radius-sm); }
     #confirmDialog .question-item strong { display: block; margin-bottom: 8px; font-size: 14px; }
-    #confirmDialog .sub-text { font-size: 13px; color: #666; margin: 5px 0 8px 20px; }
+    #confirmDialog .sub-text { font-size: 13px; color: var(--text-muted); margin: 5px 0 8px 20px; }
     #confirmDialog .input-group { margin-left: 20px; display: flex; align-items: center; gap: 10px; }
     #confirmDialog .radio-group { margin-left: 20px; display: flex; gap: 30px; align-items: center; }
     #confirmDialog .radio-group label { display: flex; align-items: center; cursor: pointer; }
     #confirmDialog .radio-group input[type="radio"] { margin-right: 5px; cursor: pointer; }
-    #confirmDialog .button-group { display: flex; gap: 10px; justify-content: center; margin-top: 20px; padding-top: 15px;
-      border-top: 1px solid #ddd; position: sticky; bottom: -20px; background: white; z-index: 1; }
-    #confirmDialog button { padding: 10px 25px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; }
-    #confirmDialog .btn-confirm { background: #4285F4; color: white; }
+    #confirmDialog .button-group {
+      display: flex; gap: 10px; justify-content: center; margin-top: 20px; padding-top: 15px;
+      border-top: 1px solid var(--border); position: sticky; bottom: -24px; background: white; z-index: 1;
+    }
+    #confirmDialog button { padding: 10px 25px; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 14px; font-weight: bold; }
+    #confirmDialog .btn-confirm { background: var(--primary); color: white; }
     #confirmDialog .btn-confirm:disabled { background: #8e8e8e; color: #e0e0e0; cursor: not-allowed; }
     #confirmDialog .btn-cancel { background: #6c757d; color: white; }
-
-    @media (max-width: 650px) {
-      .time-row, .safety-row { flex-direction: column; gap: 8px; align-items: flex-start; }
-      .time-item, .safety-item { width: auto; }
-    }
-
-    /* ===== 모바일 대응 강화 ===== */
-    @media (max-width: 768px) {
-      body { padding: 8px; }
-      #applicationForm { width: 100%; padding: 14px; box-sizing: border-box; }
-      h1 { font-size: 1.3rem; }
-      h3 { font-size: 1rem; }
-      input, select, textarea, button { font-size: 16px !important; }
-      table { font-size: 12px; display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-      .chem-table { min-width: 700px; }
-      #chemicalSearchGroup { flex-direction: column; }
-      #chemicalSearchGroup input, #chemicalSearchGroup button { width: 100%; }
-      .radio-row { flex-direction: column; gap: 8px; align-items: flex-start; }
-      .fab-container { right: 12px; bottom: 12px; gap: 8px; }
-      .fab { padding: 8px 12px; font-size: 13px; }
-      #confirmDialog { width: 95vw; max-height: 85vh; padding: 14px; }
-      #loadDialog { width: 95vw; padding: 14px; }
-      .info-box { font-size: 11px; }
-      .unit-hint { font-size: .75rem; }
-    }
-
     #confirmDialog, #confirmDialog .content-wrapper { word-break: keep-all; }
     #confirmDialog .radio-group label { white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
 
-    .blocked-input { outline: 2px solid #d32f2f; background: #fff6f6; }
-
-    .fab-container { position: fixed; right: 24px; bottom: 24px; display: flex; flex-direction: column; gap: 10px; z-index: 10002; }
-    .fab {
-      position: relative; overflow: hidden;
-      background: #4285F4; color: #fff; border: none; border-radius: 24px;
-      padding: 10px 14px; font-weight: bold; cursor: pointer;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-      transition: transform .08s ease, box-shadow .12s ease, filter .12s ease;
-      outline: none;
-    }
-    .fab.secondary { background: #6c757d; }
-    .fab:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,0.28); filter: brightness(1.02); }
-    .fab:active { transform: translateY(0) scale(0.98); box-shadow: 0 2px 8px rgba(0,0,0,0.25); filter: brightness(0.98); }
-    .fab:focus-visible { box-shadow: 0 0 0 3px rgba(66,133,244,0.35), 0 2px 8px rgba(0,0,0,0.25); }
-    .fab .ripple { position: absolute; border-radius: 50%; transform: scale(0); animation: ripple .5s linear; background: rgba(255,255,255,.45); pointer-events: none; }
-    @keyframes ripple { to { transform: scale(4); opacity: 0; } }
-
-    /* ===== 통합 불러오기 다이얼로그 ===== */
-    #loadOverlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.35); backdrop-filter: blur(2px); z-index:10010; }
+    /* ===== Load Dialog ===== */
+    #loadOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.35); backdrop-filter: blur(2px); z-index: 10010; }
     #loadDialog {
-      display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
-      background:#fff; width:520px; max-width:92vw; border-radius:10px;
-      box-shadow:0 10px 30px rgba(0,0,0,.3); z-index:10011; padding:0; overflow:hidden;
+      display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      background: var(--card); width: 520px; max-width: 92vw; border-radius: var(--radius);
+      box-shadow: var(--shadow-lg); z-index: 10011; padding: 0; overflow: hidden;
     }
-    #loadDialog.blurred {
-      filter: blur(3px);
-      pointer-events: none;
-    }
-    #loadDialog .load-header {
-      padding: 16px 20px 0 20px;
-    }
-    #loadDialog .load-header h3 {
-      margin: 0 0 12px; font-size: 1.1rem; color: #333;
-    }
-    /* 탭 스타일 */
-    .load-tabs {
-      display: flex; border-bottom: 2px solid #e0e0e0; margin: 0;
-    }
+    #loadDialog.blurred { filter: blur(3px); pointer-events: none; }
+    #loadDialog .load-header { padding: 16px 20px 0 20px; }
+    #loadDialog .load-header h3 { margin: 0 0 12px; font-size: 1.1rem; color: var(--text); }
+    .load-tabs { display: flex; border-bottom: 2px solid var(--border); margin: 0; }
     .load-tab {
       flex: 1; padding: 10px 12px; text-align: center; cursor: pointer;
-      font-size: 14px; font-weight: 600; color: #888; background: none;
+      font-size: 14px; font-weight: 600; color: var(--text-muted); background: none;
       border: none; border-bottom: 3px solid transparent;
-      transition: color .15s, border-color .15s;
-      margin: 0; outline: none;
+      transition: color .15s, border-color .15s; margin: 0; outline: none;
     }
-    .load-tab:hover { color: #555; }
-    .load-tab.active {
-      color: #4285F4; border-bottom-color: #4285F4;
-    }
-    .load-tab.active-green {
-      color: #34a853; border-bottom-color: #34a853;
-    }
-    /* 탭 패널 */
+    .load-tab:hover { color: var(--text); }
+    .load-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .load-tab.active-green { color: var(--success); border-bottom-color: var(--success); }
     .load-panel { display: none; padding: 16px 20px 20px 20px; }
     .load-panel.active { display: block; }
-    .load-panel .form-row { display:flex; gap:10px; margin:10px 0; }
-    .load-panel .form-row > * { flex:1; }
-    .load-panel .btns { display:flex; gap:10px; justify-content:flex-end; margin-top:12px; }
-    .load-panel .btn { padding:8px 14px; border:none; border-radius:6px; cursor:pointer; font-weight:600; background:#e0e0e0; }
+    .load-panel .form-row { display: flex; gap: 10px; margin: 10px 0; }
+    .load-panel .form-row > * { flex: 1; }
+    .load-panel .btns { display: flex; gap: 10px; justify-content: flex-end; margin-top: 12px; }
+    .load-panel .btn {
+      padding: 8px 14px; border: none; border-radius: var(--radius-sm); cursor: pointer; font-weight: 600; background: #e0e0e0;
+    }
     .load-panel .btn:hover { filter: brightness(1.05); }
-    .load-panel .btn:active { filter: brightness(0.95); }
-    /* 승인 조회 결과 */
-    .load-panel .result-list { margin-top:12px; max-height:280px; overflow-y:auto; }
+    .load-panel .result-list { margin-top: 12px; max-height: 280px; overflow-y: auto; }
     .load-panel .result-item {
-      display:flex; justify-content:space-between; align-items:center; padding:10px; margin:6px 0;
-      border:1px solid #e0e0e0; border-radius:6px; background:#fafafa; gap:8px; flex-wrap:wrap;
+      display: flex; justify-content: space-between; align-items: center; padding: 10px; margin: 6px 0;
+      border: 1px solid var(--border); border-radius: var(--radius-sm); background: #fafafa; gap: 8px; flex-wrap: wrap;
     }
-    .load-panel .result-item:hover { background:#f0f7ff; border-color:#4285F4; }
-    .load-panel .result-info { flex:1; font-size:13px; line-height:1.5; }
-    .load-panel .result-info b { color:#333; }
+    .load-panel .result-item:hover { background: var(--primary-light); border-color: var(--primary); }
+    .load-panel .result-info { flex: 1; font-size: 13px; line-height: 1.5; }
+    .load-panel .result-info b { color: var(--text); }
 
-    @media (max-width: 768px) {
-      #loadDialog { width:95vw; }
-      .load-tab { font-size: 13px; padding: 8px 6px; }
-      .load-panel .result-item { flex-direction:column; align-items:stretch; }
+    /* ===== Bottom Nav ===== */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--card); border-top: 1px solid var(--border);
+      padding: 16px 24px; display: flex; justify-content: center;
+      box-shadow: 0 -4px 6px -1px rgba(0,0,0,0.05); z-index: 100;
+    }
+    .bottom-nav-inner { max-width: 900px; width: 100%; display: flex; justify-content: space-between; align-items: center; }
+    .nav-btn {
+      padding: 12px 32px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600;
+      cursor: pointer; border: none; transition: all 0.15s;
+    }
+    .nav-btn.prev { background: #f1f5f9; color: var(--text-muted); }
+    .nav-btn.prev:hover { background: #e2e8f0; }
+    .nav-btn.next { background: var(--primary); color: white; }
+    .nav-btn.next:hover { background: var(--primary-dark); }
+    .nav-btn.submit { background: var(--success); color: white; font-size: 15px; padding: 14px 48px; }
+    .nav-btn.submit:hover { background: #059669; }
+    .nav-btn.draft { background: #f1f5f9; color: var(--text-muted); }
+    .step-indicator { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+
+    /* ===== Review Section (Step 5) ===== */
+    .review-section {
+      margin-bottom: 20px; padding: 20px; background: #f8fafc;
+      border-radius: var(--radius-sm); border: 1px solid var(--border);
+    }
+    .review-section-title {
+      font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 12px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .review-row { display: flex; padding: 6px 0; font-size: 13px; }
+    .review-label { width: 120px; color: var(--text-muted); font-weight: 500; flex-shrink: 0; }
+    .review-value { color: var(--text); font-weight: 500; flex: 1; }
+
+    /* ===== Agreement ===== */
+    .agreement-box {
+      background: #f8fafc; border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 20px; max-height: 200px; overflow-y: auto; font-size: 13px; line-height: 1.8;
+      margin-bottom: 16px; color: var(--text-muted);
     }
 
-    .unit-hint{ font-size:.85rem; color:#d32f2f; margin-top:6px }
-    .unit-hint code{ background:#f3f4f6; padding:2px 6px; border-radius:6px; }
+    /* ===== Ripple Effect ===== */
+    .fab .ripple, button .ripple { position: absolute; border-radius: 50%; transform: scale(0); animation: ripple .5s linear; background: rgba(255,255,255,.45); pointer-events: none; }
+    @keyframes ripple { to { transform: scale(4); opacity: 0; } }
 
-    .pill { display:inline-block; padding:4px 8px; border-radius:999px; background:#eef2ff; color:#3730a3; font-size:12px; }
-    .badge-ok { color:#065f46; background:#ecfdf5; border:1px solid #a7f3d0; }
-    .badge-err { color:#991b1b; background:#fef2f2; border:1px solid #fecaca; }
-    .note { background:#fff7ed; color:#9a3412; border:1px solid #fed7aa; padding:8px 10px; border-radius:8px; font-size:12px; }
-    .danger { background:#fef2f2; color:#991b1b; border:1px solid #fecaca; padding:8px 10px; border-radius:8px; font-size:12px; }
-    .ok { background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; padding:8px 10px; border-radius:8px; font-size:12px; }
-
-    .chem-table { table-layout: fixed; }
-    #chemicalList input[type="text"], #chemicalList input[type="number"], #chemicalList select {
-      width: 100%; box-sizing: border-box;
-    }
-    .btn-del {
-      display:inline-block; width:100%; max-width:56px; padding:4px 6px;
-      font-size:12px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-    }
-
+    /* ===== Pointer events ===== */
     #overlayBlock, #dialogOverlay, #loadOverlay { pointer-events: none; }
     #overlayBlock[style*="display: block"],
     #dialogOverlay[style*="display: block"],
     #loadOverlay[style*="display: block"] { pointer-events: auto; }
 
-    .info-box {
-      background:#eff6ff;
-      border:1px solid #bfdbfe;
-      border-radius:6px;
-      padding:8px 12px;
-      font-size:12px;
-      margin-bottom:12px;
-      line-height:1.4;
-    }
-    :focus-visible { outline: 3px solid #4285F4; outline-offset: 2px; }
-    button:focus-visible { outline: 3px solid #4285F4; outline-offset: 2px; }
+    /* ===== Focus styles ===== */
+    :focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+    button:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
 
+    /* ===== Reduced motion ===== */
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+
+    /* ===== Tablet / Mobile Responsive ===== */
+    @media (max-width: 900px) {
+      .main { padding: 24px 16px 120px; }
+      .form-card { padding: 24px; }
+      .form-row { grid-template-columns: 1fr; }
+      .header-inner { padding: 0 16px; }
+      .progress-inner { padding: 0 16px; }
+      .safety-row { flex-direction: column; gap: 8px; align-items: stretch; }
+      .radio-row { flex-direction: column; gap: 8px; align-items: stretch; }
+      #chemicalSearchGroup { flex-direction: column; }
+      #chemicalSearchGroup input, #chemicalSearchGroup button { width: 100%; }
+      table { font-size: 12px; display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .chem-table { min-width: 700px; }
+      #confirmDialog { width: 95vw; max-height: 85vh; padding: 14px; }
+      #loadDialog { width: 95vw; padding: 0; }
+      .load-tab { font-size: 13px; padding: 8px 6px; }
+      .load-panel .result-item { flex-direction: column; align-items: stretch; }
+      .header-logo span:not(.icon) { font-size: 15px; }
+      .step-label { font-size: 10px; }
+    }
+
+    @media (max-width: 650px) {
+      .time-row { flex-direction: column; gap: 8px; align-items: flex-start; }
+      .header-actions { gap: 4px; }
+      .header-btn { padding: 6px 10px; font-size: 12px; }
+      input, select, textarea, button { font-size: 16px !important; }
+    }
+
+    /* ===== Hidden helper for form ID ===== */
+    #statusMessage { display: inline-block; font-weight: bold; margin-left: 16px; color: var(--text-muted); }
+
+    /* ===== noWarningDialog ===== */
+    #noWarningDialog {
+      display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      background: white; border: 2px solid var(--danger); padding: 24px; z-index: 10002;
+      box-shadow: var(--shadow-lg); border-radius: var(--radius); width: 400px; max-width: 90%;
     }
   </style>
   <script>
@@ -333,13 +499,15 @@
 
         const bar = document.createElement('div');
         bar.id = 'autoSaveBar';
-        bar.style.cssText = 'background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;';
-        bar.innerHTML = '<span style="font-weight:600;color:#1d4ed8;">💾 이전에 작성 중이던 내용이 있습니다 (' + data.studentId + ', ' + (data.title || '제목 없음') + ')</span>' +
-          '<span><button onclick="loadAutoSave()" style="padding:6px 14px;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;margin-right:6px;">불러오기</button>' +
+        bar.style.cssText = 'background:var(--primary-light);border:1px solid #c7d2fe;border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;';
+        bar.innerHTML = '<span style="font-weight:600;color:var(--primary-dark);">💾 이전에 작성 중이던 내용이 있습니다 (' + data.studentId + ', ' + (data.title || '제목 없음') + ')</span>' +
+          '<span><button onclick="loadAutoSave()" style="padding:6px 14px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;margin-right:6px;">불러오기</button>' +
           '<button onclick="dismissAutoSave()" style="padding:6px 14px;background:#e5e7eb;color:#374151;border:none;border-radius:6px;cursor:pointer;font-weight:600;">무시</button></span>';
 
         const form = document.getElementById('applicationForm');
-        form.insertBefore(bar, form.firstChild);
+        const firstStep = document.getElementById('step1');
+        if (firstStep) firstStep.insertBefore(bar, firstStep.firstChild);
+        else form.insertBefore(bar, form.firstChild);
       } catch(e) { /* 무시 */ }
     }
 
@@ -777,7 +945,6 @@
           if (mySeq !== calendarFetchSeq) return;
           currentCalendarBlocks = info;
           applyCalendarBlocksForSelectedLab();
-          // 가용 현황표 렌더링
           renderAvailabilityTable(info);
           if (info && info.notice && !info.allBlocked) {
             showCustomAlert(info.notice);
@@ -1413,13 +1580,14 @@
           hideOverlayBlock();
           formDirty = false;
           localStorage.removeItem(AUTO_SAVE_KEY);
-          // Extract ID from response
           const idMatch = String(res).match(/ID:\s*([^\s)]+)/);
           const appId = idMatch ? idMatch[1] : '';
 
-          // Show completion screen
           const form = document.getElementById('applicationForm');
           form.style.display = 'none';
+          document.querySelector('.header').style.display = 'none';
+          document.querySelector('.progress-section').style.display = 'none';
+          document.querySelector('.bottom-nav').style.display = 'none';
 
           let completionDiv = document.getElementById('completionScreen');
           if (!completionDiv) {
@@ -1435,15 +1603,15 @@
           completionDiv.innerHTML =
             '<div style="text-align:center;max-width:600px;margin:60px auto;padding:30px;">' +
             '<div style="font-size:3rem;margin-bottom:16px;">✅</div>' +
-            '<h2 style="color:#16a34a;margin-bottom:12px;">신청이 완료되었습니다!</h2>' +
-            '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:20px;margin:20px 0;text-align:left;">' +
+            '<h2 style="color:var(--success);margin-bottom:12px;">신청이 완료되었습니다!</h2>' +
+            '<div style="background:var(--success-light);border:1px solid #bbf7d0;border-radius:var(--radius);padding:20px;margin:20px 0;text-align:left;">' +
             '<div style="margin-bottom:8px;"><b>신청 ID:</b> <code style="background:#e2e8f0;padding:2px 8px;border-radius:4px;user-select:all;">' + (appId || '(확인 중)') + '</code></div>' +
             (lab ? '<div style="margin-bottom:8px;"><b>실험·실습실:</b> ' + lab + '</div>' : '') +
             (date ? '<div style="margin-bottom:8px;"><b>실험 날짜:</b> ' + date + '</div>' : '') +
             (title ? '<div style="margin-bottom:8px;"><b>실험 제목:</b> ' + title + '</div>' : '') +
             '</div>' +
-            '<p style="color:#555;margin:16px 0;">지도교사의 1차 승인 → 담당교사의 최종 승인을 거쳐 확정됩니다.<br>승인/반려 결과는 이메일로 안내됩니다.</p>' +
-            '<button onclick="resetToNewForm()" style="padding:12px 24px;background:#4285F4;color:#fff;border:none;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;">새 신청서 작성</button>' +
+            '<p style="color:var(--text-muted);margin:16px 0;">지도교사의 1차 승인 → 담당교사의 최종 승인을 거쳐 확정됩니다.<br>승인/반려 결과는 이메일로 안내됩니다.</p>' +
+            '<button onclick="resetToNewForm()" style="padding:12px 24px;background:var(--primary);color:#fff;border:none;border-radius:var(--radius-sm);font-size:1rem;font-weight:600;cursor:pointer;">새 신청서 작성</button>' +
             '</div>';
           completionDiv.style.display = 'block';
         })
@@ -1462,7 +1630,6 @@
 
     /* ====================== 통합 불러오기 다이얼로그 ====================== */
     function openLoadDialog(tabIndex) {
-      // 초기화
       document.getElementById('loadSid').value  = '';
       document.getElementById('loadName').value = '';
       document.getElementById('loadDate').value = '';
@@ -1473,7 +1640,6 @@
       document.getElementById('loadOverlay').style.display = 'block';
       document.getElementById('loadDialog').style.display  = 'block';
 
-      // 탭 전환
       switchLoadTab(tabIndex || 0);
 
       if (tabIndex === 1) {
@@ -1612,7 +1778,7 @@
                 ${escapeHtml(item.lab)} / ${escapeHtml(item.date)} / ${escapeHtml(item.time)}<br>
                 <span style="color:#888;font-size:11px;">제출: ${escapeHtml(item.submit)}</span>
               </div>
-              <button type="button" style="padding:6px 14px;background:#34a853;color:#fff;border:none;border-radius:4px;cursor:pointer;font-weight:bold;white-space:nowrap;"
+              <button type="button" style="padding:6px 14px;background:var(--success);color:#fff;border:none;border-radius:4px;cursor:pointer;font-weight:bold;white-space:nowrap;"
                       onclick="loadApprovedItem('${escapeHtml(item.id)}')">불러오기</button>
             </div>`).join('');
         })
@@ -1628,7 +1794,6 @@
         .withSuccessHandler(data => {
           hideOverlayBlock();
           try {
-            // 승인된 신청서는 날짜를 비워둠 (새로 선택해야 함)
             applyLoadedData(data, true);
             closeLoadDialog();
             alert('승인된 신청서를 불러왔습니다.\n실험 날짜와 시간을 새로 선택해 주세요.');
@@ -1744,6 +1909,9 @@
         document.getElementById('advancedLabNote').style.display = 'block';
         document.getElementById('advancedLabReason').style.display = 'block';
       }
+
+      // 스텝1로 이동
+      goStep(1);
     }
 
     function resetChemicalTable() { const tbl = document.getElementById('chemicalList'); while (tbl.rows.length > 1) tbl.deleteRow(1); markUnvalidated(); }
@@ -1760,6 +1928,8 @@
 
     function createRipple(e){
       const btn = e.currentTarget;
+      if (!btn.style.position || btn.style.position === 'static') btn.style.position = 'relative';
+      btn.style.overflow = 'hidden';
       const rect = btn.getBoundingClientRect();
       const ripple = document.createElement('span');
       const size = Math.max(rect.width, rect.height);
@@ -1772,7 +1942,7 @@
       setTimeout(() => ripple.remove(), 500);
     }
     function initFabFeedback(){
-      document.querySelectorAll('.fab, button').forEach(btn=>{
+      document.querySelectorAll('button').forEach(btn=>{
         btn.addEventListener('click', createRipple);
         btn.addEventListener('keydown', (ev)=>{ if(ev.key === ' ' || ev.key === 'Enter'){ ev.preventDefault(); btn.click(); }});
       });
@@ -1806,14 +1976,16 @@
       const completion = document.getElementById('completionScreen');
       if (completion) completion.style.display = 'none';
       form.style.display = '';
+      document.querySelector('.header').style.display = '';
+      document.querySelector('.progress-section').style.display = '';
+      document.querySelector('.bottom-nav').style.display = '';
       form.reset();
       if (typeof resetChemicalTable === 'function') resetChemicalTable();
       if (typeof resetSearchResults === 'function') resetSearchResults();
       if (typeof markUnvalidated === 'function') markUnvalidated();
-      const btn = document.querySelector('#applicationForm button[type="button"]');
-      if (btn) btn.disabled = false;
       document.getElementById('statusMessage').textContent = '';
       formDirty = false;
+      goStep(1);
       window.scrollTo(0, 0);
     }
 
@@ -1833,7 +2005,7 @@
       }
 
       if (unavail.allBlocked) {
-        tableDiv.innerHTML = '<div style="background:#fef2f2;color:#dc2626;padding:8px 12px;border-radius:6px;font-weight:600;">⚠️ 해당 날짜는 전체 사용 불가입니다.</div>';
+        tableDiv.innerHTML = '<div style="background:var(--danger-light);color:#dc2626;padding:8px 12px;border-radius:6px;font-weight:600;">해당 날짜는 전체 사용 불가입니다.</div>';
         return;
       }
 
@@ -1856,14 +2028,113 @@
           const perLabBlocked = unavail.blockedTimesByLab && unavail.blockedTimesByLab[lab] && unavail.blockedTimesByLab[lab].includes(slot);
           const blocked = labBlocked || timeBlocked || perLabBlocked;
           const style = blocked
-            ? 'border:1px solid #ddd;padding:6px;text-align:center;background:#fef2f2;color:#dc2626;'
-            : 'border:1px solid #ddd;padding:6px;text-align:center;background:#f0fdf4;color:#16a34a;';
+            ? 'border:1px solid #ddd;padding:6px;text-align:center;background:var(--danger-light);color:#dc2626;'
+            : 'border:1px solid #ddd;padding:6px;text-align:center;background:var(--success-light);color:#16a34a;';
           html += '<td style="' + style + '">' + (blocked ? '❌' : '✅') + '</td>';
         });
         html += '</tr>';
       });
       html += '</table>';
       tableDiv.innerHTML = html;
+    }
+
+    /* ===== Step Navigation ===== */
+    var currentStep = 1;
+
+    function goStep(n) {
+      currentStep = n;
+      for (var i = 1; i <= 5; i++) {
+        document.getElementById('step' + i).classList.toggle('active', i === n);
+        var si = document.getElementById('si' + i);
+        si.classList.remove('active', 'done');
+        if (i < n) si.classList.add('done');
+        else if (i === n) si.classList.add('active');
+      }
+      document.getElementById('progressSteps').className = 'progress-steps step-' + n;
+
+      // Bottom nav
+      document.getElementById('btnPrev').style.display = n > 1 ? '' : 'none';
+      document.getElementById('btnNext').style.display = n < 5 ? '' : 'none';
+      document.getElementById('btnSubmit').style.display = n === 5 ? '' : 'none';
+      document.getElementById('stepIndicator').textContent = 'Step ' + n + ' / 5';
+
+      // Build review on step 5
+      if (n === 5) buildReview();
+
+      window.scrollTo(0, 0);
+    }
+
+    function nextStep() { if (currentStep < 5) goStep(currentStep + 1); }
+    function prevStep() { if (currentStep > 1) goStep(currentStep - 1); }
+
+    function buildReview() {
+      const r = document.getElementById('reviewContent');
+      if (!r) return;
+
+      const sid = document.getElementById('studentId').value || '';
+      const sname = document.getElementById('studentName').value || '';
+      const tm = document.getElementById('teamMembers').value || '';
+      const total = document.getElementById('totalParticipants').value || '';
+      const purpose = document.getElementById('purpose').value || '';
+      const otherPurpose = document.getElementById('otherPurpose').value || '';
+      const dateVal = document.getElementById('date').value || '';
+      const daySpan = document.getElementById('dayOfWeek').textContent || '';
+      const timeSlots = Array.from(document.querySelectorAll('input[name="timeSlot"]:checked')).map(cb => cb.value).join(', ');
+      const lab = document.getElementById('lab').value || '';
+      const title = document.getElementById('title').value || '';
+      const advLab = document.getElementById('advancedLab').value || '';
+      const hood = document.getElementById('hood').value || '';
+      const materials = document.getElementById('materials').value || '';
+      const teacher = document.getElementById('teacher').value || '';
+      const safety = Array.from(document.querySelectorAll('.safety-item input:checked')).map(cb => {
+        if (cb.id === 'otherSafetyCheck') return document.getElementById('otherSafety').value || '기타';
+        return cb.value;
+      }).join(', ');
+
+      // 시약 목록
+      let chemHtml = '';
+      document.querySelectorAll('#chemicalList tr').forEach((tr, i) => {
+        if (i === 0) return;
+        const c = tr.cells;
+        const name = c[0].querySelector('input').value.trim();
+        const conc = c[3].querySelector('input').value.trim();
+        const vol = c[4].querySelector('input').value.trim();
+        const guidance = (c[7].innerText || '').trim();
+        const guidanceBadge = guidance === '필요'
+          ? '<span style="color:#92400e;font-weight:600;">임장필요</span>'
+          : '<span style="color:#065f46;">불필요</span>';
+        chemHtml += '<div style="margin-bottom:4px;">' + escapeHtml(name);
+        if (conc || vol) chemHtml += ' (' + (conc ? escapeHtml(conc) : '') + (conc && vol ? ', ' : '') + (vol ? escapeHtml(vol) : '') + ')';
+        chemHtml += ' — ' + guidanceBadge + '</div>';
+      });
+      if (!chemHtml) chemHtml = '<span style="color:var(--text-muted);">시약 없음</span>';
+
+      r.innerHTML =
+        '<div class="review-section">' +
+        '<div class="review-section-title">📋 기본 정보</div>' +
+        '<div class="review-row"><div class="review-label">대표자</div><div class="review-value">' + escapeHtml(sid) + ' ' + escapeHtml(sname) + '</div></div>' +
+        '<div class="review-row"><div class="review-label">동반자</div><div class="review-value">' + escapeHtml(tm || '없음') + '</div></div>' +
+        '<div class="review-row"><div class="review-label">총 인원</div><div class="review-value">' + escapeHtml(total) + '명</div></div>' +
+        '<div class="review-row"><div class="review-label">목적</div><div class="review-value">' + escapeHtml(purpose === '기타' ? otherPurpose : purpose) + '</div></div>' +
+        '</div>' +
+        '<div class="review-section">' +
+        '<div class="review-section-title">📅 일정</div>' +
+        '<div class="review-row"><div class="review-label">날짜</div><div class="review-value">' + escapeHtml(dateVal) + ' ' + escapeHtml(daySpan) + '</div></div>' +
+        '<div class="review-row"><div class="review-label">시간</div><div class="review-value">' + escapeHtml(timeSlots || '미선택') + '</div></div>' +
+        '<div class="review-row"><div class="review-label">실험실</div><div class="review-value">' + escapeHtml(lab) + '</div></div>' +
+        '</div>' +
+        '<div class="review-section">' +
+        '<div class="review-section-title">🧪 실험 내용</div>' +
+        '<div class="review-row"><div class="review-label">제목</div><div class="review-value">' + escapeHtml(title) + '</div></div>' +
+        '<div class="review-row"><div class="review-label">첨단기기실</div><div class="review-value">' + escapeHtml(advLab || '미선택') + '</div></div>' +
+        '<div class="review-row"><div class="review-label">후드 사용</div><div class="review-value">' + escapeHtml(hood || '미선택') + '</div></div>' +
+        '<div class="review-row"><div class="review-label">시약</div><div class="review-value">' + chemHtml + '</div></div>' +
+        '</div>' +
+        '<div class="review-section">' +
+        '<div class="review-section-title">🦺 안전 계획</div>' +
+        '<div class="review-row"><div class="review-label">안전장구</div><div class="review-value">' + escapeHtml(safety || '미선택') + '</div></div>' +
+        '<div class="review-row"><div class="review-label">지도교사</div><div class="review-value">' + escapeHtml(teacher || '미선택') + '</div></div>' +
+        '</div>';
     }
   </script>
 </head>
@@ -1885,165 +2156,387 @@
     </div>
   </div>
 
-  <form id="applicationForm" onsubmit="return false;">
-    <h1>과학 실험·실습실 사용 신청서</h1>
-
-    <h3>대표자 정보</h3>
-    학번: <input type="text" id="studentId" placeholder="대표 학생의 학번을 입력하세요.(나이스학번)" required>
-    이름: <input type="text" id="studentName" placeholder="대표 학생의 이름을 입력하세요." required>
-
-    <h3>동반자 정보(선택)</h3>
-    <textarea id="teamMembers" rows="2" placeholder="참석하는 모든 학생의 학번 이름을 입력해주세요.(예시: 학번 이름, 학번 이름)"></textarea>
-
-    <h3>총 인원수(대표자 포함, 숫자만 쓰세요.)</h3>
-    <input type="number" id="totalParticipants" min="1" required placeholder="대표자 포함해서 참석하는 총 인원수를 입력하세요.">
-
-    <h3>사용 목적</h3>
-    <select id="purpose" onchange="handlePurposeChange(this)" required>
-      <option value="">선택</option>
-      <option>과제연구</option>
-      <option>학급활동</option>
-      <option>동아리 활동</option>
-      <option>기타</option>
-    </select>
-    <input type="text" id="otherPurpose" placeholder="기타 목적 입력" style="display:none;">
-
-    <h3>실험할 날짜(신청하고자 하는 연도-월-일 잘 보고 선택하세요.)</h3>
-    <input type="date" id="date" required onchange="showDayOfWeek();">
-    <span id="dayOfWeek" style="margin-left:8px; font-weight:bold;"></span>
-
-    <h3>신청 실험·실습실</h3>
-    <select id="lab" onchange="handleLabChange(this)" required>
-      <option value="">선택</option>
-      <option>화학실험실</option>
-      <option>생물실험실</option>
-      <option>프로젝트실험실</option>
-      <option>첨단기기실험실</option>
-      <option>오픈랩</option>
-    </select>
-
-    <h3>신청 시간</h3>
-    <div class="time-row">
-      <label class="time-item"><input type="checkbox" name="timeSlot" value="ET"> ET</label>
-      <label class="time-item"><input type="checkbox" name="timeSlot" value="EP1"> EP1</label>
-      <label class="time-item" id="period7Label" style="display:none;">
-        <input type="checkbox" name="timeSlot" value="7교시" id="period7"> 7교시
-      </label>
-    </div>
-
-    <h3>실험 제목</h3>
-    <input type="text" id="title" placeholder="실험 제목" required>
-
-    <h3>첨단기기실 이용 여부</h3>
-    <div id="advancedLabNote" style="display:none; margin:6px 0 8px 0; padding:8px 10px; background:#FFF3CD; border:1px solid #FFEEA5; border-radius:6px; font-size:13px; color:#7A5D00;">
-      '첨단기기실험실'을 선택하면 이 항목은 자동으로 <b>예</b>로 고정되며, <b>이용 사유</b>를 반드시 입력해야 합니다.
-    </div>
-    <select id="advancedLab" onchange="handleAdvancedLabChange(this)" required>
-      <option value="">선택</option>
-      <option>예</option>
-      <option>아니오</option>
-    </select>
-    <input type="text" id="advancedLabReason" placeholder="사유 입력" style="display:none;">
-
-    <h3>후드 사용 여부</h3>
-    <select id="hood" onchange="handleHoodChange(this)" required>
-      <option value="">선택</option>
-      <option>예</option>
-      <option>아니오</option>
-    </select>
-    <input type="text" id="hoodReason" placeholder="사유 입력" style="display:none;">
-
-    <h3>실험 준비물(시약 제외)</h3>
-    <textarea id="materials" rows="2" placeholder="실험에 사용할 시약을 제외하고 실험에 필요한 모든 장치와 도구를 입력하세요." required></textarea>
-
-    <h3>시약 검색 및 추가(교내 구비된 시약만 검색 가능)</h3>
-    <div id="chemicalSearchGroup">
-      <input type="text" id="chemicalSearch" placeholder="시약명 또는 화학식입력하세요. 두글자 이상 검색 가능합니다.">
-      <button type="button" onclick="searchChemical()">검색</button>
-    </div>
-    <table id="searchResults">
-      <tr>
-        <th>물질명</th><th>화학식</th><th>분류1</th><th>교사임장여부</th><th>선택</th>
-      </tr>
-    </table>
-
-    <h4>
-      추가된 시약 목록
-      <button type="button" onclick="addBlankChemical()">+ 행 추가</button>
-      <div class="unit-hint">
-        <strong>단위 입력 가이드</strong> — 농도: M, m, %, 질량: g, kg, mg, 부피: mL, L, cc, 방울 등 단위를 꼭 입력해주세요.
+  <!-- ===== Header ===== -->
+  <div class="header">
+    <div class="header-inner">
+      <div class="header-logo">
+        <span class="icon">🔬</span>
+        <span>과학 실험실 사용 신청</span>
       </div>
-    </h4>
-    <table id="chemicalList" class="chem-table">
-      <colgroup>
-        <col style="width:18%;"><col style="width:13%;"><col style="width:10%;"><col style="width:10%;"><col style="width:10%;">
-        <col style="width:11%;"><col style="width:18%;"><col style="width:6%;"><col style="width:4%;">
-      </colgroup>
-      <tr>
-        <th>시약명</th><th>화학식</th><th>상태</th><th>농도(단위를 기록하세요.)</th><th>사용량(단위를 기록하세요.)</th>
-        <th>폐기 방법</th><th>MSDS 및 취급 주의사항</th><th>교사 임장 여부</th><th>삭제</th>
-      </tr>
-    </table>
-
-    <div style="display:flex; align-items:center; gap:12px; margin:10px 0;">
-      <button type="button" id="btnValidateChem" onclick="onValidateChem()">시약 정보 검증</button>
-      <span id="chemValidateBadge" class="pill">미검증</span>
-      <span id="cooldownMsg" style="display:none; font-size:12px; color:#666;"></span>
+      <div class="header-actions">
+        <button class="header-btn" type="button" onclick="openLoadDialog(0)">📂 불러오기</button>
+        <button class="header-btn" type="button" onclick="snapshotForm()">💾 임시저장</button>
+      </div>
     </div>
-    <div style="font-size:12px;color:#9a3412;margin:4px 0 10px 0;">
-      ※ 시약 목록을 수정(추가/삭제/수정)하면 검증 상태가 자동으로 해제됩니다. 제출 전 다시 '시약 정보 검증'을 눌러주세요.
+  </div>
+
+  <!-- ===== Progress Bar ===== -->
+  <div class="progress-section">
+    <div class="progress-inner">
+      <div class="progress-steps step-1" id="progressSteps">
+        <div class="step-item active" id="si1">
+          <div class="step-circle">1</div>
+          <div class="step-label">기본 정보</div>
+        </div>
+        <div class="step-item" id="si2">
+          <div class="step-circle">2</div>
+          <div class="step-label">일정 선택</div>
+        </div>
+        <div class="step-item" id="si3">
+          <div class="step-circle">3</div>
+          <div class="step-label">실험 내용</div>
+        </div>
+        <div class="step-item" id="si4">
+          <div class="step-circle">4</div>
+          <div class="step-label">안전 계획</div>
+        </div>
+        <div class="step-item" id="si5">
+          <div class="step-circle">5</div>
+          <div class="step-label">확인/제출</div>
+        </div>
+      </div>
     </div>
-    <div id="chemValidateReport" class="note" style="display:none;"></div>
-    <div id="submitGuard" class="danger">시약 정보 검증을 통과해야 제출할 수 있습니다.</div>
+  </div>
 
-    <h3>실험 과정</h3>
-    <textarea id="process" rows="6" style="height:140px;" placeholder="실험 과정을 기록할 때 번호를 붙여서 나열하시오." required></textarea>
+  <!-- ===== Main Content ===== -->
+  <div class="main">
+    <form id="applicationForm" onsubmit="return false;">
 
-    <h3>실험 뒷정리</h3>
-    <textarea id="cleanup" rows="6" style="height:100px;" placeholder="실험 후 뒷정리 방법을 기록하세요." required></textarea>
+      <!-- ==================== STEP 1: 기본 정보 ==================== -->
+      <div class="step-view active" id="step1">
 
-    <h3>실험시 주의사항</h3>
-    <textarea id="precautions" rows="6" style="height:100px;" placeholder="실험시 반드시 주의해야 할 사항을 기록하세요." required></textarea>
+        <div class="form-card">
+          <div class="form-card-title">📋 대표자 정보</div>
+          <div class="form-card-desc">실험을 신청하는 대표 학생의 정보를 입력하세요.</div>
 
-    <h3>안전장구 선택</h3>
-    <div class="safety-row">
-      <label class="safety-item"><input type="checkbox" value="실험복"> 실험복</label>
-      <label class="safety-item"><input type="checkbox" value="보안경"> 보안경</label>
-      <label class="safety-item"><input type="checkbox" value="덮개신발(슬리퍼 금지)"> 덮개신발(슬리퍼 금지)</label>
-      <label class="safety-item"><input type="checkbox" value="라텍스 장갑(흰색)"> 라텍스 장갑(흰색)</label>
-      <label class="safety-item"><input type="checkbox" value="내열장갑(주황색)"> 내열장갑(주황색)</label>
-      <label class="safety-item"><input type="checkbox" value="산 방호장갑(초록색)"> 산 방호장갑(초록색)</label>
-      <label class="safety-item"><input type="checkbox" id="otherSafetyCheck" onchange="handleSafetyOtherChange(this)"> 기타</label>
-      <input type="text" id="otherSafety" placeholder="기타 입력" style="display:none;width:120px;">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="studentId">학번 <span class="required">*</span></label>
+              <input type="text" id="studentId" placeholder="5자리 학번 입력 (예: 30412)" maxlength="5" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="studentName">이름 <span class="required">*</span></label>
+              <input type="text" id="studentName" placeholder="대표 학생의 이름을 입력하세요." required>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <div class="form-card-title">👥 동반자 정보</div>
+          <div class="form-card-desc">함께 실험에 참여하는 학생들의 정보를 입력하세요.</div>
+
+          <div class="info-box">
+            <span class="icon">ℹ️</span>
+            <span>학번 5자리와 이름을 함께 입력하세요. 여러 명은 쉼표 또는 줄바꿈으로 구분합니다.<br>예: 30415 이서연, 30423 박지호</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="teamMembers">동반자 명단 <span class="hint">대표자 포함하지 않음</span></label>
+            <textarea id="teamMembers" rows="2" placeholder="참석하는 모든 학생의 학번 이름을 입력해주세요.(예시: 학번 이름, 학번 이름)" style="min-height:80px;"></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="totalParticipants">총 참여 인원 <span class="required">*</span> <span class="hint">대표자 포함, 숫자만</span></label>
+              <input type="number" id="totalParticipants" min="1" required placeholder="대표자 포함해서 참석하는 총 인원수를 입력하세요.">
+            </div>
+            <div></div>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <div class="form-card-title">🎯 사용 목적</div>
+          <div class="form-card-desc">실험실 사용 목적을 선택하세요.</div>
+
+          <div class="form-group">
+            <label class="form-label" for="purpose">사용 목적 <span class="required">*</span></label>
+            <select id="purpose" onchange="handlePurposeChange(this)" required>
+              <option value="">선택</option>
+              <option>과제연구</option>
+              <option>학급활동</option>
+              <option>동아리 활동</option>
+              <option>기타</option>
+            </select>
+            <input type="text" id="otherPurpose" placeholder="기타 목적 입력" style="display:none; margin-top:8px;">
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== STEP 2: 일정 선택 ==================== -->
+      <div class="step-view" id="step2">
+
+        <div class="form-card">
+          <div class="form-card-title">📅 실험 날짜 선택</div>
+          <div class="form-card-desc">실험을 진행할 날짜를 선택하세요.</div>
+
+          <div class="info-box warning">
+            <span class="icon">⚠️</span>
+            <span>신청하고자 하는 연도-월-일 잘 보고 선택하세요. 주말에는 실험실 사용이 불가합니다.</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="date">실험 날짜 <span class="required">*</span></label>
+            <div style="display:flex; align-items:center; gap:12px;">
+              <input type="date" id="date" required onchange="showDayOfWeek();" style="max-width:250px;">
+              <span id="dayOfWeek" style="font-weight:bold; color:var(--primary);"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <div class="form-card-title">🕐 신청 시간</div>
+          <div class="form-card-desc">실험 시간대를 선택하세요. 복수 선택이 가능합니다.</div>
+
+          <div class="safety-row" style="gap:16px;">
+            <label class="safety-item" style="min-width:120px; justify-content:center;">
+              <input type="checkbox" name="timeSlot" value="ET"> ET
+            </label>
+            <label class="safety-item" style="min-width:120px; justify-content:center;">
+              <input type="checkbox" name="timeSlot" value="EP1"> EP1
+            </label>
+            <label class="safety-item" id="period7Label" style="display:none; min-width:120px; justify-content:center;">
+              <input type="checkbox" name="timeSlot" value="7교시" id="period7"> 7교시
+            </label>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <div class="form-card-title">🏠 신청 실험·실습실</div>
+          <div class="form-card-desc">사용할 실험실을 선택하세요.</div>
+
+          <div class="form-group">
+            <label class="form-label" for="lab">실험·실습실 <span class="required">*</span></label>
+            <select id="lab" onchange="handleLabChange(this)" required>
+              <option value="">선택</option>
+              <option>화학실험실</option>
+              <option>생물실험실</option>
+              <option>프로젝트실험실</option>
+              <option>첨단기기실험실</option>
+              <option>오픈랩</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== STEP 3: 실험 내용 ==================== -->
+      <div class="step-view" id="step3">
+
+        <div class="form-card">
+          <div class="form-card-title">📝 실험 정보</div>
+          <div class="form-card-desc">실험의 기본 정보를 입력하세요.</div>
+
+          <div class="form-group">
+            <label class="form-label" for="title">실험 제목 <span class="required">*</span></label>
+            <input type="text" id="title" placeholder="실험 제목을 입력하세요" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="advancedLab">첨단기기실 이용 여부</label>
+              <div id="advancedLabNote" style="display:none; margin-bottom:6px; padding:8px 10px; background:var(--warning-light); border:1px solid #fde68a; border-radius:var(--radius-sm); font-size:13px; color:#7A5D00;">
+                '첨단기기실험실'을 선택하면 이 항목은 자동으로 <b>예</b>로 고정되며, <b>이용 사유</b>를 반드시 입력해야 합니다.
+              </div>
+              <select id="advancedLab" onchange="handleAdvancedLabChange(this)" required>
+                <option value="">선택</option>
+                <option>예</option>
+                <option>아니오</option>
+              </select>
+              <input type="text" id="advancedLabReason" placeholder="첨단기기실 이용 사유 입력" style="display:none; margin-top:8px;">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="hood">후드 사용 여부</label>
+              <select id="hood" onchange="handleHoodChange(this)" required>
+                <option value="">선택</option>
+                <option>예</option>
+                <option>아니오</option>
+              </select>
+              <input type="text" id="hoodReason" placeholder="후드 사용 사유 입력" style="display:none; margin-top:8px;">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="materials">실험 준비물 <span class="required">*</span> <span class="hint">시약 제외 기자재</span></label>
+            <textarea id="materials" rows="2" placeholder="실험에 사용할 시약을 제외하고 실험에 필요한 모든 장치와 도구를 입력하세요." required style="min-height:70px;"></textarea>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <div class="form-card-title">🧪 시약 정보</div>
+          <div class="form-card-desc">사용할 시약을 검색하여 추가하고, 농도와 사용량을 입력하세요.</div>
+
+          <div class="info-box">
+            <span class="icon">ℹ️</span>
+            <span>시약명 또는 화학식을 입력하고 검색하세요. 교내 구비된 시약만 검색 가능합니다. 두 글자 이상 입력해야 검색됩니다.</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">시약 검색</label>
+            <div id="chemicalSearchGroup">
+              <input type="text" id="chemicalSearch" placeholder="시약명 또는 화학식 입력 (예: NaOH, 염산...)">
+              <button type="button" onclick="searchChemical()">🔍 검색</button>
+            </div>
+          </div>
+
+          <table id="searchResults">
+            <tr>
+              <th>물질명</th><th>화학식</th><th>분류1</th><th>교사임장여부</th><th>선택</th>
+            </tr>
+          </table>
+
+          <div style="margin:16px 0 8px 0; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+            <span style="font-weight:700; font-size:15px;">추가된 시약 목록</span>
+            <button type="button" onclick="addBlankChemical()" style="padding:6px 14px; background:var(--primary-light); color:var(--primary-dark); border:1px solid #c7d2fe; border-radius:var(--radius-sm); font-weight:600; cursor:pointer;">+ 행 추가</button>
+          </div>
+          <div class="unit-hint" style="margin-bottom:12px;">
+            <strong>단위 입력 가이드</strong> — 농도: M, m, %, 질량: g, kg, mg, 부피: mL, L, cc, 방울 등 단위를 꼭 입력해주세요.
+          </div>
+
+          <div style="overflow-x:auto;">
+            <table id="chemicalList" class="chem-table">
+              <colgroup>
+                <col style="width:18%;"><col style="width:13%;"><col style="width:10%;"><col style="width:10%;"><col style="width:10%;">
+                <col style="width:11%;"><col style="width:18%;"><col style="width:6%;"><col style="width:4%;">
+              </colgroup>
+              <tr>
+                <th>시약명</th><th>화학식</th><th>상태</th><th>농도(단위를 기록하세요.)</th><th>사용량(단위를 기록하세요.)</th>
+                <th>폐기 방법</th><th>MSDS 및 취급 주의사항</th><th>교사 임장 여부</th><th>삭제</th>
+              </tr>
+            </table>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:12px; margin:12px 0; padding:12px 16px; background:#f8fafc; border-radius:var(--radius-sm); border:1px solid var(--border);">
+            <button type="button" id="btnValidateChem" onclick="onValidateChem()" style="padding:8px 16px; background:var(--primary); color:white; border:none; border-radius:var(--radius-sm); font-weight:600; cursor:pointer; font-size:13px;">시약 정보 검증</button>
+            <span id="chemValidateBadge" class="pill">미검증</span>
+            <span id="cooldownMsg" style="display:none; font-size:12px; color:#666;"></span>
+          </div>
+          <div style="font-size:12px; color:#9a3412; margin:4px 0 10px 0;">
+            ※ 시약 목록을 수정(추가/삭제/수정)하면 검증 상태가 자동으로 해제됩니다. 제출 전 다시 '시약 정보 검증'을 눌러주세요.
+          </div>
+          <div id="chemValidateReport" class="note" style="display:none;"></div>
+          <div id="submitGuard" class="danger">시약 정보 검증을 통과해야 제출할 수 있습니다.</div>
+        </div>
+      </div>
+
+      <!-- ==================== STEP 4: 안전 계획 ==================== -->
+      <div class="step-view" id="step4">
+
+        <div class="form-card">
+          <div class="form-card-title">📝 실험 과정</div>
+          <div class="form-card-desc">실험의 단계별 과정을 작성하세요.</div>
+
+          <div class="form-group">
+            <label class="form-label" for="process">실험 과정 <span class="required">*</span></label>
+            <textarea id="process" rows="6" style="min-height:140px;" placeholder="실험 과정을 기록할 때 번호를 붙여서 나열하시오." required></textarea>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <div class="form-card-title">🧹 실험 뒷정리</div>
+          <div class="form-card-desc">실험 종료 후 정리 방법을 작성하세요.</div>
+
+          <div class="form-group">
+            <label class="form-label" for="cleanup">뒷정리 방법 <span class="required">*</span></label>
+            <textarea id="cleanup" rows="4" style="min-height:100px;" placeholder="실험 후 뒷정리 방법을 기록하세요." required></textarea>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <div class="form-card-title">⚠️ 실험시 주의사항</div>
+          <div class="form-card-desc">실험 중 주의해야 할 안전 사항을 작성하세요.</div>
+
+          <div class="form-group">
+            <label class="form-label" for="precautions">주의사항 <span class="required">*</span></label>
+            <textarea id="precautions" rows="4" style="min-height:100px;" placeholder="실험시 반드시 주의해야 할 사항을 기록하세요." required></textarea>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <div class="form-card-title">🦺 안전장구 선택</div>
+          <div class="form-card-desc">실험에 필요한 안전장구를 모두 선택하세요.</div>
+
+          <div class="safety-row">
+            <label class="safety-item"><input type="checkbox" value="실험복"> 🥼 실험복</label>
+            <label class="safety-item"><input type="checkbox" value="보안경"> 🥽 보안경</label>
+            <label class="safety-item"><input type="checkbox" value="덮개신발(슬리퍼 금지)"> 👟 덮개신발(슬리퍼 금지)</label>
+            <label class="safety-item"><input type="checkbox" value="라텍스 장갑(흰색)"> 🧤 라텍스 장갑(흰색)</label>
+            <label class="safety-item"><input type="checkbox" value="내열장갑(주황색)"> 🧤 내열장갑(주황색)</label>
+            <label class="safety-item"><input type="checkbox" value="산 방호장갑(초록색)"> 🧤 산 방호장갑(초록색)</label>
+            <label class="safety-item"><input type="checkbox" id="otherSafetyCheck" onchange="handleSafetyOtherChange(this)"> 📦 기타</label>
+            <input type="text" id="otherSafety" placeholder="기타 안전장구 입력" style="display:none; width:200px;">
+          </div>
+        </div>
+
+        <div class="form-card">
+          <div class="form-card-title">👨‍🏫 지도교사 선택</div>
+          <div class="form-card-desc">실험을 지도할 교사를 선택하세요. 실험실과 목적에 따라 자동으로 필터링됩니다.</div>
+
+          <div class="form-group">
+            <label class="form-label" for="teacher">지도교사 <span class="required">*</span></label>
+            <select id="teacher" required>
+              <option value="">선택</option>
+            </select>
+            <input type="hidden" id="teacherEmail">
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== STEP 5: 확인/제출 ==================== -->
+      <div class="step-view" id="step5">
+
+        <div class="form-card">
+          <div class="form-card-title">✅ 신청 내용 최종 확인</div>
+          <div class="form-card-desc">아래 내용을 확인한 후 제출하세요. 수정이 필요하면 해당 단계로 돌아가세요.</div>
+
+          <div id="reviewContent">
+            <!-- 동적으로 채워짐 -->
+          </div>
+        </div>
+
+        <div class="form-card">
+          <div class="form-card-title">📜 실험·실습실 사용 제약 안내</div>
+          <div class="form-card-desc">사용 규정을 읽고 동의해 주세요.</div>
+
+          <div class="agreement-box">
+            <p style="color:var(--danger); font-weight:600; margin-bottom:8px;">
+              작성된 문서에 위배되거나 실험·실습실 안전 수칙에 위배될 경우(특히, 안전 장구 미착용, 사전 지도교사 협의 없이 신청한 경우 등)<br>
+              1개월간 과학 실험·실습실 사용에 제한됩니다.
+            </p>
+          </div>
+
+          <div class="radio-row" style="margin-bottom:16px;">
+            <label class="radio-item"><input type="radio" name="agreement" value="yes"> 동의합니다</label>
+            <label class="radio-item"><input type="radio" name="agreement" value="no"> 동의하지 않습니다</label>
+          </div>
+        </div>
+
+        <span id="statusMessage" aria-live="polite"></span>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- ===== Bottom Navigation ===== -->
+  <div class="bottom-nav">
+    <div class="bottom-nav-inner">
+      <button class="nav-btn draft" type="button" onclick="snapshotForm()">💾 임시저장</button>
+      <div class="step-indicator" id="stepIndicator">Step 1 / 5</div>
+      <div style="display:flex; gap:8px;">
+        <button class="nav-btn prev" type="button" id="btnPrev" onclick="prevStep()" style="display:none">← 이전</button>
+        <button class="nav-btn next" type="button" id="btnNext" onclick="nextStep()">다음 →</button>
+        <button class="nav-btn submit" type="button" id="btnSubmit" onclick="submitForm()" style="display:none">🚀 제출하기</button>
+      </div>
     </div>
+  </div>
 
-    <h3>지도교사 선택</h3>
-    <select id="teacher" required>
-      <option value="">선택</option>
-    </select>
-    <input type="hidden" id="teacherEmail">
-
-    <h3>실험·실습실 사용 제약 안내</h3>
-    <p style="color:red;">
-      작성된 문서에 위배되거나 실험·실습실 안전 수칙에 위배될 경우(특히, 안전 장구 미착용, 사전 지도교사 협의 없이 신청한 경우 등)<br>
-      1개월간 과학 실험·실습실 사용에 제한됩니다.
-    </p>
-    <div class="radio-row">
-      <label class="radio-item"><input type="radio" name="agreement" value="yes"> 동의합니다</label>
-      <label class="radio-item"><input type="radio" name="agreement" value="no"> 동의하지 않습니다</label>
-    </div>
-
-    <button type="button" onclick="submitForm()">신청하기</button>
-    <span id="statusMessage" aria-live="polite"></span>
-  </form>
-
+  <!-- ===== Custom Alert ===== -->
+  <div id="customAlertOverlay"></div>
   <div id="customAlert" role="alertdialog" aria-modal="true">
     <p id="alertMessage"></p>
     <button type="button" onclick="closeCustomAlert()">확인</button>
   </div>
 
+  <!-- ===== Confirm Dialog ===== -->
   <div id="dialogOverlay"></div>
-
   <div id="confirmDialog" role="dialog" aria-modal="true">
     <h3 style="text-align: center;">신청하기 전 한번 더 확인하기</h3>
     <div class="content-wrapper">
@@ -2094,26 +2587,24 @@
     </div>
   </div>
 
-  <div id="noWarningDialog"
-       style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%);
-              background:white; border:2px solid #dc3545; padding:20px; z-index:10001;
-              box-shadow:0 4px 20px rgba(0,0,0,0.3); border-radius:8px; width:400px; max-width:90%;">
+  <!-- ===== No Warning Dialog ===== -->
+  <div id="noWarningDialog">
     <button type="button" onclick="closeNoWarning()"
             style="position:absolute; top:10px; right:10px; background:none; border:none;
                    font-size:20px; cursor:pointer; padding:0; width:30px; height:30px;">✕</button>
-    <h4 style="color:#dc3545; margin-top:10px;">경고</h4>
+    <h4 style="color:var(--danger); margin-top:10px;">경고</h4>
     <p style="margin: 20px 0;">
       아니오를 체크하셨습니다.<br>
       <strong>실험·실습실 사용 신청이 거부됩니다.</strong><br>
       실험·실습실 사용을 신청하려면 '예'를 체크해주세요.
     </p>
     <button type="button" onclick="closeNoWarning()"
-            style="width:100%; padding:10px; background:#dc3545; color:white; border:none; border-radius:4px; cursor:pointer;">
+            style="width:100%; padding:10px; background:var(--danger); color:white; border:none; border-radius:var(--radius-sm); cursor:pointer; font-weight:600;">
       확인
     </button>
   </div>
 
-  <!-- ===== 통합 불러오기 다이얼로그 ===== -->
+  <!-- ===== Load Dialog ===== -->
   <div id="loadOverlay" role="dialog" aria-modal="true" onclick="closeLoadDialog()"></div>
   <div id="loadDialog" role="dialog" aria-modal="true" aria-labelledby="loadDialogTitle">
     <div class="load-header">
@@ -2126,7 +2617,7 @@
 
     <!-- 탭 1: 임시저장 불러오기 -->
     <div class="load-panel active" id="panelDraft">
-      <p style="font-size:13px;color:#666;margin:0 0 10px;">임시저장한 신청서를 불러옵니다.</p>
+      <p style="font-size:13px;color:var(--text-muted);margin:0 0 10px;">임시저장한 신청서를 불러옵니다.</p>
       <div class="form-row">
         <div>
           <label for="loadSid">대표자 학번(5자리)</label>
@@ -2145,13 +2636,13 @@
       </div>
       <div class="btns">
         <button class="btn" type="button" onclick="closeLoadDialog()" style="background:#e0e0e0;color:#333;">취소</button>
-        <button class="btn" type="button" onclick="loadDraftSubmit()" style="background:#4285F4;color:#fff;">불러오기</button>
+        <button class="btn" type="button" onclick="loadDraftSubmit()" style="background:var(--primary);color:#fff;">불러오기</button>
       </div>
     </div>
 
     <!-- 탭 2: 승인된 신청서 불러오기 -->
     <div class="load-panel" id="panelApproved">
-      <p style="font-size:13px;color:#666;margin:0 0 10px;">이전에 최종 승인된 신청서를 불러와 새 신청서의 기본 내용으로 사용할 수 있습니다.</p>
+      <p style="font-size:13px;color:var(--text-muted);margin:0 0 10px;">이전에 최종 승인된 신청서를 불러와 새 신청서의 기본 내용으로 사용할 수 있습니다.</p>
       <div class="form-row">
         <div>
           <label for="approvedSid">대표자 학번(5자리)</label>
@@ -2164,19 +2655,11 @@
       </div>
       <div class="btns">
         <button class="btn" type="button" onclick="closeLoadDialog()" style="background:#e0e0e0;color:#333;">취소</button>
-        <button class="btn" type="button" onclick="searchApproved()" style="background:#34a853;color:#fff;">검색</button>
+        <button class="btn" type="button" onclick="searchApproved()" style="background:var(--success);color:#fff;">검색</button>
       </div>
       <div id="approvedResults" class="result-list"></div>
     </div>
   </div>
 
-  <div class="fab-container" aria-label="빠른 작업">
-    <button class="fab" onclick="snapshotForm()" type="button" title="임시저장">💾 임시저장</button>
-    <button class="fab" onclick="openLoadDialog(0)" type="button" title="불러오기">📂 불러오기</button>
-    <button class="fab secondary" onclick="scrollToTopSmooth()" type="button" title="맨 위로">⬆Top</button>
-    <button class="fab secondary" onclick="scrollToBottomSmooth()" type="button" title="맨 아래로">⬇Bottom</button>
-  </div>
-
-  <div id="customAlertOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.25); z-index:999;"></div>
 </body>
 </html>

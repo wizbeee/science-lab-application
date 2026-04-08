@@ -487,6 +487,10 @@ function include(filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
 }
 
+function getGatewayUrl() {
+  return ScriptApp.getService().getUrl();
+}
+
 /* ------------------------- 데이터 조회 API ------------------------- */
 /**
  * ✅ 시약 목록(객체형) 반환

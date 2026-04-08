@@ -1667,6 +1667,14 @@
       });
     }
 
+    function goHome() {
+      if (formDirty && !confirm('작성 중인 내용이 있습니다. 홈으로 돌아가시겠습니까?')) return;
+      google.script.run
+        .withSuccessHandler(function(url) { window.top.location.href = url; })
+        .withFailureHandler(function() { history.back(); })
+        .getGatewayUrl();
+    }
+
     function snapshotForm() {
       const sid  = (document.getElementById('studentId').value || '').trim();
       const name = (document.getElementById('studentName').value || '').trim();
@@ -2207,6 +2215,7 @@
         <span>과학 실험실 사용 신청</span>
       </div>
       <div class="header-actions">
+        <button class="header-btn" type="button" onclick="goHome()">🏠 홈</button>
         <button class="header-btn" type="button" onclick="openLoadDialog(0)">📂 불러오기</button>
         <button class="header-btn" type="button" onclick="snapshotForm()">💾 임시저장</button>
       </div>

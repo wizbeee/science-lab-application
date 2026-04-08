@@ -88,6 +88,14 @@
       background: #e8f5e9;
       color: #2e7d32;
     }
+    .card.coming-soon .floor-badge {
+      background: #f3e5f5;
+      color: #7b1fa2;
+    }
+    .card.coming-soon-n .floor-badge {
+      background: #fff3e0;
+      color: #e65100;
+    }
     .card-header h2 {
       font-size: 1.5rem;
       color: #222;
@@ -148,6 +156,27 @@
     }
     .card.floor23 .btn {
       background: linear-gradient(135deg, #2e7d32, #66bb6a);
+    }
+    .card.coming-soon .btn {
+      background: linear-gradient(135deg, #7b1fa2, #ba68c8);
+    }
+    .card.coming-soon-n .btn {
+      background: linear-gradient(135deg, #e65100, #ff9800);
+    }
+    .card.disabled {
+      opacity: 0.65; cursor: default;
+    }
+    .card.disabled:hover {
+      transform: none;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    .coming-tag {
+      display: inline-block; padding: 3px 10px; border-radius: 12px;
+      font-size: 0.7rem; font-weight: 700; background: #f3e5f5; color: #7b1fa2;
+      margin-left: 8px; vertical-align: middle;
+    }
+    .card.coming-soon-n .coming-tag {
+      background: #fff3e0; color: #e65100;
     }
 
     @keyframes spin {
@@ -255,6 +284,38 @@
       </div>
       <div class="card-action">
         <div class="btn">2, 3층 실험·실습실 신청하기 →</div>
+      </div>
+    </div>
+
+    <!-- S동 2층 IT 관련 실습실 (작업 예정) -->
+    <div class="card coming-soon disabled" role="button" tabindex="0" aria-label="S동 2층 IT 관련 실습실 - 작업 예정" onclick="return false;">
+      <div class="card-header">
+        <div class="floor-badge">S동 2층</div>
+        <h2>IT 관련 실습실 <span class="coming-tag">작업 예정</span></h2>
+        <div class="subtitle">코딩 · 멀티미디어 계열 실습실</div>
+      </div>
+      <div class="lab-list">
+        <div class="lab-label">신청 가능 실습실 (준비 중)</div>
+        <div class="lab-names"><span class="lab-name">코딩실</span><span class="separator"> · </span><span class="lab-name">멀티미디어실</span></div>
+      </div>
+      <div class="card-action">
+        <div class="btn">준비 중입니다</div>
+      </div>
+    </div>
+
+    <!-- N동 실습실 (작업 예정) -->
+    <div class="card coming-soon-n disabled" role="button" tabindex="0" aria-label="N동 실습실 - 작업 예정" onclick="return false;">
+      <div class="card-header">
+        <div class="floor-badge">N동</div>
+        <h2>N동 실습실 <span class="coming-tag">작업 예정</span></h2>
+        <div class="subtitle">기술 · 공학 계열 실습실</div>
+      </div>
+      <div class="lab-list">
+        <div class="lab-label">신청 가능 실습실 (준비 중)</div>
+        <div class="lab-names"><span class="lab-name">가정실습실</span><span class="separator"> · </span><span class="lab-name">FAB랩</span><span class="separator"> · </span><span class="lab-name">융합기술실</span><span class="separator"> · </span><span class="lab-name">창의공학실</span><span class="separator"> · </span><span class="lab-name">공작기계실</span></div>
+      </div>
+      <div class="card-action">
+        <div class="btn">준비 중입니다</div>
       </div>
     </div>
 

@@ -377,7 +377,9 @@ button { cursor:pointer; font-family:inherit; border:none; background:none; }
 <!-- ====== 스플래시 ====== -->
 <div id="splash" class="screen active">
   <div class="splash-spinner"></div>
-  <div class="splash-text">인증 정보를 확인하고 있습니다...</div>
+  <div class="splash-text" id="splash-text">인증 정보를 확인하고 있습니다...</div>
+  <button id="splash-skip" style="display:none;margin-top:24px;padding:12px 28px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:.95rem;font-weight:600;cursor:pointer;" onclick="forceShowLogin()">직접 로그인하기</button>
+  <div id="splash-debug" style="margin-top:16px;font-size:.75rem;color:#999;max-width:400px;text-align:center;word-break:break-all;"></div>
 </div>
 
 <!-- ====== 로그인 ====== -->
@@ -513,43 +515,113 @@ var DETAIL_DATA     = null; // 현재 열린 상세 데이터
    초기화
    ================================================================ */
 window.addEventListener('DOMContentLoaded', function() {
+  var authDone = false;
+  var dbg = document.getElementById('splash-debug');
+  var skipBtn = document.getElementById('splash-skip');
+
+  function dbgLog(msg) {
+    console.log(msg);
+    if (dbg) dbg.textContent = msg;
+  }
+
+  // 3초 후 스킵 버튼 표시
+  setTimeout(function() {
+    if (skipBtn && !authDone) skipBtn.style.display = 'inline-block';
+  }, 3000);
+
+  // 10초 타임아웃 — 강제 로그인 화면
+  var authTimeout = setTimeout(function() {
+    if (!authDone) {
+      authDone = true;
+      dbgLog('[타임아웃] 강제 로그인 화면 전환');
+      forceShowLogin();
+    }
+  }, 10000);
+
+  dbgLog('서버에 인증 요청 중...');
+
   // 자동 로그인 시도
-  google.script.run
-    .withSuccessHandler(function(res) {
-      if (res && res.loggedIn) {
-        USER = res;
-        enterApp();
-      } else {
-        // 수동 로그인 표시
-        if (res && res.reason === 'not_teacher') {
-          showAutoMsg('Google 계정(' + (res.email || '') + ')이 교사 목록에 없습니다. 아래에서 직접 선택해 주세요.');
+  try {
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (authDone) return;
+        authDone = true;
+        clearTimeout(authTimeout);
+        dbgLog('응답 수신: loggedIn=' + (res && res.loggedIn) + ', name=' + (res && res.name));
+        if (res && res.loggedIn) {
+          USER = res;
+          enterApp();
+        } else {
+          if (res && res.reason === 'not_teacher') {
+            showAutoMsg('Google 계정(' + (res.email || '') + ')이 교사 목록에 없습니다. 아래에서 직접 선택해 주세요.');
+          } else if (res && res.reason === 'error') {
+            showAutoMsg('자동 로그인 실패: ' + (res.message || '') + ' — 아래에서 직접 선택해 주세요.');
+          }
+          loadTeacherSelect();
         }
-        loadTeacherSelect();
-      }
-    })
-    .withFailureHandler(function() {
-      loadTeacherSelect();
-    })
-    .getCurrentUser();
+      })
+      .withFailureHandler(function(err) {
+        if (authDone) return;
+        authDone = true;
+        clearTimeout(authTimeout);
+        dbgLog('인증 실패: ' + (err && (err.message || err)));
+        forceShowLogin();
+      })
+      .getCurrentUser();
+  } catch (e) {
+    if (!authDone) {
+      authDone = true;
+      clearTimeout(authTimeout);
+      dbgLog('예외: ' + (e.message || e));
+      forceShowLogin();
+    }
+  }
 });
 
 function loadTeacherSelect() {
-  google.script.run
-    .withSuccessHandler(function(list) {
-      var sel = document.getElementById('teacher-select');
-      (list || []).forEach(function(t) {
-        var opt = document.createElement('option');
-        opt.value = t.name;
-        opt.textContent = t.name + (t.subject ? ' (' + t.subject + ')' : '');
-        sel.appendChild(opt);
-      });
+  var selectDone = false;
+  var selectTimeout = setTimeout(function() {
+    if (!selectDone) {
+      selectDone = true;
+      console.warn('[TeacherList] 타임아웃');
       showScreen('login-screen');
-    })
-    .withFailureHandler(function(e) {
+      showLoginError('교사 목록 로딩 시간 초과. 페이지를 새로고침하거나 GAS 스크립트 권한을 확인해 주세요.');
+    }
+  }, 10000);
+
+  try {
+    google.script.run
+      .withSuccessHandler(function(list) {
+        if (selectDone) return;
+        selectDone = true;
+        clearTimeout(selectTimeout);
+        console.log('[TeacherList] 로드 완료:', (list || []).length + '명');
+        var sel = document.getElementById('teacher-select');
+        (list || []).forEach(function(t) {
+          var opt = document.createElement('option');
+          opt.value = t.name;
+          opt.textContent = t.name + (t.subject ? ' (' + t.subject + ')' : '');
+          sel.appendChild(opt);
+        });
+        showScreen('login-screen');
+      })
+      .withFailureHandler(function(e) {
+        if (selectDone) return;
+        selectDone = true;
+        clearTimeout(selectTimeout);
+        console.error('[TeacherList] 실패:', e);
+        showScreen('login-screen');
+        showLoginError('교사 목록을 불러올 수 없습니다: ' + (e.message || e));
+      })
+      .getTeacherNames();
+  } catch (e) {
+    if (!selectDone) {
+      selectDone = true;
+      clearTimeout(selectTimeout);
       showScreen('login-screen');
-      showLoginError('교사 목록을 불러올 수 없습니다: ' + (e.message || e));
-    })
-    .getTeacherNames();
+      showLoginError('교사 목록 요청 오류: ' + (e.message || e));
+    }
+  }
 }
 
 function showAutoMsg(msg) {
@@ -605,24 +677,41 @@ function doLogout() {
    앱 진입
    ================================================================ */
 function enterApp() {
-  // UI 초기화
-  document.getElementById('user-name-display').textContent = USER.name;
-  document.getElementById('user-avatar').textContent = USER.name.charAt(0);
+  console.log('[enterApp] 시작');
+  // 화면 전환을 최우선 — 인라인 스타일로 강제 전환
+  showScreen('app-screen');
 
-  // 최종승인 권한 없으면 관련 UI 숨김
-  if (!USER.isFinalApprover) {
-    document.getElementById('st-final-card').style.display = 'none';
-    document.getElementById('final-section-btn').style.display = 'none';
-  } else {
-    document.getElementById('st-final-card').style.display = '';
-    document.getElementById('final-section-btn').style.display = '';
+  try {
+    var displayName = (USER && USER.name) || (USER && USER.email) || '교사';
+    var el1 = document.getElementById('user-name-display');
+    var el2 = document.getElementById('user-avatar');
+    if (el1) el1.textContent = displayName;
+    if (el2) el2.textContent = displayName.charAt(0);
+
+    var stFinal = document.getElementById('st-final-card');
+    var btnFinal = document.getElementById('final-section-btn');
+    if (!USER || !USER.isFinalApprover) {
+      if (stFinal) stFinal.style.display = 'none';
+      if (btnFinal) btnFinal.style.display = 'none';
+    } else {
+      if (stFinal) stFinal.style.display = '';
+      if (btnFinal) btnFinal.style.display = '';
+    }
+  } catch (uiErr) {
+    console.error('[enterApp] UI 초기화 오류:', uiErr);
   }
 
-  showScreen('app-screen');
   CURRENT_SECTION = 'guidance';
   CURRENT_FILTER = 'my_pending';
   refreshDashboard();
   loadList();
+}
+
+/** 강제 로그인 화면 (스킵 버튼 / 타임아웃) */
+function forceShowLogin() {
+  console.log('[forceShowLogin] 로그인 화면으로 강제 전환');
+  showScreen('login-screen');
+  loadTeacherSelect();
 }
 
 /* ================================================================
@@ -965,8 +1054,21 @@ function submitDecision(appId, approvalType) {
    유틸리티
    ================================================================ */
 function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
-  document.getElementById(id).classList.add('active');
+  console.log('[showScreen] → ' + id);
+  // 인라인 스타일로 강제 전환 (CSS 클래스 문제 방지)
+  var all = document.querySelectorAll('.screen');
+  for (var i = 0; i < all.length; i++) {
+    all[i].style.display = 'none';
+    all[i].classList.remove('active');
+  }
+  var target = document.getElementById(id);
+  if (target) {
+    target.style.display = (id === 'login-screen') ? 'flex' : 'block';
+    target.classList.add('active');
+    console.log('[showScreen] ' + id + ' display=' + target.style.display);
+  } else {
+    console.error('[showScreen] 엘리먼트 없음: ' + id);
+  }
 }
 
 function calcStatus(a) {

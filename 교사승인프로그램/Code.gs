@@ -23,10 +23,31 @@ function doGet(e) {
 /** Google 세션에서 현재 사용자 자동 감지 */
 function getCurrentUser() {
   try {
-    var email = Session.getActiveUser().getEmail();
+    var email = '';
+    try {
+      email = Session.getActiveUser().getEmail();
+    } catch (sessionErr) {
+      Logger.log('Session.getActiveUser 실패: ' + sessionErr.message);
+    }
+
+    if (!email) {
+      try {
+        email = Session.getEffectiveUser().getEmail();
+      } catch (effErr) {
+        Logger.log('Session.getEffectiveUser 실패: ' + effErr.message);
+      }
+    }
+
     if (!email) return { loggedIn: false, reason: 'no_session' };
-    return findTeacherByEmail_(email);
+
+    try {
+      return findTeacherByEmail_(email);
+    } catch (findErr) {
+      Logger.log('findTeacherByEmail_ 실패: ' + findErr.message);
+      return { loggedIn: false, reason: 'error', message: findErr.message, email: email };
+    }
   } catch (e) {
+    Logger.log('getCurrentUser 전체 실패: ' + e.message);
     return { loggedIn: false, reason: 'error', message: e.message };
   }
 }

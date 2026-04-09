@@ -190,20 +190,35 @@ function sendMail_(to, subject, htmlBody) {
     return { ok: false, error: msg };
   }
   try {
-    // from 옵션: SCIENCE_EMAIL이 Gmail "보내기 주소(Send As)"로 등록된 경우에만 사용
-    // 미등록 시 from을 지정하면 에러가 발생하거나 무시될 수 있으므로 조건부 적용
     const opts = { htmlBody: htmlBody };
+
+    // from 옵션: SCIENCE_EMAIL이 Gmail "보내기 주소(Send As)"로 등록된 경우에만 사용
+    let useFrom = false;
     try {
       const aliases = GmailApp.getAliases();
       if (aliases.indexOf(SCIENCE_EMAIL) !== -1) {
-        opts.from = SCIENCE_EMAIL;
+        useFrom = true;
       } else {
-        Logger.log('[sendMail_] SCIENCE_EMAIL(' + SCIENCE_EMAIL + ')이 Gmail 별칭에 미등록 → from 생략 (기본 계정으로 발송)');
+        Logger.log('[sendMail_] SCIENCE_EMAIL(' + SCIENCE_EMAIL + ')이 Gmail 별칭에 미등록 → from 생략');
       }
     } catch (aliasErr) {
       Logger.log('[sendMail_] getAliases 실패 → from 생략: ' + String(aliasErr.message || aliasErr));
     }
-    GmailApp.sendEmail(addr, subject, '', opts);
+
+    // from 옵션 포함 시도 → 실패 시 from 없이 재시도
+    if (useFrom) {
+      try {
+        opts.from = SCIENCE_EMAIL;
+        GmailApp.sendEmail(addr, subject, '', opts);
+      } catch (fromErr) {
+        Logger.log('[sendMail_] from 옵션 발송 실패, from 없이 재시도: ' + String(fromErr.message || fromErr));
+        delete opts.from;
+        GmailApp.sendEmail(addr, subject, '', opts);
+      }
+    } else {
+      GmailApp.sendEmail(addr, subject, '', opts);
+    }
+
     Logger.log('[sendMail_] 발송 성공 → ' + addr + ' / 제목: ' + subject);
     return { ok: true };
   } catch (e) {

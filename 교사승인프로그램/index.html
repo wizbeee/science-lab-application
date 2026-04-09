@@ -3,8 +3,18 @@
 <head>
   <base target="_top">
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>과학실험실 교사 승인 시스템</title>
+
+  <!-- PWA -->
+  <meta name="theme-color" content="#1565c0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="실험실 승인">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="실험실 승인">
+  <link rel="manifest" href="?page=manifest">
+  <link rel="apple-touch-icon" href="https://fonts.gstatic.com/s/i/short-term/release/googlesymbols/science/default/48px.svg">
   <style>
 /* ── 리셋 & 변수 ─────────────────────────── */
 :root {
@@ -31,7 +41,11 @@
 }
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 html { font-size:15px; }
-body { font-family:var(--font); background:var(--bg); color:var(--text); min-height:100vh; }
+body {
+  font-family:var(--font); background:var(--bg); color:var(--text); min-height:100vh;
+  padding-top: env(safe-area-inset-top); /* iOS 노치 대응 */
+  -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent;
+}
 a { color:var(--primary); text-decoration:none; }
 button { cursor:pointer; font-family:inherit; border:none; background:none; }
 
@@ -1109,6 +1123,19 @@ function showToast(msg, type) {
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') closeDetail();
 });
+
+/* PWA 서비스워커 등록 */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('?page=sw').catch(function(e) {
+    console.log('[SW] 등록 실패 (GAS 환경에서는 정상):', e.message);
+  });
+}
+
+/* iOS 홈화면 앱 감지 */
+if (window.navigator.standalone === true) {
+  console.log('[PWA] iOS 홈화면 앱 모드');
+  document.body.style.paddingTop = 'env(safe-area-inset-top)';
+}
 </script>
 
 </body>

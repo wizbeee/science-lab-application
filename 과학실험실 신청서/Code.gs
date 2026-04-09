@@ -36,6 +36,13 @@ const LAB_CALENDAR_ID   = 'c_d0dbfd548bf8746b12576a773f1171cd718955ea70a016b1c5f
 /* ✅ 이메일 발신자 주소 */
 const SCIENCE_EMAIL     = 'cnsa.science@cnsa.hs.kr';
 
+/* ✅ Google Chat 웹훅 URL (스크립트 속성에서 읽기, 없으면 빈 문자열) */
+function getChatWebhookUrl_() {
+  try {
+    return PropertiesService.getScriptProperties().getProperty('CHAT_WEBHOOK_URL') || '';
+  } catch (e) { return ''; }
+}
+
 // 가용성 조회 기본 슬롯 목록
 const TIME_SLOTS = ['ET', 'EP1', '7교시'];
 
@@ -1211,6 +1218,10 @@ function submitApplication_(data) {
     warnings.push('지도교사 1차 승인요청 메일 발송 실패: ' + (r2.error || ''));
   }
 
+  // ====== Google Chat 알림 ======
+  try { sendChatNotification_(data, id); }
+  catch (chatErr) { Logger.log('[submitApplication_] Chat 알림 실패: ' + chatErr.message); }
+
   const suffixMsg = (hasRestricted && seventhValid)
     ? ' (신청제한 학생이 있지만 7교시에는 신청이 가능합니다)'
     : '';
@@ -1681,4 +1692,110 @@ function loadApprovedApplication(appId) {
       '교사임장여부':  c['교사임장여부'] || c['교사 임장 여부'] || ''
     }))
   };
+}
+
+/* ================================================================
+   Google Chat 웹훅 알림
+   ================================================================ */
+
+/**
+ * 학생 신청 접수 시 Google Chat 스페이스에 카드 메시지 전송
+ */
+function sendChatNotification_(data, appId) {
+  var webhookUrl = getChatWebhookUrl_();
+  if (!webhookUrl) return;
+
+  var teacherApprovalUrl = ScriptApp.getService().getUrl() + '?page=approve&id=' + encodeURIComponent(appId);
+
+  var card = {
+    cardsV2: [{
+      cardId: 'app-' + appId,
+      card: {
+        header: {
+          title: '🔬 실험실 사용 신청 접수',
+          subtitle: (data.studentName || '') + ' (' + (data.studentId || '') + ')',
+          imageUrl: 'https://fonts.gstatic.com/s/i/short-term/release/googlesymbols/science/default/48px.svg',
+          imageType: 'CIRCLE'
+        },
+        sections: [
+          {
+            header: '신청 정보',
+            widgets: [
+              {
+                decoratedText: {
+                  topLabel: '실험실',
+                  text: data.lab || data.신청실험실 || '-',
+                  startIcon: { knownIcon: 'HOTEL_ROOM_TYPE' }
+                }
+              },
+              {
+                decoratedText: {
+                  topLabel: '날짜 / 시간',
+                  text: (data.date || data.실험할날짜 || '-') + '  |  ' + (data.timeSlot || data.신청시간 || '-'),
+                  startIcon: { knownIcon: 'INVITE' }
+                }
+              },
+              {
+                decoratedText: {
+                  topLabel: '실험 제목',
+                  text: data.title || data.실험제목 || '-',
+                  startIcon: { knownIcon: 'BOOKMARK' }
+                }
+              },
+              {
+                decoratedText: {
+                  topLabel: '지도교사',
+                  text: data.teacherName || data.지도교사이름 || '-',
+                  startIcon: { knownIcon: 'PERSON' }
+                }
+              },
+              {
+                decoratedText: {
+                  topLabel: '인원',
+                  text: (data.totalMembers || data.총인원수 || '1') + '명',
+                  startIcon: { knownIcon: 'MULTIPLE_PEOPLE' }
+                }
+              }
+            ]
+          },
+          {
+            widgets: [
+              {
+                buttonList: {
+                  buttons: [
+                    {
+                      text: '승인 페이지 열기',
+                      onClick: { openLink: { url: teacherApprovalUrl } },
+                      color: { red: 0.08, green: 0.49, blue: 0.2, alpha: 1 }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }]
+  };
+
+  try {
+    UrlFetchApp.fetch(webhookUrl, {
+      method: 'post',
+      contentType: 'application/json; charset=UTF-8',
+      payload: JSON.stringify(card),
+      muteHttpExceptions: true
+    });
+    Logger.log('[sendChatNotification_] Chat 알림 전송 성공 - appId: ' + appId);
+  } catch (e) {
+    Logger.log('[sendChatNotification_] Chat 알림 전송 실패: ' + e.message);
+  }
+}
+
+/**
+ * Chat 웹훅 URL을 스크립트 속성에 설정하는 유틸 함수
+ * GAS 편집기에서 직접 실행하여 설정
+ */
+function setChatWebhookUrl(url) {
+  PropertiesService.getScriptProperties().setProperty('CHAT_WEBHOOK_URL', url);
+  Logger.log('Chat 웹훅 URL 설정 완료: ' + url);
 }

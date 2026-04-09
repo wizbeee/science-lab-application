@@ -10,6 +10,38 @@ const SCIENCE_EMAIL     = 'cnsa.science@cnsa.hs.kr';
 
 /* ── 웹앱 엔트리 ─────────────────────────────────────────── */
 function doGet(e) {
+  var page = (e && e.parameter && e.parameter.page) || '';
+
+  // PWA 매니페스트
+  if (page === 'manifest') {
+    var manifest = {
+      name: '과학실험실 교사 승인 시스템',
+      short_name: '실험실 승인',
+      description: '과학 실험·실습실 사용 신청 승인 시스템',
+      start_url: ScriptApp.getService().getUrl(),
+      display: 'standalone',
+      orientation: 'portrait',
+      theme_color: '#1565c0',
+      background_color: '#f4f6f9',
+      icons: [
+        { src: 'https://fonts.gstatic.com/s/i/short-term/release/googlesymbols/science/default/48px.svg', sizes: '48x48', type: 'image/svg+xml' },
+        { src: 'https://fonts.gstatic.com/s/i/short-term/release/googlesymbols/science/default/48px.svg', sizes: '96x96', type: 'image/svg+xml' },
+        { src: 'https://fonts.gstatic.com/s/i/short-term/release/googlesymbols/science/default/48px.svg', sizes: '192x192', type: 'image/svg+xml', purpose: 'any maskable' }
+      ]
+    };
+    return ContentService.createTextOutput(JSON.stringify(manifest))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // 서비스워커 (기본 캐시)
+  if (page === 'sw') {
+    var sw = "self.addEventListener('install',function(e){self.skipWaiting();});" +
+             "self.addEventListener('activate',function(e){clients.claim();});" +
+             "self.addEventListener('fetch',function(e){e.respondWith(fetch(e.request));});";
+    return ContentService.createTextOutput(sw)
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+
   return HtmlService.createHtmlOutputFromFile('index')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')

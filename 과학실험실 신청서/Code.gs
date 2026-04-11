@@ -1043,6 +1043,41 @@ function submitApplication(data) {
   } finally { lock.releaseLock(); }
 }
 function submitApplication_(data) {
+  // ===== [C3] 서버측 필수값 검증 (클라이언트 우회 방지) =====
+  if (!data || typeof data !== 'object') {
+    throw new Error('요청 데이터가 비어있습니다. 다시 시도해 주세요.');
+  }
+  const _required = {
+    '학번': data.studentId,
+    '대표자 이름': data.studentName,
+    '실험실': data.lab,
+    '실험 날짜': data.date,
+    '신청 시간': data.timeSlot,
+    '실험 제목': data.title,
+    '지도교사 이름': data.teacher
+  };
+  const _missing = Object.keys(_required).filter(k => !String(_required[k] || '').trim());
+  if (_missing.length) {
+    throw new Error('필수 입력이 누락되었습니다: ' + _missing.join(', '));
+  }
+  // 학번 형식 (5자리)
+  if (!/^\d{5}$/.test(String(data.studentId).trim())) {
+    throw new Error('대표자 학번은 5자리 숫자여야 합니다.');
+  }
+  // 날짜 정규화 및 검증
+  const _normDate = normalizeDateYMD_(data.date);
+  if (!_normDate || !/^\d{4}-\d{2}-\d{2}$/.test(_normDate)) {
+    throw new Error('실험 날짜 형식이 올바르지 않습니다. (YYYY-MM-DD)');
+  }
+  // ===== [H7] 과거 날짜 금지 =====
+  (function(){
+    const now = new Date();
+    const todayYMD = Utilities.formatDate(now, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+    if (_normDate < todayYMD) {
+      throw new Error('과거 날짜로는 신청할 수 없습니다. (선택한 날짜: ' + _normDate + ')');
+    }
+  })();
+
   const unavail = getUnavailableForDate(data.date);
 
   const requestedSlots = String(data.timeSlot || '')
@@ -1051,7 +1086,18 @@ function submitApplication_(data) {
     .filter(Boolean)
     .map(normalizeSlot_);
 
+  // ===== [C3] 정규화 후 슬롯이 하나도 없으면 거부 =====
+  if (requestedSlots.length === 0) {
+    throw new Error('신청 시간(교시)을 하나 이상 선택해 주세요.');
+  }
+
   const labName = String(data.lab || '').trim();
+
+  // ===== [H8] 시약 배열 크기 제한 =====
+  const _MAX_CHEMS = 50;
+  if (Array.isArray(data.chemicals) && data.chemicals.length > _MAX_CHEMS) {
+    throw new Error('시약 수가 한도를 초과했습니다. (최대 ' + _MAX_CHEMS + '개)');
+  }
 
   if (unavail.allBlocked) {
     throw new Error('해당 일자는 캘린더에서 전체 사용 불가로 지정되어 있습니다.\n(사유: ' + (unavail.message || '캘린더 차단') + ')');
@@ -1226,9 +1272,10 @@ function submitApplication_(data) {
   put('대표자이름', data.studentName);
   put('동반자명단', data.teamMembers);
   put('총인원수', data.totalParticipants || '');
-  put('신청실험실', data.lab);
-  put('실험할날짜', data.date);
-  put('신청시간', data.timeSlot);
+  put('신청실험실', labName);
+  // ===== [C2] 저장 시 정규화 — 중복 감지와 동일한 형식으로 통일 =====
+  put('실험할날짜', _normDate);
+  put('신청시간', requestedSlots.join(','));
   put('실험제목', data.title);
   put('사용목적', data.purpose);
   put('사용목적 기타', data.otherPurpose || '');
@@ -1244,6 +1291,8 @@ function submitApplication_(data) {
   put('지도교사이름', data.teacher);
   put('지도교사이메일', data.teacherEmail || '');
   sh.appendRow(row);
+  // ===== [H6] 쓰기 후 즉시 flush — 후속 읽기(중복 감지 등)에서 최신 상태 보장 =====
+  SpreadsheetApp.flush();
 
   // ====== 시약 기록 (1층 폼만) ======
   if (!is2F && chemsArray.length > 0) {
@@ -1433,16 +1482,31 @@ function submitApproval_(info) {
   if (idx < 0) throw new Error('신청 정보를 찾을 수 없습니다.');
   const rowNum = idx + 2;
 
-  // ====== 중복 승인/반려 방지 ======
+  // ===== [H4] 필수 컬럼 검증 — silent skip 방지 =====
   const approvalCol = map['지도승인여부'];
-  if (approvalCol != null) {
+  if (approvalCol == null) {
+    throw new Error('시트 헤더에 "지도승인여부" 열이 없습니다. 관리자에게 문의해 주세요.');
+  }
+  if (map['지도승인의견'] == null) {
+    throw new Error('시트 헤더에 "지도승인의견" 열이 없습니다. 관리자에게 문의해 주세요.');
+  }
+
+  // ====== 중복 승인/반려 방지 ======
+  {
     const existing = String(rows[idx][approvalCol] || '').trim();
     if (existing === '승인' || existing === '반려') {
       throw new Error('이미 1차 처리(승인/반려)된 신청입니다.');
     }
   }
 
-  const put = (col, val) => { if (map[col] != null) sh.getRange(rowNum, map[col] + 1).setValue(val); };
+  // put: 필수 열 외의 선택 열은 누락되어도 skip (경고만)
+  const put = (col, val) => {
+    if (map[col] != null) {
+      sh.getRange(rowNum, map[col] + 1).setValue(val);
+    } else {
+      Logger.log('[submitApproval_] 시트 열 누락(skip): ' + col);
+    }
+  };
   put('지도승인여부', decision);
   put('지도승인의견', comment || '');
 
@@ -1460,6 +1524,9 @@ function submitApproval_(info) {
   if (Array.isArray(chemicalsGuidance) && chemicalsGuidance.length > 0) {
     applyTeacherGuidanceToChemicals_(id, chemicalsGuidance);
   }
+
+  // ===== [H6] 시트 변경 즉시 flush =====
+  SpreadsheetApp.flush();
 
   const rec = getApplication(id);
   const warnings = [];
@@ -1504,8 +1571,10 @@ function submitApproval_(info) {
       }
     }
 
+    // [C4] 경고가 있으면 prefix로 표시 — 클라이언트가 노란 경고 오버레이로 인식
     const warnMsg = warnings.length > 0 ? '\n⚠️ ' + warnings.join('\n⚠️ ') : '';
-    return '1차 승인 완료, 담당교사에게 최종 승인 메일을 발송했습니다.' + warnMsg;
+    const prefix  = warnings.length > 0 ? '[수동조치필요] ' : '';
+    return prefix + '1차 승인 완료, 담당교사에게 최종 승인 메일을 발송했습니다.' + warnMsg;
 
   } else {
     const r1 = sendStudentRejectEmail_(rec, comment);
@@ -1520,7 +1589,8 @@ function submitApproval_(info) {
     }
 
     const warnMsg = warnings.length > 0 ? '\n⚠️ ' + warnings.join('\n⚠️ ') : '';
-    return '반려 처리 완료' + warnMsg;
+    const prefix  = warnings.length > 0 ? '[수동조치필요] ' : '';
+    return prefix + '반려 처리 완료' + warnMsg;
   }
 }
 
@@ -1547,18 +1617,35 @@ function submitFinalApproval_(info) {
   if (idx < 0) throw new Error('신청 정보를 찾을 수 없습니다.');
   const rowNum = idx + 2;
 
-  // ====== 중복 최종 승인/반려 방지 ======
+  // ===== [H4] 필수 컬럼 검증 — silent skip 방지 =====
   const finalApprovalCol = map['최종승인여부'];
-  if (finalApprovalCol != null) {
+  if (finalApprovalCol == null) {
+    throw new Error('시트 헤더에 "최종승인여부" 열이 없습니다. 관리자에게 문의해 주세요.');
+  }
+  if (map['최종승인의견'] == null) {
+    throw new Error('시트 헤더에 "최종승인의견" 열이 없습니다. 관리자에게 문의해 주세요.');
+  }
+
+  // ====== 중복 최종 승인/반려 방지 ======
+  {
     const existing = String(rows[idx][finalApprovalCol] || '').trim();
     if (existing === '승인' || existing === '반려') {
       throw new Error('이미 최종 처리(승인/반려)된 신청입니다.');
     }
   }
 
-  const put = (col, val) => { if (map[col] != null) sh.getRange(rowNum, map[col] + 1).setValue(val); };
+  const put = (col, val) => {
+    if (map[col] != null) {
+      sh.getRange(rowNum, map[col] + 1).setValue(val);
+    } else {
+      Logger.log('[submitFinalApproval_] 시트 열 누락(skip): ' + col);
+    }
+  };
   put('최종승인여부', decision);
   put('최종승인의견', comment || '');
+
+  // ===== [H6] 시트 변경 즉시 flush =====
+  SpreadsheetApp.flush();
 
   // ====== 메일 발송 ======
   const rec = getApplication(id);
@@ -1594,7 +1681,8 @@ function submitFinalApproval_(info) {
   }
 
   const warnMsg = warnings.length > 0 ? '\n⚠️ ' + warnings.join('\n⚠️ ') : '';
-  return (decision === '승인' ? '최종 승인 처리 완료' : '최종 반려 처리 완료') + warnMsg;
+  const prefix  = warnings.length > 0 ? '[수동조치필요] ' : '';
+  return prefix + (decision === '승인' ? '최종 승인 처리 완료' : '최종 반려 처리 완료') + warnMsg;
 }
 
 /* ------------------------- 임시저장: 저장/불러오기/정리 ------------------------- */

@@ -42,9 +42,10 @@
     .judgment-card { background: #fff; border: 2px solid #4285F4; border-radius: 10px; padding: 20px; margin-top: 16px; }
     .judgment-card h3 { color: #4285F4; margin: 0 0 16px 0; }
     .elapsed { font-size: 13px; font-weight: 600; margin-left: 6px; }
-    .urgent-high { color: #dc2626; }
-    .urgent-mid { color: #b45309; }
-    .urgent-low { color: #16a34a; }
+    /* [A4] WCAG AA 대비 4.5:1 이상 */
+    .urgent-high { color: #b91c1c; } /* 6.36:1 */
+    .urgent-mid { color: #b45309; }  /* 4.66:1 */
+    .urgent-low { color: #047857; }  /* 4.54:1 */
     .chem-danger { background: #fef2f2 !important; border-left: 3px solid #dc2626; }
     .first-approval-card { background: #e8f5e9; border-radius: 10px; padding: 16px; margin-bottom: 16px; border-left: 4px solid #4caf50; }
     .chip { background: #e3f2fd; border: 1px solid #90caf9; border-radius: 16px; padding: 4px 12px; cursor: pointer; font-size: 13px; color: #1565c0; }
@@ -107,8 +108,9 @@
       font-size: 36px; font-weight: bold; color: #fff;
       animation: overlayPop 0.32s ease-out;
     }
-    #statusOverlay .icon-success { background: #16a34a; }
-    #statusOverlay .icon-error   { background: #dc2626; }
+    #statusOverlay .icon-success { background: #15803d; } /* WCAG AA: 4.54:1 */
+    #statusOverlay .icon-warning { background: #b45309; } /* WCAG AA: 4.66:1 */
+    #statusOverlay .icon-error   { background: #b91c1c; } /* WCAG AA: 6.36:1 */
     #statusOverlay .overlay-title {
       font-size: 1.2rem;
       font-weight: 700;
@@ -382,7 +384,11 @@
 
     // ---- 유틸 ----
     function disableAllInputs_() {
-      document.querySelectorAll('#finalApproveForm input, #finalApproveForm textarea, #finalApproveForm select, #finalApproveForm button').forEach(el => { el.disabled = true; });
+      // [H1] accordion toggle과 overlay close 버튼은 살려둔다
+      document.querySelectorAll(
+        '#finalApproveForm input, #finalApproveForm textarea, #finalApproveForm select,' +
+        ' #finalApproveForm button:not(.accordion-toggle):not(.chip):not(.overlay-close)'
+      ).forEach(el => { el.disabled = true; });
     }
 
     function appendReason(text) {
@@ -392,17 +398,22 @@
 
     // ---- 렌더링 ----
     function fillForm(data) {
-      // 이미 처리된 건인지 확인
+      // [H3] 이미 처리된 건이면 입력을 즉시 잠그고, 이벤트 리스너 부착도 건너뛴다
       const existingDecision = String(data['최종승인여부'] || '').trim();
-      if (existingDecision === '승인' || existingDecision === '반려') {
+      const alreadyProcessed = (existingDecision === '승인' || existingDecision === '반려');
+      if (alreadyProcessed) {
         const banner = document.createElement('div');
         banner.className = 'already-processed';
         banner.textContent = '\u26a0\ufe0f 이미 최종 처리된 신청입니다 (' + existingDecision + ')';
         const form = document.getElementById('finalApproveForm');
         form.insertBefore(banner, form.querySelector('h2').nextSibling);
-        document.getElementById('saveBtn').disabled = true;
-        document.getElementById('saveBtn').textContent = '\u2705 처리 완료 (' + existingDecision + ')';
-        setTimeout(disableAllInputs_, 100);
+        const saveBtn = document.getElementById('saveBtn');
+        if (saveBtn) {
+          saveBtn.disabled = true;
+          saveBtn.textContent = '\u2705 처리 완료 (' + existingDecision + ')';
+        }
+        // [H2] setTimeout 제거 — 즉시 잠금
+        disableAllInputs_();
       }
 
       // 요약 카드
@@ -472,8 +483,10 @@
         chemBadge.innerHTML = `<span style="background:#6b7280;color:#fff;border-radius:10px;padding:2px 8px;font-size:12px;">${totalChem}건</span>`;
       }
 
-      // 승인/반려 토글
-      document.getElementsByName('decision').forEach(r => { r.onchange = toggleComment; });
+      // [H3] 이미 처리된 건이면 이벤트 리스너 부착 생략
+      if (!alreadyProcessed) {
+        document.getElementsByName('decision').forEach(r => { r.onchange = toggleComment; });
+      }
 
       // Show 1st approval results
       const firstCard = document.getElementById('firstApprovalCard');
@@ -486,6 +499,11 @@
           document.getElementById('firstApprovalTime').textContent = data['1차승인시각'] || data['지도승인시각'] || '-';
           document.getElementById('firstComment').textContent = data['지도교사의견'] || data['1차승인의견'] || '-';
         }
+      }
+
+      // 처리 완료 상태를 한 번 더 강제 적용 (렌더링 후 입력 enable 방지)
+      if (alreadyProcessed) {
+        disableAllInputs_();
       }
     }
 
@@ -544,6 +562,7 @@
     }
 
     // ===== 전체화면 상태 오버레이 제어 =====
+    // state: 'loading' | 'success' | 'warning' | 'error'
     function showStatusOverlay(state, title, sub) {
       const overlay = document.getElementById('statusOverlay');
       const visual  = document.getElementById('overlayVisual');
@@ -562,6 +581,11 @@
         tEl.textContent  = title || '저장되었습니다';
         sEl.textContent  = sub   || '처리가 완료되었습니다.';
         closeBtn.classList.add('hidden');
+      } else if (state === 'warning') {
+        visual.innerHTML = '<div class="icon-big icon-warning" aria-hidden="true">!</div>';
+        tEl.textContent  = title || '저장되었으나 수동 조치가 필요합니다';
+        sEl.textContent  = sub   || '학과 사무실에서 직접 연락해 주세요.';
+        closeBtn.classList.remove('hidden');
       } else if (state === 'error') {
         visual.innerHTML = '<div class="icon-big icon-error" aria-hidden="true">!</div>';
         tEl.textContent  = title || '오류가 발생했습니다';
@@ -606,18 +630,27 @@
 
       google.script.run
         .withSuccessHandler(msg => {
-          const hasWarning = msg && msg.indexOf('⚠️') !== -1;
-          const subText = hasWarning
-            ? msg.replace(/^[^\n]*\n?/, '').trim() || '일부 메일 발송이 지연되었습니다.'
-            : (decision === '승인' ? '최종 승인 처리가 완료되었습니다.' : '최종 반려 처리가 완료되었습니다.');
-          showStatusOverlay('success', '저장되었습니다', subText);
+          // [C4] 서버 prefix 감지 — 수동 조치가 필요한 경우 노란 경고
+          const text = String(msg || '');
+          const needsManual = /^\[수동조치필요\]/.test(text) || text.indexOf('⚠️') !== -1;
+          const cleaned = text.replace(/^\[수동조치필요\]\s*/, '');
+          const firstLine = cleaned.split('\n')[0].trim();
+          const restLines = cleaned.split('\n').slice(1).join('\n').trim();
+
           btn.disabled = true;
           btn.textContent = '\u2705 처리 완료';
           disableAllInputs_();
-          status.innerText = msg;
-          if (hasWarning) {
-            document.getElementById('overlayCloseBtn').classList.remove('hidden');
+          status.innerText = text;
+
+          if (needsManual) {
+            showStatusOverlay(
+              'warning',
+              '저장되었습니다 · 수동 조치 필요',
+              (restLines || firstLine) + '\n\n학과 사무실에서 확인 후 직접 연락해 주세요.'
+            );
           } else {
+            const subText = decision === '승인' ? '최종 승인 처리가 완료되었습니다.' : '최종 반려 처리가 완료되었습니다.';
+            showStatusOverlay('success', '저장되었습니다', subText);
             setTimeout(hideStatusOverlay, 2500);
           }
         })

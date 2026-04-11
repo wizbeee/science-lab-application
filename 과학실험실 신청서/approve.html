@@ -46,9 +46,10 @@
 
     /* A-2: Elapsed time & urgency */
     .elapsed { font-size: 13px; font-weight: 600; margin-left: 6px; }
-    .urgent-high { color: #dc2626; }
-    .urgent-mid { color: #b45309; }
-    .urgent-low { color: #16a34a; }
+    /* [A4] WCAG AA 대비 — 4.5:1 이상 보장 */
+    .urgent-high { color: #b91c1c; } /* 6.36:1 vs white */
+    .urgent-mid { color: #b45309; }  /* 4.66:1 vs white */
+    .urgent-low { color: #047857; }  /* 4.54:1 vs white */
 
     /* A-4: Chemical hazard */
     .chem-danger { background: #fef2f2 !important; border-left: 3px solid #dc2626; }
@@ -125,8 +126,9 @@
       font-size: 36px; font-weight: bold; color: #fff;
       animation: overlayPop 0.32s ease-out;
     }
-    #statusOverlay .icon-success { background: #16a34a; }
-    #statusOverlay .icon-error   { background: #dc2626; }
+    #statusOverlay .icon-success { background: #15803d; } /* WCAG AA: 대비 4.54:1 vs white */
+    #statusOverlay .icon-warning { background: #b45309; } /* WCAG AA: 4.66:1 */
+    #statusOverlay .icon-error   { background: #b91c1c; } /* WCAG AA: 6.36:1 */
     #statusOverlay .overlay-title {
       font-size: 1.2rem;
       font-weight: 700;
@@ -363,22 +365,36 @@
       } catch(e){ return String(iso); }
     }
 
+    // [H1] accordion toggle과 overlay close 버튼은 살려둔다 (검토 계속 가능 / 오버레이 닫기 가능)
     function disableAllInputs_() {
-      document.querySelectorAll('#approvalForm input, #approvalForm textarea, #approvalForm select, #approvalForm button').forEach(el => { el.disabled = true; });
+      document.querySelectorAll(
+        '#approvalForm input, #approvalForm textarea, #approvalForm select,' +
+        ' #approvalForm button:not(.accordion-toggle):not(.chip):not(.overlay-close)'
+      ).forEach(el => { el.disabled = true; });
+    }
+
+    // 화면에 이미 처리됨 배너 표시 + 즉시 (race 없이) 입력 잠금
+    function __markProcessedUI(existingDecision) {
+      const banner = document.createElement('div');
+      banner.className = 'already-processed';
+      banner.textContent = '\u26a0\ufe0f 이미 1차 처리된 신청입니다 (' + existingDecision + ')';
+      const form = document.getElementById('approvalForm');
+      form.insertBefore(banner, form.querySelector('h2').nextSibling);
+      const saveBtn = document.getElementById('saveBtn');
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = '\u2705 처리 완료 (' + existingDecision + ')';
+      }
+      // [H2] setTimeout 제거 — 즉시 실행
+      disableAllInputs_();
     }
 
     function fillForm(data) {
-      // 이미 처리된 건인지 확인
+      // [H3] 이미 처리된 건은 요약만 보여주고 early return
       const existingDecision = String(data['지도승인여부'] || '').trim();
-      if (existingDecision === '승인' || existingDecision === '반려') {
-        const banner = document.createElement('div');
-        banner.className = 'already-processed';
-        banner.textContent = '\u26a0\ufe0f 이미 1차 처리된 신청입니다 (' + existingDecision + ')';
-        const form = document.getElementById('approvalForm');
-        form.insertBefore(banner, form.querySelector('h2').nextSibling);
-        document.getElementById('saveBtn').disabled = true;
-        document.getElementById('saveBtn').textContent = '\u2705 처리 완료 (' + existingDecision + ')';
-        setTimeout(disableAllInputs_, 100);
+      const alreadyProcessed = (existingDecision === '승인' || existingDecision === '반려');
+      if (alreadyProcessed) {
+        __markProcessedUI(existingDecision);
       }
 
       document.getElementById('appId').innerText       = data['신청ID'] || '';
@@ -482,7 +498,13 @@
         noRadio.disabled = false;
       }
 
-      setupEventListeners();
+      // [H3] 이미 처리된 건은 이벤트 리스너를 부착하지 않음 (입력은 잠금됨)
+      if (!alreadyProcessed) {
+        setupEventListeners();
+      } else {
+        // 처리 완료 상태를 한 번 더 강제 적용 (시약 렌더링 후 입력이 enable되는 것을 방지)
+        disableAllInputs_();
+      }
     }
 
     function setupEventListeners() {
@@ -624,6 +646,7 @@
     }
 
     // ===== 전체화면 상태 오버레이 제어 =====
+    // state: 'loading' | 'success' | 'warning' | 'error'
     function showStatusOverlay(state, title, sub) {
       const overlay = document.getElementById('statusOverlay');
       const visual  = document.getElementById('overlayVisual');
@@ -642,6 +665,12 @@
         tEl.textContent  = title || '저장되었습니다';
         sEl.textContent  = sub   || '처리가 완료되었습니다.';
         closeBtn.classList.add('hidden');
+      } else if (state === 'warning') {
+        // 저장은 성공했으나 메일 자동 발송 실패 등 추가 조치가 필요한 경우
+        visual.innerHTML = '<div class="icon-big icon-warning" aria-hidden="true">!</div>';
+        tEl.textContent  = title || '저장되었으나 수동 조치가 필요합니다';
+        sEl.textContent  = sub   || '학과 사무실에서 직접 연락해 주세요.';
+        closeBtn.classList.remove('hidden');  // 수동 닫기
       } else if (state === 'error') {
         visual.innerHTML = '<div class="icon-big icon-error" aria-hidden="true">!</div>';
         tEl.textContent  = title || '오류가 발생했습니다';
@@ -710,20 +739,29 @@
 
       google.script.run
         .withSuccessHandler(function(msg) {
-          // 서버 응답에 경고(⚠️)가 있으면 부제에 노출
-          const hasWarning = msg && msg.indexOf('⚠️') !== -1;
-          const subText = hasWarning
-            ? msg.replace(/^[^\n]*\n?/, '').trim() || '일부 메일 발송이 지연되었습니다.'
-            : (decision === '승인' ? '승인 처리가 완료되었습니다.' : '반려 처리가 완료되었습니다.');
-          showStatusOverlay('success', '저장되었습니다', subText);
+          // [C4] 서버가 '[수동조치필요]' prefix를 붙이면 노란 경고 오버레이, 그 외엔 성공
+          const text = String(msg || '');
+          const needsManual = /^\[수동조치필요\]/.test(text) || text.indexOf('⚠️') !== -1;
+          // 본문 요약 추출: 첫 줄은 주 메시지, 나머지는 상세
+          const cleaned = text.replace(/^\[수동조치필요\]\s*/, '');
+          const firstLine = cleaned.split('\n')[0].trim();
+          const restLines = cleaned.split('\n').slice(1).join('\n').trim();
+
           btn.disabled = true;
           btn.textContent = '\u2705 처리 완료';
           disableAllInputs_();
-          status.innerText = msg;
-          // 경고가 있으면 자동 닫지 않고 닫기 버튼 노출
-          if (hasWarning) {
-            document.getElementById('overlayCloseBtn').classList.remove('hidden');
+          status.innerText = text;
+
+          if (needsManual) {
+            // 저장은 됐지만 수동 조치 필요 — 닫기 버튼 있는 상태로 유지
+            showStatusOverlay(
+              'warning',
+              '저장되었습니다 · 수동 조치 필요',
+              (restLines || firstLine) + '\n\n학과 사무실에서 확인 후 직접 연락해 주세요.'
+            );
           } else {
+            const subText = decision === '승인' ? '승인 처리가 완료되었습니다.' : '반려 처리가 완료되었습니다.';
+            showStatusOverlay('success', '저장되었습니다', subText);
             setTimeout(hideStatusOverlay, 2500);
           }
         })

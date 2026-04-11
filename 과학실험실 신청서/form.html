@@ -1526,10 +1526,16 @@
       if (confirmCount) confirmCount.addEventListener('input', function() { this.value = this.value.replace(/[^0-9]/g, ''); checkAllConfirms(); });
     });
 
+    // 제출 진행 중 가드 — 같은 제출이 두 번 실행되는 것을 완전히 차단
+    var __SUBMITTING = false;
     function processSubmit() {
+      if (__SUBMITTING) return;            // 이미 진행 중이면 조용히 무시
+      __SUBMITTING = true;
       closeConfirmDialog();
       showOverlayBlock("신청 중입니다.<br>잠시만 기다려주세요.<br>클릭은 한 번만 해주세요.");
-      const btn = document.querySelector('#applicationForm button'); if (btn) btn.disabled = true;
+      // #applicationForm 바깥(.bottom-nav)에 있는 실제 제출 버튼을 직접 타겟
+      const btn = document.getElementById('btnSubmit');
+      if (btn) btn.disabled = true;
 
       const timeSlots = Array.from(document.querySelectorAll('input[name="timeSlot"]:checked')).map(cb => cb.value);
       const safety = Array.from(document.querySelectorAll('.safety-item input:checked')).map(cb => cb.id==='otherSafetyCheck' ? document.getElementById('otherSafety').value : cb.value);
@@ -1578,6 +1584,7 @@
 
       google.script.run
         .withSuccessHandler(res => {
+          __SUBMITTING = false;
           hideOverlayBlock();
           formDirty = false;
           localStorage.removeItem(AUTO_SAVE_KEY);
@@ -1617,6 +1624,7 @@
           completionDiv.style.display = 'block';
         })
         .withFailureHandler(err => {
+          __SUBMITTING = false;
           hideOverlayBlock();
           console.error(err);
           const raw = (err && err.message ? err.message : String(err) || '');
@@ -1992,6 +2000,10 @@
       if (typeof resetChemicalTable === 'function') resetChemicalTable();
       if (typeof resetSearchResults === 'function') resetSearchResults();
       if (typeof markUnvalidated === 'function') markUnvalidated();
+      // 제출 버튼 재활성화 + 제출 가드 해제
+      __SUBMITTING = false;
+      const submitBtn = document.getElementById('btnSubmit');
+      if (submitBtn) submitBtn.disabled = false;
       document.getElementById('statusMessage').textContent = '';
       formDirty = false;
       goStep(1);

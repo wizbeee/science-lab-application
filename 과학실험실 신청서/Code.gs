@@ -158,20 +158,47 @@ function normalizeName_(s)      { return String(s || '').trim(); }
 
 /* ========================= 이메일 발송 헬퍼 ========================= */
 /**
+ * HTML → plain text 변환 (text fallback용)
+ * - 태그 제거, &nbsp; 등 엔티티 복원, 연속 공백/줄바꿈 정리
+ */
+function htmlToPlainText_(html) {
+  if (!html) return '';
+  return String(html)
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/div>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<\/h[1-6]>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/[ \t]+\n/g, '\n')
+    .trim();
+}
+
+/**
  * HTML 이메일 래퍼 - 깔끔한 이메일 포맷
+ * ※ title / linkLabel은 내부에서 escape (방어적)
+ * ※ bodyLines는 이미 호출부에서 escape된 문자열로 가정 (HTML 태그 허용)
  */
 function buildEmailHtml_(title, bodyLines, linkUrl, linkLabel) {
-  const rows = bodyLines.map(l => {
+  const safeTitle = escapeHtml_(title || '');
+  const safeLinkLabel = escapeHtml_(linkLabel || '바로가기');
+  const rows = (bodyLines || []).map(l => {
     if (l === '') return '<br>';
-    if (l.startsWith('•')) return `<div style="padding:2px 0 2px 12px;">${l}</div>`;
+    if (String(l).startsWith('•')) return `<div style="padding:2px 0 2px 12px;">${l}</div>`;
     return `<div style="padding:2px 0;">${l}</div>`;
   }).join('');
   const safeUrl = linkUrl ? escapeHtml_(linkUrl) : '';
   const linkBlock = safeUrl
-    ? `<div style="margin:18px 0;"><a href="${safeUrl}" style="display:inline-block;padding:10px 24px;background:#4285F4;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;">${linkLabel || '바로가기'}</a></div>`
+    ? `<div style="margin:18px 0;"><a href="${safeUrl}" style="display:inline-block;padding:10px 24px;background:#4285F4;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;">${safeLinkLabel}</a></div>`
     : '';
   return `<div style="font-family:'맑은 고딕',Arial,sans-serif;max-width:620px;margin:0 auto;padding:20px;">
-    <h2 style="color:#333;border-bottom:2px solid #4285F4;padding-bottom:8px;">${title}</h2>
+    <h2 style="color:#333;border-bottom:2px solid #4285F4;padding-bottom:8px;">${safeTitle}</h2>
     <div style="line-height:1.8;color:#444;">${rows}</div>
     ${linkBlock}
     <hr style="border:none;border-top:1px solid #eee;margin:24px 0 8px;">
@@ -183,6 +210,7 @@ function buildEmailHtml_(title, bodyLines, linkUrl, linkLabel) {
  * 공통 메일 발송 함수
  * - 발신자를 SCIENCE_EMAIL로 통일
  * - 이메일 형식 기본 검증
+ * - HTML 미지원 클라이언트용 text body 자동 생성
  * - 실패 시 로깅 + 결과 객체 반환
  * @param {string} to       수신자 이메일
  * @param {string} subject  제목
@@ -197,6 +225,10 @@ function sendMail_(to, subject, htmlBody) {
     return { ok: false, error: msg };
   }
   try {
+    // HTML → text 폴백 본문 생성 (HTML 미지원 클라이언트/스크린리더 대응)
+    const textBody = htmlToPlainText_(htmlBody) ||
+      'HTML 형식의 메일입니다. HTML을 지원하는 메일 클라이언트에서 확인해 주세요.';
+
     const opts = { htmlBody: htmlBody };
 
     // from 옵션: SCIENCE_EMAIL이 Gmail "보내기 주소(Send As)"로 등록된 경우에만 사용
@@ -216,14 +248,14 @@ function sendMail_(to, subject, htmlBody) {
     if (useFrom) {
       try {
         opts.from = SCIENCE_EMAIL;
-        GmailApp.sendEmail(addr, subject, '', opts);
+        GmailApp.sendEmail(addr, subject, textBody, opts);
       } catch (fromErr) {
         Logger.log('[sendMail_] from 옵션 발송 실패, from 없이 재시도: ' + String(fromErr.message || fromErr));
         delete opts.from;
-        GmailApp.sendEmail(addr, subject, '', opts);
+        GmailApp.sendEmail(addr, subject, textBody, opts);
       }
     } else {
-      GmailApp.sendEmail(addr, subject, '', opts);
+      GmailApp.sendEmail(addr, subject, textBody, opts);
     }
 
     Logger.log('[sendMail_] 발송 성공 → ' + addr + ' / 제목: ' + subject);
@@ -234,6 +266,39 @@ function sendMail_(to, subject, htmlBody) {
     console.error('[sendMail_] 발송 실패 (' + addr + '): ' + msg);
     return { ok: false, error: msg };
   }
+}
+
+/**
+ * 메일 발송 실패 시 학과(SCIENCE_EMAIL)에 수동 처리 요청 폴백 메일
+ * @param {string} stage     '1차 승인' | '최종 승인' 등 문맥
+ * @param {string} recipient 원래 받았어야 할 대상자 설명 ('학생 홍길동 (20001)')
+ * @param {string} reason    실패 사유 배열 또는 문자열
+ * @param {object} rec       신청 row (context 표시용, optional)
+ * @returns {{ ok: boolean, error?: string }}
+ */
+function sendAdminFallbackEmail_(stage, recipient, reason, rec) {
+  const e = escapeHtml_;
+  const reasonText = Array.isArray(reason) ? reason.join(' / ') : String(reason || '');
+  const lines = [
+    `<b>[${e(stage)}] 자동 메일 발송 실패</b>`,
+    `시스템이 아래 대상자에게 메일을 자동 발송하지 못했습니다. 직접 연락 또는 수동 처리가 필요합니다.`,
+    '',
+    `• 대상: ${e(recipient)}`,
+    `• 실패 사유: ${e(reasonText)}`
+  ];
+  if (rec && typeof rec === 'object') {
+    lines.push(
+      '',
+      `• 신청 ID: ${e(rec['신청ID'] || '')}`,
+      `• 대표자: ${e(rec['대표자이름'] || '')} (${e(rec['대표자학번'] || '')})`,
+      `• 실험실: ${e(rec['신청실험실'] || '')}`,
+      `• 날짜/시간: ${e(normalizeDateYMD_(rec['실험할날짜']))} / ${e(rec['신청시간'] || '')}`,
+      `• 실험 제목: ${e(rec['실험제목'] || '')}`
+    );
+  }
+  const subject = `[수동 처리 요청] ${stage} - ${recipient} 메일 발송 실패`;
+  const body = buildEmailHtml_('메일 자동 발송 실패 알림', lines);
+  return sendMail_(SCIENCE_EMAIL, subject, body);
 }
 
 /** 학생 이메일 주소 생성 (학번 5자리 → 학번@cnsa.hs.kr) */
@@ -1399,10 +1464,20 @@ function submitApproval_(info) {
   const rec = getApplication(id);
   const warnings = [];
 
+  const recipientLabel = `학생 ${rec['대표자이름'] || ''} (${rec['대표자학번'] || ''})`;
+
   if (decision === '승인') {
     // 학생에게 1차 승인 안내
     const r1 = sendStudentFirstApproveEmail_(rec, comment);
-    if (!r1.ok) warnings.push('학생 1차 승인 메일 발송 실패: ' + (r1.error || ''));
+    if (!r1.ok) {
+      Logger.log('학생 1차 승인 메일 실패 → 관리자 폴백: ' + (r1.error || ''));
+      const fb = sendAdminFallbackEmail_('1차 승인', recipientLabel, r1.error || '알 수 없는 오류', rec);
+      if (fb.ok) {
+        warnings.push('학생에게 1차 승인 메일 자동 발송 실패 → 학과 메일로 수동 처리 요청을 보냈습니다.');
+      } else {
+        warnings.push('학생 1차 승인 메일 및 학과 메일 발송 모두 실패했습니다. 학생에게 직접 연락해 주세요.');
+      }
+    }
 
     // 담당교사에게 최종 승인 요청 (실패 시 학과 메일로 fallback)
     try {
@@ -1434,7 +1509,15 @@ function submitApproval_(info) {
 
   } else {
     const r1 = sendStudentRejectEmail_(rec, comment);
-    if (!r1.ok) warnings.push('학생 반려 메일 발송 실패: ' + (r1.error || ''));
+    if (!r1.ok) {
+      Logger.log('학생 반려 메일 실패 → 관리자 폴백: ' + (r1.error || ''));
+      const fb = sendAdminFallbackEmail_('1차 반려', recipientLabel, r1.error || '알 수 없는 오류', rec);
+      if (fb.ok) {
+        warnings.push('학생에게 반려 메일 자동 발송 실패 → 학과 메일로 수동 처리 요청을 보냈습니다.');
+      } else {
+        warnings.push('학생 반려 메일 및 학과 메일 발송 모두 실패했습니다. 학생에게 직접 연락해 주세요.');
+      }
+    }
 
     const warnMsg = warnings.length > 0 ? '\n⚠️ ' + warnings.join('\n⚠️ ') : '';
     return '반려 처리 완료' + warnMsg;
@@ -1480,17 +1563,34 @@ function submitFinalApproval_(info) {
   // ====== 메일 발송 ======
   const rec = getApplication(id);
   const warnings = [];
+  const stageLabel = decision === '승인' ? '최종 승인' : '최종 반려';
+  const studentLabel  = `학생 ${rec['대표자이름'] || ''} (${rec['대표자학번'] || ''})`;
+  const teacherLabel  = `지도교사 ${rec['지도교사이름'] || ''} <${rec['지도교사이메일'] || ''}>`;
 
-  if (decision === '승인') {
-    const r1 = sendStudentFinalApproveEmail_(rec, comment);
-    if (!r1.ok) warnings.push('학생 최종승인 메일 발송 실패: ' + (r1.error || ''));
-    const r2 = sendTeacherFinalResultEmail_(rec, '승인', comment);
-    if (!r2.ok) warnings.push('지도교사 최종승인 결과 메일 발송 실패: ' + (r2.error || ''));
-  } else {
-    const r1 = sendStudentFinalRejectEmail_(rec, comment);
-    if (!r1.ok) warnings.push('학생 최종반려 메일 발송 실패: ' + (r1.error || ''));
-    const r2 = sendTeacherFinalResultEmail_(rec, '반려', comment);
-    if (!r2.ok) warnings.push('지도교사 최종반려 결과 메일 발송 실패: ' + (r2.error || ''));
+  // 학생 메일
+  const r1 = (decision === '승인')
+    ? sendStudentFinalApproveEmail_(rec, comment)
+    : sendStudentFinalRejectEmail_(rec, comment);
+  if (!r1.ok) {
+    Logger.log('학생 ' + stageLabel + ' 메일 실패 → 관리자 폴백: ' + (r1.error || ''));
+    const fb = sendAdminFallbackEmail_(stageLabel, studentLabel, r1.error || '알 수 없는 오류', rec);
+    if (fb.ok) {
+      warnings.push('학생에게 ' + stageLabel + ' 메일 자동 발송 실패 → 학과 메일로 수동 처리 요청을 보냈습니다.');
+    } else {
+      warnings.push('학생 ' + stageLabel + ' 메일 및 학과 메일 발송 모두 실패했습니다. 학생에게 직접 연락해 주세요.');
+    }
+  }
+
+  // 지도교사 메일 (결과 통보)
+  const r2 = sendTeacherFinalResultEmail_(rec, decision, comment);
+  if (!r2.ok) {
+    Logger.log('지도교사 ' + stageLabel + ' 결과 메일 실패 → 관리자 폴백: ' + (r2.error || ''));
+    const fb = sendAdminFallbackEmail_(stageLabel + ' 결과 통보', teacherLabel, r2.error || '알 수 없는 오류', rec);
+    if (fb.ok) {
+      warnings.push('지도교사에게 ' + stageLabel + ' 결과 메일 자동 발송 실패 → 학과 메일로 수동 처리 요청을 보냈습니다.');
+    } else {
+      warnings.push('지도교사 결과 메일 및 학과 메일 발송 모두 실패했습니다. 지도교사에게 직접 연락해 주세요.');
+    }
   }
 
   const warnMsg = warnings.length > 0 ? '\n⚠️ ' + warnings.join('\n⚠️ ') : '';

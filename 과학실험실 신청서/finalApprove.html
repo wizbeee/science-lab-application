@@ -66,9 +66,94 @@
       textarea { width: 100% !important; box-sizing: border-box; }
       input, select, textarea, button { font-size: 16px !important; }
     }
+
+    /* ===== 전체화면 상태 오버레이 (저장 중 / 저장 완료 / 오류) ===== */
+    #statusOverlay {
+      position: fixed; inset: 0;
+      background: rgba(255, 255, 255, 0.92);
+      -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+      display: none;
+      align-items: center; justify-content: center;
+      z-index: 9999;
+      animation: overlayFadeIn 0.18s ease-out;
+    }
+    #statusOverlay.show { display: flex; }
+    @keyframes overlayFadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes overlaySpin  { to { transform: rotate(360deg); } }
+    @keyframes overlayPop   { 0% { transform: scale(0.5); opacity: 0; } 60% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+
+    #statusOverlay .overlay-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 36px 48px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+      min-width: 280px; max-width: 92vw;
+      text-align: center;
+      border: 1px solid #e5e7eb;
+    }
+    #statusOverlay .spinner {
+      width: 56px; height: 56px;
+      border: 5px solid #e5e7eb;
+      border-top-color: #4285F4;
+      border-radius: 50%;
+      margin: 0 auto 18px;
+      animation: overlaySpin 0.9s linear infinite;
+    }
+    #statusOverlay .icon-big {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      margin: 0 auto 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px; font-weight: bold; color: #fff;
+      animation: overlayPop 0.32s ease-out;
+    }
+    #statusOverlay .icon-success { background: #16a34a; }
+    #statusOverlay .icon-error   { background: #dc2626; }
+    #statusOverlay .overlay-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #111827;
+      margin: 0 0 6px;
+    }
+    #statusOverlay .overlay-sub {
+      font-size: 0.95rem;
+      color: #4b5563;
+      margin: 0 0 8px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: keep-all;
+    }
+    #statusOverlay .overlay-close {
+      margin-top: 16px;
+      padding: 10px 24px;
+      background: #4285F4;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      min-height: 44px;
+      min-width: 88px;
+    }
+    #statusOverlay .overlay-close:hover { background: #3367d6; }
+    #statusOverlay .overlay-close.hidden { display: none; }
+    @media (prefers-reduced-motion: reduce) {
+      #statusOverlay, #statusOverlay .icon-big, #statusOverlay .spinner { animation: none !important; }
+    }
   </style>
 </head>
 <body>
+  <!-- 전체화면 상태 오버레이 -->
+  <div id="statusOverlay" role="status" aria-live="assertive" aria-hidden="true">
+    <div class="overlay-card">
+      <div id="overlayVisual"></div>
+      <div class="overlay-title" id="overlayTitle">저장 중입니다</div>
+      <div class="overlay-sub" id="overlaySub">잠시만 기다려주세요…</div>
+      <button type="button" class="overlay-close hidden" id="overlayCloseBtn" onclick="hideStatusOverlay()">닫기</button>
+    </div>
+  </div>
+
   <a href="#judgmentSection" class="skip-link" style="position:absolute;left:-9999px;top:0;z-index:100;background:#4285F4;color:#fff;padding:8px 16px;font-size:14px;border-radius:0 0 4px 0;" onfocus="this.style.left='0'" onblur="this.style.left='-9999px'">판단 섹션으로 건너뛰기</a>
   <form id="finalApproveForm" onsubmit="return false;">
     <h2>실험·실습실 최종 승인</h2>
@@ -458,6 +543,42 @@
         .getApplication(appId);
     }
 
+    // ===== 전체화면 상태 오버레이 제어 =====
+    function showStatusOverlay(state, title, sub) {
+      const overlay = document.getElementById('statusOverlay');
+      const visual  = document.getElementById('overlayVisual');
+      const tEl     = document.getElementById('overlayTitle');
+      const sEl     = document.getElementById('overlaySub');
+      const closeBtn = document.getElementById('overlayCloseBtn');
+      if (!overlay) return;
+
+      if (state === 'loading') {
+        visual.innerHTML = '<div class="spinner" aria-hidden="true"></div>';
+        tEl.textContent  = title || '저장 중입니다';
+        sEl.textContent  = sub   || '잠시만 기다려주세요…';
+        closeBtn.classList.add('hidden');
+      } else if (state === 'success') {
+        visual.innerHTML = '<div class="icon-big icon-success" aria-hidden="true">✓</div>';
+        tEl.textContent  = title || '저장되었습니다';
+        sEl.textContent  = sub   || '처리가 완료되었습니다.';
+        closeBtn.classList.add('hidden');
+      } else if (state === 'error') {
+        visual.innerHTML = '<div class="icon-big icon-error" aria-hidden="true">!</div>';
+        tEl.textContent  = title || '오류가 발생했습니다';
+        sEl.textContent  = sub   || '다시 시도해 주세요.';
+        closeBtn.classList.remove('hidden');
+      }
+      overlay.classList.add('show');
+      overlay.setAttribute('aria-hidden', 'false');
+    }
+
+    function hideStatusOverlay() {
+      const overlay = document.getElementById('statusOverlay');
+      if (!overlay) return;
+      overlay.classList.remove('show');
+      overlay.setAttribute('aria-hidden', 'true');
+    }
+
     function submitFinalApproval() {
       const btn = document.getElementById('saveBtn');
       const status = document.getElementById('statusMsg');
@@ -470,23 +591,42 @@
       const confirmMsg = decision === '승인'
         ? '최종 승인 처리하시겠습니까?\n학생에게 최종 승인 안내 메일이 발송됩니다.'
         : '최종 반려 처리하시겠습니까?\n학생에게 반려 안내 메일이 발송됩니다.\n\n반려 사유: ' + comment;
-      if (!confirm(confirmMsg)) return;
+      if (!confirm(confirmMsg)) {
+        // confirm 취소 시 상태 완전 복구
+        btn.disabled = false;
+        btn.textContent = '저장하기';
+        status.innerText = '';
+        return;
+      }
 
       btn.disabled = true;
-      status.innerText = '저장 중입니다…';
+      btn.textContent = '저장 중…';
+      status.innerText = '';
+      showStatusOverlay('loading', '저장 중입니다', '잠시만 기다려주세요…');
 
       google.script.run
         .withSuccessHandler(msg => {
-          status.innerText = msg;
+          const hasWarning = msg && msg.indexOf('⚠️') !== -1;
+          const subText = hasWarning
+            ? msg.replace(/^[^\n]*\n?/, '').trim() || '일부 메일 발송이 지연되었습니다.'
+            : (decision === '승인' ? '최종 승인 처리가 완료되었습니다.' : '최종 반려 처리가 완료되었습니다.');
+          showStatusOverlay('success', '저장되었습니다', subText);
           btn.disabled = true;
           btn.textContent = '\u2705 처리 완료';
           disableAllInputs_();
-          alert(msg);
+          status.innerText = msg;
+          if (hasWarning) {
+            document.getElementById('overlayCloseBtn').classList.remove('hidden');
+          } else {
+            setTimeout(hideStatusOverlay, 2500);
+          }
         })
         .withFailureHandler(e => {
-          status.innerText = '오류: ' + (e.message || e);
+          const errMsg = (e && (e.message || e.toString())) || '알 수 없는 오류';
+          showStatusOverlay('error', '오류가 발생했습니다', errMsg);
+          status.innerText = '오류: ' + errMsg;
           btn.disabled = false;
-          alert('오류: ' + (e.message || e));
+          btn.textContent = '저장하기';
         })
         .submitFinalApproval({ id: appId, decision, comment });
     }

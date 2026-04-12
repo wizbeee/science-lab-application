@@ -1677,9 +1677,16 @@
 
     function goHome() {
       if (formDirty && !confirm('작성 중인 내용이 있습니다. 홈으로 돌아가시겠습니까?')) return;
+      showOverlayBlock("홈으로 이동 중입니다…<br>잠시만 기다려주세요.");
       google.script.run
-        .withSuccessHandler(function(url) { window.top.location.href = url; })
-        .withFailureHandler(function() { history.back(); })
+        .withSuccessHandler(function(url) {
+          // 페이지 전환 전까지 오버레이 유지 (사용자에게 로딩 중 피드백)
+          window.top.location.href = url;
+        })
+        .withFailureHandler(function() {
+          hideOverlayBlock();
+          history.back();
+        })
         .getGatewayUrl();
     }
 

@@ -1,0 +1,56 @@
+/* styles.css - 커스텀 스타일 */
+
+/* 스크롤바 */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* 테이블 래퍼 */
+.table-wrapper { position: relative; }
+.table-wrapper table thead { position: sticky; top: 0; z-index: 10; }
+.table-wrapper tbody tr { transition: background-color 0.15s; }
+
+/* 사이드바 트랜지션 */
+#sidebar { transition: transform 0.3s ease; }
+
+/* 모달 진입 애니메이션 */
+.modal-overlay { animation: fadeIn 0.15s ease; }
+.modal-content { animation: slideUp 0.2s ease; }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 인쇄 스타일 */
+@media print {
+  #sidebar, #mobile-menu-btn, .no-print { display: none !important; }
+  #main-area { margin-left: 0 !important; padding: 0 !important; }
+  .bg-white { box-shadow: none !important; border: 1px solid #e5e7eb !important; }
+  body { background: white !important; }
+}
+
+/* 선택 드롭다운 */
+select.result-select { cursor: pointer; }
+select.result-select option { background: white; color: #1f2937; }
+
+/* 카드 호버 */
+.hover-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
+
+/* 반응형 그리드 조정 */
+@media (max-width: 768px) {
+  .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
+  .grid-cols-5 { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* 입력 필드 포커스 */
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}

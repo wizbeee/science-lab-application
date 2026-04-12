@@ -13,6 +13,30 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["serve", "mockups", "-l", "5500"],
       "port": 5500
+    },
+    {
+      "name": "vibe-training",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["http-server", "../vibe-coding-training", "-c-1"],
+      "port": 8090
+    },
+    {
+      "name": "sigfig-game",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "significant-figures-game", "-l", "5502"],
+      "port": 5502
+    },
+    {
+      "name": "widget-report",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "smart-desktop", "-l", "5503"],
+      "port": 5503
+    },
+    {
+      "name": "admission-manager",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "고입전형관리", "-l", "5504"],
+      "port": 5504
     }
   ]
 }

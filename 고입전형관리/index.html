@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>고입전형 관리 프로그램</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+
+  <!-- SheetJS (xlsx) -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+
+  <!-- Dexie.js (IndexedDB) -->
+  <script src="https://unpkg.com/dexie@3/dist/dexie.min.js"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-gray-50 min-h-screen flex">
+
+  <!-- 사이드바 -->
+  <aside id="sidebar" class="fixed lg:sticky top-0 left-0 z-40 w-64 h-screen bg-white border-r border-gray-200 flex flex-col -translate-x-full lg:translate-x-0">
+    <!-- 로고 -->
+    <div class="flex items-center gap-3 px-5 py-5 border-b">
+      <div class="w-9 h-9 bg-blue-500 rounded-lg flex items-center justify-center">
+        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-base font-bold text-gray-900 leading-tight">고입전형 관리</h1>
+        <p class="text-xs text-gray-400">Admission Manager</p>
+      </div>
+    </div>
+
+    <!-- 네비게이션 -->
+    <nav id="nav-menu" class="flex-1 px-3 py-4 space-y-1 overflow-y-auto"></nav>
+
+    <!-- 하단 정보 -->
+    <div class="px-4 py-3 border-t text-xs text-gray-400">
+      <p>데이터: 브라우저 로컬 저장</p>
+      <p class="mt-1">Alt+1~8: 페이지 이동</p>
+    </div>
+  </aside>
+
+  <!-- 오버레이 (모바일) -->
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden" onclick="document.getElementById('sidebar').classList.add('-translate-x-full'); this.classList.add('hidden');"></div>
+
+  <!-- 메인 영역 -->
+  <main id="main-area" class="flex-1 min-h-screen">
+    <!-- 상단 바 -->
+    <header class="sticky top-0 z-20 bg-white/80 backdrop-blur-sm border-b px-6 py-3 flex items-center justify-between">
+      <button id="mobile-menu-btn" class="lg:hidden p-2 rounded-lg hover:bg-gray-100" onclick="document.getElementById('sidebar').classList.toggle('-translate-x-full'); document.getElementById('sidebar-overlay').classList.toggle('hidden');">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <div class="flex items-center gap-3">
+        <span id="db-indicator" class="flex items-center gap-1.5 text-xs text-gray-400">
+          <span class="w-2 h-2 rounded-full bg-green-400"></span>
+          로컬 DB 활성
+        </span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="ImportExport.backupToJSON().then(() => Toast.success('백업 완료'))" class="p-2 rounded-lg hover:bg-gray-100 text-gray-500" title="백업 다운로드">
+          <i data-lucide="download" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- 페이지 콘텐츠 -->
+    <div id="page-content" class="p-6"></div>
+  </main>
+
+  <!-- JS 로드 순서 중요 -->
+  <script src="js/db.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/components/toast.js"></script>
+  <script src="js/components/modal.js"></script>
+  <script src="js/components/table.js"></script>
+  <script src="js/components/chart-helpers.js"></script>
+  <script src="js/import-export.js"></script>
+  <script src="js/pages/dashboard.js"></script>
+  <script src="js/pages/applicants.js"></script>
+  <script src="js/pages/applicant-detail.js"></script>
+  <script src="js/pages/analysis.js"></script>
+  <script src="js/pages/cutline.js"></script>
+  <script src="js/pages/regional.js"></script>
+  <script src="js/pages/yearly.js"></script>
+  <script src="js/pages/results.js"></script>
+  <script src="js/pages/settings.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>학생 조회 데스크톱 - 분할 레이아웃</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --primary: #4285F4;
+    --primary-light: #e8f0fe;
+    --success: #34a853;
+    --success-light: #e6f4ea;
+    --danger: #ea4335;
+    --danger-light: #fce8e6;
+    --warning: #f59e0b;
+    --warning-light: #fef3c7;
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --text: #1a1a2e;
+    --text-sec: #5f6368;
+    --text-muted: #9ca3af;
+    --border: #e5e7eb;
+    --radius: 12px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  body {
+    font-family: 'Pretendard','Apple SD Gothic Neo','Segoe UI',sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Header */
+  .header {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+  .header h1 { font-size: 17px; font-weight: 700; }
+  .search-group {
+    display: flex; gap: 8px; margin-left: 24px;
+  }
+  .search-group input {
+    padding: 8px 14px; border: 1.5px solid var(--border);
+    border-radius: 8px; font-size: 14px; width: 100px;
+    outline: none; background: var(--bg);
+  }
+  .search-group input:focus { border-color: var(--primary); }
+  .search-group .btn-search {
+    padding: 8px 16px; border-radius: 8px; border: none;
+    background: var(--primary); color: white; font-size: 13px;
+    font-weight: 600; cursor: pointer;
+  }
+  .header-stats {
+    display: flex; gap: 8px; margin-left: auto;
+  }
+  .stat-chip {
+    padding: 5px 12px; border-radius: 16px; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.12s; border: 1.5px solid transparent;
+  }
+  .stat-chip.all { background: var(--primary-light); color: var(--primary); border-color: var(--primary); }
+  .stat-chip.success { background: var(--success-light); color: #065f46; }
+  .stat-chip.pending { background: var(--warning-light); color: #92400e; }
+  .stat-chip.danger { background: var(--danger-light); color: #991b1b; }
+  .stat-chip:hover { opacity: 0.8; }
+  .theme-btn {
+    width: 34px; height: 34px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--card);
+    cursor: pointer; font-size: 15px;
+  }
+
+  /* Split Layout */
+  .split {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* Left Panel - List */
+  .list-panel {
+    width: 380px;
+    border-right: 1px solid var(--border);
+    background: var(--card);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .list-toolbar {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg);
+  }
+  .list-toolbar select {
+    padding: 6px 10px; border: 1px solid var(--border);
+    border-radius: 6px; font-size: 12px; background: var(--card);
+  }
+  .list-toolbar .view-btns {
+    margin-left: auto; display: flex; gap: 2px;
+  }
+  .view-btn {
+    width: 30px; height: 30px; border-radius: 6px;
+    border: 1px solid var(--border); background: var(--card);
+    cursor: pointer; font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .view-btn.active { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
+
+  .list-scroll {
+    flex: 1; overflow-y: auto; padding: 8px;
+  }
+
+  .list-item {
+    padding: 12px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.1s;
+    margin-bottom: 4px;
+    border-left: 4px solid transparent;
+  }
+  .list-item:hover { background: var(--bg); }
+  .list-item.selected { background: var(--primary-light); border-left-color: var(--primary); }
+  .list-item .top-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .list-item .date { font-size: 12px; color: var(--text-muted); }
+  .list-item .badge {
+    padding: 2px 8px; border-radius: 5px; font-size: 11px; font-weight: 600;
+  }
+  .badge.pending { background: var(--warning-light); color: #92400e; }
+  .badge.approved { background: var(--success-light); color: #065f46; }
+  .badge.final { background: #dbeafe; color: #1e3a8a; }
+  .badge.rejected { background: var(--danger-light); color: #991b1b; }
+  .list-item .title { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+  .list-item .meta { font-size: 12px; color: var(--text-sec); }
+
+  /* Right Panel - Detail */
+  .detail-panel {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px 36px;
+    background: var(--bg);
+  }
+
+  /* Stepper */
+  .stepper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 28px;
+    padding: 20px;
+    background: var(--card);
+    border-radius: var(--radius);
+  }
+  .step {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .step-circle {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700;
+    border: 2.5px solid var(--border);
+    background: var(--card);
+    color: var(--text-muted);
+  }
+  .step.done .step-circle {
+    background: var(--success); border-color: var(--success); color: white;
+  }
+  .step.current .step-circle {
+    background: var(--primary); border-color: var(--primary); color: white;
+    box-shadow: 0 0 0 4px rgba(66,133,244,0.15);
+  }
+  .step-label { font-size: 13px; color: var(--text-muted); }
+  .step.done .step-label { color: var(--success); font-weight: 500; }
+  .step.current .step-label { color: var(--primary); font-weight: 600; }
+  .step-line {
+    width: 60px; height: 2px;
+    background: var(--border); margin: 0 8px;
+  }
+  .step-line.done { background: var(--success); }
+
+  /* Detail Cards */
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .d-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 18px;
+  }
+  .d-card.full { grid-column: 1 / -1; }
+  .d-card h3 {
+    font-size: 13px; color: var(--text-muted); font-weight: 600;
+    margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
+  }
+  .d-field { margin-bottom: 10px; }
+  .d-field label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 2px; }
+  .d-field .val { font-size: 14px; font-weight: 500; }
+  .d-field-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+
+  .d-card .process-text {
+    font-size: 13px; line-height: 1.7;
+    background: var(--bg); padding: 12px; border-radius: 8px;
+    white-space: pre-wrap;
+  }
+
+  /* Chemical table in detail */
+  .detail-chem { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .detail-chem th {
+    padding: 8px 10px; text-align: left; background: var(--bg);
+    font-size: 12px; font-weight: 600; color: var(--text-sec);
+    border-bottom: 1px solid var(--border);
+  }
+  .detail-chem td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+
+  /* Actions */
+  .detail-actions {
+    display: flex; gap: 8px;
+  }
+  .action-btn {
+    padding: 10px 20px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--card);
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    color: var(--text-sec); transition: all 0.12s;
+  }
+  .action-btn:hover { border-color: var(--primary); color: var(--primary); }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <h1>🔬 내 실험실 신청</h1>
+  <div class="search-group">
+    <input type="text" placeholder="학번" value="10512">
+    <input type="text" placeholder="이름" value="김민준">
+    <button class="btn-search">조회</button>
+  </div>
+  <div class="header-stats">
+    <span class="stat-chip all">전체 8</span>
+    <span class="stat-chip success">승인 3</span>
+    <span class="stat-chip pending">대기 2</span>
+    <span class="stat-chip danger">반려 1</span>
+  </div>
+  <button class="theme-btn">🌙</button>
+</div>
+
+<!-- Split Layout -->
+<div class="split">
+
+  <!-- Left: List -->
+  <div class="list-panel">
+    <div class="list-toolbar">
+      <select><option>전체 상태</option></select>
+      <select><option>전체 실험실</option></select>
+      <div class="view-btns">
+        <button class="view-btn active" title="목록">📋</button>
+        <button class="view-btn" title="캘린더">📅</button>
+      </div>
+    </div>
+    <div class="list-scroll">
+      <div class="list-item selected">
+        <div class="top-row">
+          <span class="date">04/10 (금)</span>
+          <span class="badge pending">대기중</span>
+        </div>
+        <div class="title">산-염기 적정 실험</div>
+        <div class="meta">🧪 화학실험실 · 6,7교시 · 3명</div>
+      </div>
+      <div class="list-item">
+        <div class="top-row">
+          <span class="date">04/08 (화)</span>
+          <span class="badge final">최종승인</span>
+        </div>
+        <div class="title">분광기 스펙트럼 분석</div>
+        <div class="meta">🔬 첨단기기실험실 · 5,6교시 · 2명</div>
+      </div>
+      <div class="list-item">
+        <div class="top-row">
+          <span class="date">04/05 (토)</span>
+          <span class="badge approved">1차 승인</span>
+        </div>
+        <div class="title">DNA 전기영동 실습</div>
+        <div class="meta">🧬 생물실험실 · 야자1 · 4명</div>
+      </div>
+      <div class="list-item">
+        <div class="top-row">
+          <span class="date">04/03 (목)</span>
+          <span class="badge rejected">반려</span>
+        </div>
+        <div class="title">에스터 합성 반응</div>
+        <div class="meta">🧪 화학실험실 · 야자2 · 2명</div>
+      </div>
+      <div class="list-item">
+        <div class="top-row">
+          <span class="date">03/28 (금)</span>
+          <span class="badge final">최종승인</span>
+        </div>
+        <div class="title">렌즈의 초점거리 측정</div>
+        <div class="meta">⚡ 파동광학실험실 · 6교시 · 3명</div>
+      </div>
+      <div class="list-item">
+        <div class="top-row">
+          <span class="date">03/25 (화)</span>
+          <span class="badge final">최종승인</span>
+        </div>
+        <div class="title">Arduino 센서 데이터 수집</div>
+        <div class="meta">🔧 프로젝트실험실 · 야자1,2 · 2명</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Detail -->
+  <div class="detail-panel">
+    <!-- Stepper -->
+    <div class="stepper">
+      <div class="step done">
+        <span class="step-circle">✓</span>
+        <span class="step-label">신청 완료</span>
+      </div>
+      <div class="step-line done"></div>
+      <div class="step current">
+        <span class="step-circle">2</span>
+        <span class="step-label">1차 승인 대기</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step">
+        <span class="step-circle">3</span>
+        <span class="step-label">최종 승인</span>
+      </div>
+    </div>
+
+    <!-- Detail Cards -->
+    <div class="detail-grid">
+      <div class="d-card">
+        <h3>👤 학생 정보</h3>
+        <div class="d-field-row">
+          <div class="d-field">
+            <label>신청 대표</label>
+            <div class="val">김민준 (10512)</div>
+          </div>
+          <div class="d-field">
+            <label>참여 인원</label>
+            <div class="val">3명</div>
+          </div>
+        </div>
+        <div class="d-field">
+          <label>팀원</label>
+          <div class="val">이서연 (10823), 정우진 (11102)</div>
+        </div>
+      </div>
+
+      <div class="d-card">
+        <h3>📅 일정</h3>
+        <div class="d-field-row">
+          <div class="d-field">
+            <label>날짜</label>
+            <div class="val">2026-04-10 (금)</div>
+          </div>
+          <div class="d-field">
+            <label>실험실</label>
+            <div class="val">화학실험실</div>
+          </div>
+        </div>
+        <div class="d-field-row">
+          <div class="d-field">
+            <label>시간</label>
+            <div class="val">6교시, 7교시</div>
+          </div>
+          <div class="d-field">
+            <label>목적</label>
+            <div class="val">교과 실험</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-card full">
+        <h3>🧪 실험 내용</h3>
+        <div class="d-field">
+          <label>실험 제목</label>
+          <div class="val" style="font-size:16px;font-weight:700;margin-bottom:8px;">산-염기 적정 실험</div>
+        </div>
+        <div class="process-text">1. 0.1M NaOH 표준용액 조제
+2. 식초 시료 정량 채취 (10mL)
+3. 페놀프탈레인 지시약 2~3방울 첨가
+4. 뷰렛으로 NaOH 용액 적정
+5. 종말점 도달 시 소비된 NaOH 부피 기록</div>
+      </div>
+
+      <div class="d-card full">
+        <h3>⚗️ 시약</h3>
+        <table class="detail-chem">
+          <thead>
+            <tr><th>시약명</th><th>상태</th><th>농도</th><th>사용량</th><th>지도</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>NaOH</strong></td><td>고체</td><td>—</td><td>4g</td><td><span class="badge" style="background:var(--danger-light);color:#991b1b;padding:2px 8px;border-radius:4px;font-size:11px;">필요</span></td></tr>
+            <tr><td><strong>CH₃COOH</strong></td><td>액체</td><td>0.1M</td><td>50mL</td><td><span style="font-size:12px;color:var(--text-muted)">불필요</span></td></tr>
+            <tr><td><strong>페놀프탈레인</strong></td><td>액체</td><td>1%</td><td>5mL</td><td><span style="font-size:12px;color:var(--text-muted)">불필요</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="detail-actions">
+      <button class="action-btn">📄 PDF 다운로드</button>
+      <button class="action-btn">🖨️ 인쇄</button>
+      <button class="action-btn">📋 신청서 복사 (재신청)</button>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

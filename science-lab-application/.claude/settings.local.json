@@ -48,19 +48,7 @@
       "Bash(ls -la 'C:/Users/danie/Desktop/스마트 바탕화면 프로그램/files \\(2\\)/')",
       "Bash(find 'C:/Users/danie/Desktop/스마트 바탕화면 프로그램' -type f -name *.json -not -path */node_modules/* -not -path */dist/* -not -path */.cache/*)",
       "Bash(find \"C:/Users/danie/Desktop/스마트 바탕화면 프로그램/files \\(1\\)\" -type f \\\\\\( -name \"*.jsx\" -o -name \"*.js\" -o -name \"*.css\" -o -name \"*.html\" \\\\\\) ! -path \"*/node_modules/*\" ! -path \"*/dist/*\" ! -path \"*/.next/*\")",
-      "Bash(find \"C:/Users/danie/Desktop/스마트 바탕화면 프로그램/files \\(2\\)\" -type f \\\\\\( -name \"*.jsx\" -o -name \"*.js\" -o -name \"*.css\" -o -name \"*.html\" \\\\\\) ! -path \"*/node_modules/*\" ! -path \"*/dist/*\")",
-      "Bash(npm run:*)",
-      "Bash(\"/c/Program Files/nodejs/npm.cmd\" run build:win)",
-      "Bash(where gh:*)",
-      "Bash(winget install:*)",
-      "Bash(export PATH=\"/c/Program Files/GitHub CLI:$PATH\")",
-      "Bash(gh --version)",
-      "Bash(gh auth:*)",
-      "WebFetch(domain:github.com)",
-      "Bash(gh release:*)",
-      "Bash(curl -L -o \"C:/Users/danie/Desktop/클로드 코드 관련/smart-desktop-v2.2.2-win.zip\" \"https://github.com/wizbeee/smart-teacher-desktop/releases/download/v2.2.2/smart-desktop-v2.2.2-win.zip\" --progress-bar)",
-      "Bash(unzip -o smart-desktop-v2.2.2-win.zip -d smart-desktop-v2.2.2)",
-      "mcp__Claude_Preview__preview_start"
+      "Bash(find \"C:/Users/danie/Desktop/스마트 바탕화면 프로그램/files \\(2\\)\" -type f \\\\\\( -name \"*.jsx\" -o -name \"*.js\" -o -name \"*.css\" -o -name \"*.html\" \\\\\\) ! -path \"*/node_modules/*\" ! -path \"*/dist/*\")"
     ]
   }
 }

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>관리자 - 시약 목록</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--primary:#4285F4;--primary-light:#e8f0fe;--success:#34a853;--success-light:#e6f4ea;
+    --danger:#ea4335;--danger-light:#fce8e6;--warning:#f59e0b;--warning-light:#fef3c7;
+    --bg:#f8f9fa;--card:#fff;--text:#1a1a2e;--text-sec:#5f6368;--text-muted:#9ca3af;
+    --border:#e5e7eb;--radius:12px;--shadow-sm:0 1px 3px rgba(0,0,0,0.06)}
+  body{font-family:'Pretendard','Apple SD Gothic Neo','Segoe UI',sans-serif;background:var(--bg);color:var(--text)}
+
+  .nav{background:var(--card);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;height:52px;gap:8px;position:sticky;top:0;z-index:100}
+  .nav-logo{font-size:15px;font-weight:700;color:var(--primary);margin-right:24px;display:flex;align-items:center;gap:6px}
+  .nav-link{padding:8px 14px;border-radius:8px;font-size:14px;color:var(--text-sec);text-decoration:none;font-weight:500;cursor:pointer}
+  .nav-link:hover{background:var(--primary-light);color:var(--primary)}
+  .nav-link.active{background:var(--primary-light);color:var(--primary);font-weight:600}
+  .nav-right{margin-left:auto}
+  .theme-btn{width:36px;height:36px;border-radius:8px;border:1px solid var(--border);background:var(--card);cursor:pointer;font-size:15px}
+
+  .main{padding:24px;max-width:1200px;margin:0 auto}
+  .page-title{font-size:22px;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:8px}
+
+  /* Filter bar */
+  .filter-bar{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:16px;box-shadow:var(--shadow-sm);
+    display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+  .filter-group{display:flex;flex-direction:column;gap:4px}
+  .filter-group label{font-size:11px;font-weight:600;color:var(--text-sec)}
+  .filter-group input,.filter-group select{padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--card);color:var(--text);outline:none}
+  .filter-group input:focus,.filter-group select:focus{border-color:var(--primary)}
+  .quick-btns{display:flex;gap:4px}
+  .qb{padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card);font-size:12px;cursor:pointer;color:var(--text-sec);font-weight:500}
+  .qb:hover{border-color:var(--primary);color:var(--primary)}
+  .qb.active{background:var(--primary);color:white;border-color:var(--primary)}
+  .search-btn{padding:8px 18px;border-radius:8px;border:none;background:var(--primary);color:white;font-size:13px;font-weight:600;cursor:pointer}
+
+  /* Summary cards */
+  .summary-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+  .sum-card{background:var(--card);border-radius:10px;padding:14px 16px;box-shadow:var(--shadow-sm)}
+  .sum-card .num{font-size:24px;font-weight:700}
+  .sum-card .lbl{font-size:12px;color:var(--text-sec);margin-top:2px}
+  .sum-card.total .num{color:var(--primary)}
+  .sum-card.guidance .num{color:var(--danger)}
+
+  /* Group header */
+  .group-header{display:flex;align-items:center;gap:10px;padding:10px 0;margin-top:8px}
+  .group-header h3{font-size:15px;font-weight:700;display:flex;align-items:center;gap:6px}
+  .group-count{background:var(--primary-light);color:var(--primary);padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600}
+
+  /* Table */
+  .table-wrap{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:16px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  thead{background:var(--bg)}
+  th{padding:10px 14px;text-align:left;font-weight:600;color:var(--text-sec);font-size:12px;border-bottom:1px solid var(--border);cursor:pointer}
+  th:hover{color:var(--primary)}
+  td{padding:10px 14px;border-bottom:1px solid var(--border)}
+  tr:hover{background:rgba(66,133,244,0.03)}
+  tr:last-child td{border-bottom:none}
+  .badge{padding:3px 8px;border-radius:5px;font-size:11px;font-weight:600}
+  .badge.req{background:var(--danger-light);color:#991b1b}
+  .badge.no{background:#f1f3f5;color:var(--text-muted)}
+  .badge.approved{background:var(--success-light);color:#065f46}
+  .badge.pending{background:var(--warning-light);color:#92400e}
+
+  .table-footer{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg);border-top:1px solid var(--border)}
+  .table-footer .info{font-size:13px;color:var(--text-sec)}
+  .export-btns{display:flex;gap:6px}
+  .exp-btn{padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card);font-size:12px;cursor:pointer;color:var(--text-sec)}
+  .exp-btn:hover{border-color:var(--primary);color:var(--primary)}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <span class="nav-logo">🔬 과학실험실</span>
+  <a class="nav-link">📋 신청 관리</a>
+  <a class="nav-link active">🧪 시약 목록</a>
+  <a class="nav-link">👨‍🎓 학생 목록</a>
+  <a class="nav-link">📅 임장 시간표</a>
+  <div class="nav-right"><button class="theme-btn">🌙</button></div>
+</nav>
+
+<div class="main">
+  <div class="page-title">🧪 시약 사용 목록</div>
+
+  <div class="filter-bar">
+    <div class="filter-group">
+      <label>시작일</label>
+      <input type="date" value="2026-04-01">
+    </div>
+    <div class="filter-group">
+      <label>종료일</label>
+      <input type="date" value="2026-04-30">
+    </div>
+    <div class="filter-group">
+      <label>빠른 기간</label>
+      <div class="quick-btns">
+        <span class="qb active">이번 달</span>
+        <span class="qb">이번 주</span>
+        <span class="qb">오늘</span>
+      </div>
+    </div>
+    <div class="filter-group">
+      <label>실험실</label>
+      <select><option>전체 실험실</option></select>
+    </div>
+    <div class="filter-group">
+      <label>승인 상태</label>
+      <select><option>승인됨만</option></select>
+    </div>
+    <button class="search-btn">🔍 조회</button>
+  </div>
+
+  <div class="summary-row">
+    <div class="sum-card total"><div class="num">23</div><div class="lbl">총 시약 사용건</div></div>
+    <div class="sum-card"><div class="num">15</div><div class="lbl">시약 종류</div></div>
+    <div class="sum-card guidance"><div class="num">7</div><div class="lbl">교사 지도 필요</div></div>
+    <div class="sum-card"><div class="num">5</div><div class="lbl">실험 건수</div></div>
+  </div>
+
+  <!-- Grouped by date -->
+  <div class="group-header">
+    <h3>📅 2026-04-10 (금)</h3>
+    <span class="group-count">2건</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>시약명</th><th>화학식</th><th>상태</th><th>농도</th><th>사용량</th><th>폐기분류</th><th>실험실</th><th>신청자</th><th>교사지도</th><th>상태</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>NaOH</strong></td><td>NaOH</td><td>고체</td><td>—</td><td>4g</td><td>알칼리 폐액</td><td>화학실험실</td><td>김민준</td><td><span class="badge req">필요</span></td><td><span class="badge pending">대기</span></td></tr>
+        <tr><td><strong>CH₃COOH</strong></td><td>C₂H₄O₂</td><td>액체</td><td>0.1M</td><td>50mL</td><td>산 폐액</td><td>화학실험실</td><td>김민준</td><td><span class="badge no">불필요</span></td><td><span class="badge pending">대기</span></td></tr>
+        <tr><td><strong>페놀프탈레인</strong></td><td>C₂₀H₁₄O₄</td><td>액체</td><td>1%</td><td>5mL</td><td>유기 폐액</td><td>화학실험실</td><td>김민준</td><td><span class="badge no">불필요</span></td><td><span class="badge pending">대기</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="group-header">
+    <h3>📅 2026-04-09 (목)</h3>
+    <span class="group-count">3건</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>시약명</th><th>화학식</th><th>상태</th><th>농도</th><th>사용량</th><th>폐기분류</th><th>실험실</th><th>신청자</th><th>교사지도</th><th>상태</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>HCl</strong></td><td>HCl</td><td>액체</td><td>1M</td><td>30mL</td><td>산 폐액</td><td>화학실험실</td><td>박하은</td><td><span class="badge req">필요</span></td><td><span class="badge approved">승인</span></td></tr>
+        <tr><td><strong>에탄올</strong></td><td>C₂H₅OH</td><td>액체</td><td>95%</td><td>20mL</td><td>유기 폐액</td><td>화학실험실</td><td>박하은</td><td><span class="badge no">불필요</span></td><td><span class="badge approved">승인</span></td></tr>
+        <tr><td><strong>살리실산</strong></td><td>C₇H₆O₃</td><td>고체</td><td>—</td><td>2g</td><td>유기 폐기물</td><td>화학실험실</td><td>박하은</td><td><span class="badge no">불필요</span></td><td><span class="badge approved">승인</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="table-wrap">
+    <div class="table-footer">
+      <span class="info">총 6건 · 시약 6종</span>
+      <div class="export-btns">
+        <button class="exp-btn">📥 CSV 내보내기</button>
+        <button class="exp-btn">🖨️ 인쇄</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>Smart Desktop v2.5 - 목업</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Malgun Gothic', 'Segoe UI', sans-serif; overflow: hidden; height: 100vh; }
+
+  /* ── 테마 변수 ── */
+  :root {
+    --accent: #f43f5e; --bg: #fff1f2; --widget: #ffffff; --text: #1f2937;
+    --border: #fecdd3; --sub: #9ca3af; --radius: 10px; --shadow: 0 1px 6px rgba(0,0,0,0.05);
+    --padding: 10px 12px; --border-w: 1px; --border-style: solid; --blur: none;
+  }
+
+  .app { width: 100vw; height: 100vh; background: var(--bg); display: flex; flex-direction: column; color: var(--text); font-size: 13px; }
+
+  /* ── 상단바 ── */
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 5px 16px; min-height: 42px; background: rgba(255,255,255,0.95); border-bottom: 1px solid var(--border); flex-shrink: 0; backdrop-filter: var(--blur); }
+  .topbar .left { display: flex; align-items: center; gap: 12px; }
+  .topbar .time { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .topbar .date { font-size: 11px; color: var(--sub); }
+  .topbar .user { font-size: 11px; color: var(--accent); font-weight: 600; }
+  .topbar .school { font-size: 10px; color: var(--sub); background: #f3f4f6; border-radius: 5px; padding: 1px 7px; }
+  .topbar .period { display: flex; align-items: center; gap: 10px; background: #dbeafe; border-radius: 10px; padding: 6px 16px; }
+  .topbar .period .emoji { font-size: 16px; }
+  .topbar .period .name { font-size: 14px; font-weight: 700; color: #1e40af; }
+  .topbar .period .ptime { font-size: 12px; color: #6b7280; }
+  .topbar .period .remain { font-size: 16px; font-weight: 700; color: #dc2626; font-variant-numeric: tabular-nums; }
+  .topbar .right { display: flex; align-items: center; gap: 6px; }
+  .topbar .btn { background: #f3f4f6; border: none; border-radius: 7px; padding: 4px 10px; font-size: 11px; cursor: pointer; color: var(--text); font-family: inherit; }
+  .topbar .btn:hover { background: #e5e7eb; }
+  .topbar .btn.edit { background: var(--accent); color: #fff; }
+
+  /* ── 메인 위젯 영역 ── */
+  .main { flex: 1; position: relative; overflow: hidden; padding: 6px; }
+
+  .widget {
+    position: absolute;
+    background: var(--widget);
+    border-radius: var(--radius);
+    padding: var(--padding);
+    border: var(--border-w) var(--border-style) var(--border);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    backdrop-filter: var(--blur);
+    transition: border-radius 0.3s, box-shadow 0.3s, border 0.3s;
+  }
+  .widget .w-title { font-size: 12px; font-weight: 600; margin-bottom: 6px; flex-shrink: 0; }
+  .widget .w-sub { font-size: 10px; color: var(--sub); }
+  .widget .w-content { flex: 1; overflow: hidden; }
+
+  /* ── 하단 독 ── */
+  .dock { display: flex; align-items: center; gap: 3px; padding: 4px 14px 5px; background: rgba(255,255,255,0.9); border-top: 1px solid var(--border); flex-shrink: 0; backdrop-filter: var(--blur); }
+  .dock-search { flex: 0 0 180px; display: flex; align-items: center; gap: 4px; background: #f3f4f6; border-radius: 8px; padding: 4px 8px; }
+  .dock-search input { border: none; background: none; outline: none; font-size: 11px; width: 100%; font-family: inherit; }
+  .dock-btn { width: 34px; height: 34px; border-radius: 9px; border: 1px solid var(--border); background: rgba(255,255,255,0.9); display: flex; align-items: center; justify-content: center; font-size: 15px; cursor: pointer; transition: transform 0.15s; }
+  .dock-btn:hover { transform: scale(1.12) translateY(-2px); }
+  .dock-sep { width: 1px; height: 22px; background: var(--border); margin: 0 4px; }
+  .dock-right { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+  .dock-bell { width: 32px; height: 32px; border-radius: 8px; border: none; background: transparent; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+  /* ── 위젯 내부 스타일 ── */
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+  .cal-header { text-align: center; font-size: 10px; font-weight: 600; padding: 2px; }
+  .cal-header.sun { color: #ef4444; }
+  .cal-header.sat { color: #3b82f6; }
+  .cal-cell { min-height: 32px; border-radius: 6px; padding: 2px; text-align: center; font-size: 11px; cursor: pointer; position: relative; }
+  .cal-cell:hover { background: #fef2f2; }
+  .cal-cell.today { background: var(--accent); color: #fff; font-weight: 700; border-radius: 6px; }
+  .cal-cell .weather { font-size: 8px; }
+  .cal-event { font-size: 8px; background: var(--accent); color: #fff; border-radius: 2px; padding: 0 2px; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .nl-input { width: 100%; border: 1.5px solid #e5e7eb; border-radius: 8px; padding: 5px 8px; font-size: 11px; outline: none; font-family: inherit; margin-bottom: 6px; }
+  .nl-input:focus { border-color: var(--accent); }
+
+  .todo-item { display: flex; align-items: center; gap: 5px; padding: 3px 0; border-bottom: 0.5px solid var(--border); font-size: 11px; }
+  .todo-check { width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid #d1d5db; flex-shrink: 0; }
+  .todo-check.done { background: var(--accent); border-color: var(--accent); }
+
+  .progress-bar { height: 8px; background: #f3f4f6; border-radius: 4px; overflow: hidden; margin: 3px 0; }
+  .progress-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+
+  .tag { display: inline-block; font-size: 9px; padding: 1px 5px; border-radius: 3px; margin: 1px; }
+  .tag-accent { background: var(--accent); color: #fff; opacity: 0.2; }
+
+  .meal-tab { padding: 3px 8px; border-radius: 5px; border: none; font-size: 10px; cursor: pointer; font-family: inherit; }
+  .meal-tab.active { background: var(--accent); color: #fff; }
+  .meal-tab:not(.active) { background: #f3f4f6; }
+
+  /* ── 설정 탭 ── */
+  .settings-tab { padding: 8px 14px; font-size: 12px; cursor: pointer; border-radius: 0; border: none; color: #6b7280; transition: all 0.15s; }
+  .settings-tab:hover { background: #f3f4f6; color: #1f2937; }
+  .settings-tab.active { background: #fff; color: var(--accent); font-weight: 600; border-right: 2px solid var(--accent); }
+  .widget-toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 0.5px solid #f3f4f6; }
+  .widget-toggle-row .wt-label { font-size: 12px; }
+  .toggle-switch { width: 36px; height: 20px; border-radius: 10px; position: relative; cursor: pointer; transition: background 0.2s; border: none; }
+  .toggle-switch.on { background: var(--accent); }
+  .toggle-switch.off { background: #e5e7eb; }
+  .toggle-switch::after { content: ''; width: 16px; height: 16px; border-radius: 50%; background: #fff; position: absolute; top: 2px; transition: left 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+  .toggle-switch.on::after { left: 18px; }
+  .toggle-switch.off::after { left: 2px; }
+  .theme-picker .section-label { font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; margin: 16px 0 8px; letter-spacing: 0.5px; }
+
+  .frame-btn { width: 100%; padding: 8px; border-radius: 10px; border: 2px solid transparent; cursor: pointer; text-align: center; margin-bottom: 6px; background: #f9fafb; transition: all 0.15s; }
+  .frame-btn:hover { border-color: #e5e7eb; }
+  .frame-btn.active { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(244,63,94,0.2); }
+  .frame-btn .preview { padding: 8px 6px; margin-bottom: 4px; display: flex; flex-direction: column; gap: 3px; }
+  .frame-btn .preview .bar { height: 3px; border-radius: 2px; }
+  .frame-btn .label { font-size: 11px; font-weight: 600; }
+
+  .color-btn { width: 36px; height: 36px; border-radius: 8px; border: 2px solid transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; margin: 2px; transition: all 0.15s; }
+  .color-btn:hover { transform: scale(1.1); }
+  .color-btn.active { border-color: var(--text); box-shadow: 0 0 0 2px rgba(0,0,0,0.1); }
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <!-- ═══ 상단바 ═══ -->
+  <div class="topbar">
+    <div class="left">
+      <span class="time" id="clock">08:45</span>
+      <span class="date" id="dateStr">4/12 (토)</span>
+      <span style="font-size:11px;color:#6b7280">|</span>
+      <span class="user">김선생</span>
+      <span class="school">충남삼성고</span>
+    </div>
+    <div class="period">
+      <span class="emoji">📚</span>
+      <span class="name">2교시</span>
+      <span class="ptime">09:40~10:30</span>
+      <span class="remain">42:15</span>
+      <span style="font-size:11px;color:#9ca3af">남음</span>
+      <span style="font-size:11px;color:#6b7280;margin-left:4px">→ 쉬는시간 (10:30)</span>
+    </div>
+    <div class="right">
+      <button class="btn">✏️ 화면 편집</button>
+      <button class="btn" onclick="toggleSettings()">⚙️ 설정</button>
+    </div>
+  </div>
+
+  <!-- ═══ 메인 위젯 영역 ═══ -->
+  <div class="main" id="main">
+
+    <!-- 시간표 -->
+    <div class="widget" style="left:0.5%;top:0.5%;width:16%;height:55%;">
+      <div class="w-title">📋 시간표</div>
+      <div class="w-content" style="overflow:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:9px;">
+          <tr style="background:#fef2f2"><th style="padding:3px;width:35px">교시</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th></tr>
+          <tr><td style="padding:3px;font-weight:600;color:var(--accent)">1</td><td style="background:#dbeafe80;padding:2px;border-radius:3px">수학</td><td style="background:#dcfce780;padding:2px;border-radius:3px">영어</td><td style="background:#fef3c780;padding:2px;border-radius:3px">국어</td><td style="background:#dbeafe80;padding:2px;border-radius:3px">수학</td><td style="background:#e9d5ff80;padding:2px;border-radius:3px">과학</td></tr>
+          <tr><td style="padding:3px;font-weight:600;color:var(--accent)">2</td><td style="background:#dcfce780;padding:2px;border-radius:3px">영어</td><td style="background:#fef3c780;padding:2px;border-radius:3px">국어</td><td style="background:#dbeafe80;padding:2px;border-radius:3px">수학</td><td style="background:#e9d5ff80;padding:2px;border-radius:3px">과학</td><td style="background:#fecaca80;padding:2px;border-radius:3px">체육</td></tr>
+          <tr><td style="padding:3px;font-weight:600;color:var(--accent)">3</td><td style="background:#fef3c780;padding:2px;border-radius:3px">국어</td><td style="background:#e9d5ff80;padding:2px;border-radius:3px">과학</td><td style="background:#dcfce780;padding:2px;border-radius:3px">영어</td><td style="background:#fecaca80;padding:2px;border-radius:3px">체육</td><td style="background:#dbeafe80;padding:2px;border-radius:3px">수학</td></tr>
+          <tr><td style="padding:3px;font-weight:600;color:var(--accent)">4</td><td style="background:#e9d5ff80;padding:2px;border-radius:3px">과학</td><td style="background:#dbeafe80;padding:2px;border-radius:3px">수학</td><td style="background:#fecaca80;padding:2px;border-radius:3px">체육</td><td style="background:#dcfce780;padding:2px;border-radius:3px">영어</td><td style="background:#fef3c780;padding:2px;border-radius:3px">국어</td></tr>
+          <tr><td style="padding:3px;font-weight:600;color:var(--accent)">5</td><td style="background:#fecaca80;padding:2px;border-radius:3px">미술</td><td style="background:#fed7aa80;padding:2px;border-radius:3px">음악</td><td style="background:#fef3c780;padding:2px;border-radius:3px">국어</td><td style="background:#dbeafe80;padding:2px;border-radius:3px">수학</td><td style="background:#dcfce780;padding:2px;border-radius:3px">창체</td></tr>
+          <tr><td style="padding:3px;font-weight:600;color:var(--accent)">6</td><td style="background:#fed7aa80;padding:2px;border-radius:3px">음악</td><td style="background:#fecaca80;padding:2px;border-radius:3px">미술</td><td style="background:#e9d5ff80;padding:2px;border-radius:3px">과학</td><td style="background:#fef3c780;padding:2px;border-radius:3px">국어</td><td style="background:#dbeafe80;padding:2px;border-radius:3px">자습</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- D-Day -->
+    <div class="widget" style="left:0.5%;top:56%;width:16%;height:18%;">
+      <div class="w-title">📅 D-Day</div>
+      <div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:0.5px solid var(--border)">
+        <span style="font-size:13px;font-weight:700;color:#dc2626;min-width:40px">D-12</span>
+        <span style="font-size:11px;flex:1">1차 지필고사</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:0.5px solid var(--border)">
+        <span style="font-size:13px;font-weight:700;color:var(--accent);min-width:40px">D-45</span>
+        <span style="font-size:11px;flex:1">여름방학</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;padding:3px 0">
+        <span style="font-size:13px;font-weight:700;color:#f59e0b;min-width:40px">D-3</span>
+        <span style="font-size:11px;flex:1">✅ 보고서 제출</span>
+      </div>
+    </div>
+
+    <!-- 바로가기 -->
+    <div class="widget" style="left:0.5%;top:75%;width:16%;height:24.5%;">
+      <div class="w-title">⭐ 바로가기</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;">
+        <div style="text-align:center;padding:4px;border-radius:6px;cursor:pointer;font-size:8px" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='transparent'"><div style="font-size:18px">🌐</div>Google</div>
+        <div style="text-align:center;padding:4px;border-radius:6px;cursor:pointer;font-size:8px" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='transparent'"><div style="font-size:18px">📧</div>Gmail</div>
+        <div style="text-align:center;padding:4px;border-radius:6px;cursor:pointer;font-size:8px" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='transparent'"><div style="font-size:18px">🏫</div>NEIS</div>
+        <div style="text-align:center;padding:4px;border-radius:6px;cursor:pointer;font-size:8px" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='transparent'"><div style="font-size:18px">🎓</div>Classroom</div>
+        <div style="text-align:center;padding:4px;border-radius:6px;cursor:pointer;font-size:8px" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='transparent'"><div style="font-size:18px">📁</div>Drive</div>
+        <div style="text-align:center;padding:4px;border-radius:6px;cursor:pointer;font-size:8px" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='transparent'"><div style="font-size:18px">📝</div>한컴</div>
+      </div>
+    </div>
+
+    <!-- 캘린더 -->
+    <div class="widget" style="left:17%;top:0.5%;width:36.5%;height:55%;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <span style="cursor:pointer;font-size:16px;color:var(--sub)">‹</span>
+        <span style="font-weight:700;font-size:14px">2026년 4월</span>
+        <span style="cursor:pointer;font-size:16px;color:var(--sub)">›</span>
+      </div>
+      <input class="nl-input" placeholder="✨ 자연어 입력: 내일 3시 학부모 상담" />
+      <div class="cal-grid" style="margin-bottom:4px">
+        <div class="cal-header sun">일</div><div class="cal-header">월</div><div class="cal-header">화</div><div class="cal-header">수</div><div class="cal-header">목</div><div class="cal-header">금</div><div class="cal-header sat">토</div>
+      </div>
+      <div class="cal-grid" style="flex:1" id="calGrid"></div>
+      <div style="font-size:9px;color:var(--sub);text-align:center;margin-top:4px">✨ 자연어 입력 · 📅 더블클릭 추가 · 🖱 드래그 이동 · 🗑 우클릭 삭제</div>
+    </div>
+
+    <!-- 받은 메일 -->
+    <div class="widget" style="left:17%;top:56%;width:20%;height:43.5%;">
+      <div class="w-title">📧 받은 메일 <span style="background:#fee2e2;color:#dc2626;font-size:10px;padding:1px 6px;border-radius:8px;margin-left:4px">3</span></div>
+      <div style="flex:1;overflow:auto">
+        <div style="padding:6px 0;border-bottom:0.5px solid var(--border)">
+          <div style="font-size:11px;font-weight:600">📌 [긴급] 교직원 회의 안건</div>
+          <div style="font-size:9px;color:var(--sub)">교무부 · 10분 전</div>
+        </div>
+        <div style="padding:6px 0;border-bottom:0.5px solid var(--border)">
+          <div style="font-size:11px;font-weight:600">학급 행사비 정산 요청</div>
+          <div style="font-size:9px;color:var(--sub)">행정실 · 1시간 전</div>
+        </div>
+        <div style="padding:6px 0;border-bottom:0.5px solid var(--border)">
+          <div style="font-size:11px">2학기 교과서 선정 안내</div>
+          <div style="font-size:9px;color:var(--sub)">교육과정부 · 어제</div>
+        </div>
+        <div style="padding:6px 0">
+          <div style="font-size:11px;color:var(--sub)">RE: 현장학습 계획서 검토</div>
+          <div style="font-size:9px;color:var(--sub)">생활지도부 · 2일 전</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 수업 진도표 -->
+    <div class="widget" style="left:37.5%;top:56%;width:16%;height:43.5%;">
+      <div class="w-title">📊 수업 진도표</div>
+      <div style="flex:1;overflow:auto">
+        <div style="padding:4px 0;border-bottom:0.5px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;font-size:11px"><span style="font-weight:600">수학</span><span style="color:var(--accent);font-weight:700">68%</span></div>
+          <div class="progress-bar"><div class="progress-fill" style="width:68%;background:var(--accent)"></div></div>
+          <div style="font-size:9px;color:var(--sub)">이차방정식까지 완료</div>
+        </div>
+        <div style="padding:4px 0;border-bottom:0.5px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;font-size:11px"><span style="font-weight:600">영어</span><span style="color:#10b981;font-weight:700">85%</span></div>
+          <div class="progress-bar"><div class="progress-fill" style="width:85%;background:#10b981"></div></div>
+        </div>
+        <div style="padding:4px 0">
+          <div style="display:flex;justify-content:space-between;font-size:11px"><span style="font-weight:600">과학</span><span style="color:var(--accent);font-weight:700">42%</span></div>
+          <div class="progress-bar"><div class="progress-fill" style="width:42%;background:var(--accent)"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 할 일 -->
+    <div class="widget" style="left:54%;top:0.5%;width:12.5%;height:49%;">
+      <div class="w-title">✅ 할 일 <span style="background:#fee2e2;color:#dc2626;font-size:10px;padding:1px 6px;border-radius:8px">4</span></div>
+      <div style="flex:1;overflow:auto">
+        <div class="todo-item"><div class="todo-check done"></div><span style="text-decoration:line-through;color:var(--sub)">수업 진도표 업데이트</span></div>
+        <div class="todo-item"><div class="todo-check"></div><span>1학기 성적 입력</span><span style="font-size:8px;color:#f59e0b;background:#fef3c7;border-radius:3px;padding:0 3px;margin-left:auto">4/15</span></div>
+        <div class="todo-item"><div class="todo-check"></div><span>학부모 상담 준비</span></div>
+        <div class="todo-item"><div class="todo-check"></div><span>교육과정 재구성안</span><span style="font-size:8px;color:#f59e0b;background:#fef3c7;border-radius:3px;padding:0 3px;margin-left:auto">4/20</span></div>
+        <div class="todo-item"><div class="todo-check"></div><span>현장학습 계획서</span></div>
+      </div>
+    </div>
+
+    <!-- 메모 (마크다운+태그+위키링크) -->
+    <div class="widget" style="left:67%;top:0.5%;width:12.5%;height:49%;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:12px;font-weight:600">📝 메모</span>
+        <span style="font-size:10px;color:var(--accent);cursor:pointer">👁 미리보기</span>
+      </div>
+      <div style="display:flex;gap:2px;margin-bottom:4px;flex-wrap:wrap">
+        <span style="font-size:9px;padding:1px 5px;border-radius:4px;background:var(--accent);color:#fff;cursor:pointer">전체</span>
+        <span style="font-size:9px;padding:1px 5px;border-radius:4px;background:#f3f4f6;cursor:pointer">#수업</span>
+        <span style="font-size:9px;padding:1px 5px;border-radius:4px;background:#f3f4f6;cursor:pointer">#행정</span>
+      </div>
+      <div style="flex:1;overflow:auto;font-size:11px;line-height:1.6">
+        <strong style="font-size:13px">수업 메모</strong><br>
+        <strong>이차방정식</strong> 단원 포인트<br>
+        - 근의 공식 유도 과정<br>
+        - <code style="background:#f3f4f6;padding:1px 3px;border-radius:3px;font-size:10px">판별식</code> 활용 문제<br>
+        <span style="background:rgba(244,63,94,0.1);color:var(--accent);padding:0 3px;border-radius:3px;font-size:10px">#수업</span>
+        <span style="color:var(--accent);text-decoration:underline;font-size:10px">성적분석</span>
+      </div>
+    </div>
+
+    <!-- AI 채팅 -->
+    <div class="widget" style="left:54%;top:50%;width:25.5%;height:24.5%;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:12px;font-weight:600">🤖 AI 채팅</span>
+        <div style="display:flex;gap:2px">
+          <span style="font-size:9px;padding:2px 5px;border-radius:4px;background:#4285f4;color:#fff;font-weight:700">Gemini</span>
+          <span style="font-size:9px;padding:2px 5px;border-radius:4px;background:#f3f4f6;color:#6b7280">Claude</span>
+          <span style="font-size:9px;padding:2px 5px;border-radius:4px;background:#f3f4f6;color:#6b7280">GPT</span>
+        </div>
+      </div>
+      <div style="flex:1;overflow:auto;display:flex;flex-direction:column;gap:4px">
+        <div style="align-self:flex-end;background:var(--accent);color:#fff;border-radius:8px;padding:5px 8px;font-size:11px;max-width:85%">이차방정식 수업 도입 활동 추천해줘</div>
+        <div style="align-self:flex-start;background:#f3f4f6;border-radius:8px;padding:5px 8px;font-size:11px;max-width:85%;line-height:1.5">1. 실생활 문제로 시작하기 (공 던지기 궤적)<br>2. GeoGebra로 그래프 탐구<br>3. 모둠별 문제 만들기 활동</div>
+      </div>
+      <div style="display:flex;gap:3px;margin-top:4px">
+        <input placeholder="질문 입력..." style="flex:1;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:11px;outline:none;font-family:inherit" />
+        <button style="background:var(--accent);color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer">→</button>
+      </div>
+    </div>
+
+    <!-- 스톱워치 -->
+    <div class="widget" style="left:54%;top:75%;width:25.5%;height:24.5%;">
+      <div style="display:flex;gap:3px;margin-bottom:6px">
+        <button style="flex:1;padding:2px;border-radius:5px;font-size:10px;border:none;cursor:pointer;background:var(--accent);color:#fff">⏱ 스톱워치</button>
+        <button style="flex:1;padding:2px;border-radius:5px;font-size:10px;border:none;cursor:pointer;background:#f3f4f6;color:#6b7280">⏳ 타이머</button>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center">
+        <div style="font-size:32px;font-weight:700;font-variant-numeric:tabular-nums">00:00</div>
+      </div>
+      <div style="display:flex;gap:4px">
+        <button style="flex:1;background:#10b981;color:#fff;border:none;border-radius:6px;padding:5px;font-size:11px;cursor:pointer">▶ 시작</button>
+        <button style="flex:1;background:#f3f4f6;color:var(--text);border:none;border-radius:6px;padding:5px;font-size:11px;cursor:pointer">↺ 초기화</button>
+      </div>
+    </div>
+
+    <!-- 날씨 -->
+    <div class="widget" style="left:80%;top:0.5%;width:19.5%;height:18%;">
+      <div class="w-title">🌤 날씨 · 아산</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:28px">⛅</span>
+        <div>
+          <div style="font-size:22px;font-weight:700">18°</div>
+          <div style="font-size:10px;color:var(--sub)">체감 16° · 구름 조금</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:9px;color:var(--sub)">
+        <span>💨 8km/h</span><span>💧 52%</span>
+        <span style="background:#dbeafe;color:#1e40af;padding:1px 4px;border-radius:3px">미세먼지 좋음</span>
+      </div>
+    </div>
+
+    <!-- 급식 -->
+    <div class="widget" style="left:80%;top:19%;width:19.5%;height:24%;">
+      <div class="w-title">🍽 급식</div>
+      <div style="display:flex;gap:3px;margin-bottom:6px">
+        <button class="meal-tab">조식</button>
+        <button class="meal-tab active">중식</button>
+        <button class="meal-tab">석식</button>
+      </div>
+      <div style="font-size:11px;line-height:1.8">
+        쌀밥<br>된장찌개<br>제육볶음<br>시금치나물<br>깍두기<br>딸기
+      </div>
+    </div>
+
+    <!-- 랜덤 뽑기 -->
+    <div class="widget" style="left:80%;top:43.5%;width:12%;height:18%;">
+      <div class="w-title">🎲 랜덤 뽑기</div>
+      <div style="text-align:center;padding:6px;background:rgba(244,63,94,0.08);border-radius:8px;margin-bottom:4px">
+        <div style="font-size:18px;font-weight:700;color:var(--accent)">김민수</div>
+      </div>
+      <button style="width:100%;background:var(--accent);color:#fff;border:none;border-radius:6px;padding:4px;font-size:11px;cursor:pointer">🎲 뽑기!</button>
+    </div>
+
+    <!-- 음악 -->
+    <div class="widget" style="left:92.5%;top:43.5%;width:7%;height:18%;">
+      <div style="text-align:center;font-size:24px;margin-bottom:4px">🎵</div>
+      <div style="text-align:center;font-size:9px;color:var(--sub)">YouTube</div>
+      <div style="text-align:center;margin-top:6px;font-size:16px;cursor:pointer">▶</div>
+    </div>
+
+    <!-- 계산기 -->
+    <div class="widget" style="left:80%;top:62%;width:19.5%;height:24.5%;">
+      <div class="w-title">🔢 계산기</div>
+      <div style="background:#f9fafb;border-radius:6px;padding:5px 8px;text-align:right;font-size:18px;font-weight:700;margin-bottom:4px;font-variant-numeric:tabular-nums">0</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:3px;flex:1">
+        <button style="border:none;border-radius:5px;background:#ef4444;color:#fff;font-size:12px;cursor:pointer;padding:4px 0">C</button>
+        <button style="border:none;border-radius:5px;background:#f3f4f6;font-size:12px;cursor:pointer;padding:4px 0">÷</button>
+        <button style="border:none;border-radius:5px;background:#f3f4f6;font-size:12px;cursor:pointer;padding:4px 0">×</button>
+        <button style="border:none;border-radius:5px;background:#f3f4f6;font-size:12px;cursor:pointer;padding:4px 0">−</button>
+        <button style="border:none;border-radius:5px;background:#f3f4f6;font-size:12px;cursor:pointer;padding:4px 0">7</button>
+        <button style="border:none;border-radius:5px;background:#f3f4f6;font-size:12px;cursor:pointer;padding:4px 0">8</button>
+        <button style="border:none;border-radius:5px;background:#f3f4f6;font-size:12px;cursor:pointer;padding:4px 0">9</button>
+        <button style="border:none;border-radius:5px;background:#f3f4f6;font-size:12px;cursor:pointer;padding:4px 0">+</button>
+        <button style="border:none;border-radius:5px;background:#f3f4f6;font-size:12px;cursor:pointer;padding:4px 0">4</button>
+        <button style="border:none;border-radius:5px;background:#f3f4f6;font-size:12px;cursor:pointer;padding:4px 0">5</button>
+        <button style="border:none;border-radius:5px;background:#f3f4f6;font-size:12px;cursor:pointer;padding:4px 0">6</button>
+        <button style="border:none;border-radius:5px;background:var(--accent);color:#fff;font-size:12px;cursor:pointer;padding:4px 0">=</button>
+      </div>
+    </div>
+
+    <!-- 수업자료 -->
+    <div class="widget" style="left:80%;top:87%;width:12%;height:12.5%;">
+      <div class="w-title">📚 수업 자료</div>
+      <div style="font-size:9px;color:var(--sub)">에듀넷 · EBS · 인디스쿨</div>
+    </div>
+
+    <!-- 명언 -->
+    <div class="widget" style="left:92.5%;top:87%;width:7%;height:12.5%;">
+      <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-size:10px;line-height:1.4">
+        <div>"교육은 미래를 위한 무기"</div>
+        <div style="font-size:8px;color:var(--sub);margin-top:2px">— 만델라</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══ 하단 독 ═══ -->
+  <div class="dock">
+    <div class="dock-search"><span style="font-size:12px">🔍</span><input placeholder="검색..." /></div>
+    <div class="dock-btn">📂</div>
+    <div class="dock-btn">🌐</div>
+    <div class="dock-btn">📅</div>
+    <div class="dock-btn">📧</div>
+    <div class="dock-btn">💬</div>
+    <div class="dock-btn">📁</div>
+    <div class="dock-btn">🎓</div>
+    <div class="dock-btn">🏫</div>
+    <div class="dock-sep"></div>
+    <div class="dock-btn">✦</div>
+    <div class="dock-btn">👥</div>
+    <div class="dock-btn">📋</div>
+    <div class="dock-right">
+      <div class="dock-bell">🔔</div>
+      <div class="dock-sep"></div>
+      <span style="font-size:13px" title="Wi-Fi 연결됨">📶</span>
+      <span style="font-size:13px" title="배터리 85%">🔋</span>
+      <span style="font-size:10px;color:var(--sub);font-variant-numeric:tabular-nums" id="batteryPct">85%</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 설정 패널 (탭 구조, 고정 크기) ═══ -->
+<div id="settingsOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:999" onclick="toggleSettings()"></div>
+<div id="settingsPanel" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:620px;height:520px;background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,0.25);z-index:1000;overflow:hidden;">
+  <!-- 헤더 -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #e5e7eb">
+    <span style="font-size:16px;font-weight:700">⚙️ 설정</span>
+    <button onclick="toggleSettings()" style="background:none;border:none;font-size:18px;cursor:pointer;color:#9ca3af">✕</button>
+  </div>
+  <div style="display:flex;height:calc(100% - 52px)">
+    <!-- 좌측 탭 메뉴 -->
+    <div style="width:140px;border-right:1px solid #e5e7eb;padding:8px 0;overflow-y:auto;flex-shrink:0;background:#f9fafb">
+      <div class="settings-tab active" onclick="switchTab('design')">🎨 디자인</div>
+      <div class="settings-tab" onclick="switchTab('schedule')">🕐 일과</div>
+      <div class="settings-tab" onclick="switchTab('google')">🔗 Google</div>
+      <div class="settings-tab" onclick="switchTab('ai')">✦ AI Plus</div>
+      <div class="settings-tab" onclick="switchTab('noticeboard')">📡 전광판</div>
+      <div class="settings-tab" onclick="switchTab('notifications')">🔔 알림</div>
+      <div class="settings-tab" onclick="switchTab('widgets')">🧩 위젯</div>
+      <div class="settings-tab" onclick="switchTab('weather')">🌤️ 날씨</div>
+      <div class="settings-tab" onclick="switchTab('meal')">🍽️ 급식</div>
+      <div class="settings-tab" onclick="switchTab('profile')">👤 내 정보</div>
+      <div class="settings-tab" onclick="switchTab('data')">💾 데이터</div>
+      <div class="settings-tab" onclick="switchTab('update')">🔄 업데이트</div>
+      <div class="settings-tab" onclick="switchTab('about')">ℹ️ 정보</div>
+    </div>
+    <!-- 우측 컨텐츠 -->
+    <div style="flex:1;padding:16px 20px;overflow-y:auto" id="settingsContent">
+
+      <!-- ── 디자인 탭 ── -->
+      <div id="tab-design">
+        <div class="section-label">프레임 테마 (틀 디자인)</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px" id="frameList"></div>
+
+        <div class="section-label">색상 팔레트</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:16px" id="colorList"></div>
+
+        <div class="section-label">커스텀 색상</div>
+        <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px">
+          <span style="font-size:11px;width:60px">강조 색상</span>
+          <input type="color" value="#f43f5e" style="width:32px;height:24px;border:none;cursor:pointer" />
+          <span style="font-size:11px;width:60px">배경 색상</span>
+          <input type="color" value="#fff1f2" style="width:32px;height:24px;border:none;cursor:pointer" />
+        </div>
+
+        <div class="section-label">다크모드</div>
+        <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px">
+          <select style="border:1px solid #e5e7eb;border-radius:6px;padding:4px 8px;font-size:11px;outline:none;font-family:inherit">
+            <option>끄기</option><option>켜기</option><option>시간별 (18~6시)</option><option selected>시스템 따라가기</option>
+          </select>
+        </div>
+
+        <div class="section-label">글꼴</div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+          <span style="font-size:11px;width:40px">폰트</span>
+          <select id="fontSelect" style="flex:1;border:1px solid #e5e7eb;border-radius:6px;padding:4px 8px;font-size:11px;outline:none;font-family:inherit">
+            <option>시스템 폰트 로딩 중...</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+          <span style="font-size:11px;width:40px">크기</span>
+          <input type="range" min="11" max="16" value="13" style="flex:1" />
+          <span style="font-size:11px;width:30px;text-align:right">13px</span>
+        </div>
+
+        <div class="section-label">위젯 투명도</div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+          <input type="range" min="50" max="100" value="95" style="flex:1" />
+          <span style="font-size:11px;width:30px;text-align:right">95%</span>
+        </div>
+
+        <div class="section-label">배경 이미지</div>
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px">
+          <button style="background:#f3f4f6;border:1px solid #e5e7eb;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit">📁 이미지 선택</button>
+          <button style="background:#f3f4f6;border:1px solid #e5e7eb;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit">🗑 제거</button>
+          <span style="font-size:10px;color:#9ca3af">권장: 1920×1080</span>
+        </div>
+      </div>
+
+      <!-- ── 위젯 탭 ── -->
+      <div id="tab-widgets" style="display:none">
+        <div style="display:flex;gap:6px;margin-bottom:12px">
+          <input placeholder="🔍 위젯 검색..." style="flex:1;border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;font-size:12px;outline:none;font-family:inherit" />
+          <span style="font-size:11px;color:#9ca3af;align-self:center" id="widgetCount">17/48</span>
+        </div>
+        <div class="section-label">수업</div>
+        <div id="widgetListClass"></div>
+        <div class="section-label">일정</div>
+        <div id="widgetListSchedule"></div>
+        <div class="section-label">도구</div>
+        <div id="widgetListTool"></div>
+        <div class="section-label">생활</div>
+        <div id="widgetListLife"></div>
+        <div class="section-label">정보</div>
+        <div id="widgetListInfo"></div>
+        <div class="section-label">기타</div>
+        <div id="widgetListEtc"></div>
+      </div>
+
+      <!-- ── 업데이트 탭 ── -->
+      <div id="tab-update" style="display:none">
+        <div class="section-label">자동 업데이트</div>
+        <div class="widget-toggle-row">
+          <span class="wt-label">자동 업데이트 사용</span>
+          <button class="toggle-switch on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button>
+        </div>
+        <div class="widget-toggle-row">
+          <span class="wt-label">시작 시 업데이트 확인</span>
+          <button class="toggle-switch on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button>
+        </div>
+        <div style="margin-top:16px">
+          <div class="section-label">현재 버전</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+            <span style="font-size:18px;font-weight:700;color:var(--accent)">v2.5.0</span>
+            <span style="font-size:10px;color:#10b981;background:#dcfce7;padding:2px 8px;border-radius:10px">최신 버전</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:16px">
+          <button style="flex:1;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px;font-size:12px;cursor:pointer;font-family:inherit">🔍 업데이트 확인</button>
+          <button style="flex:1;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:8px;padding:8px;font-size:12px;cursor:pointer;font-family:inherit;color:#6b7280">📥 수동 설치</button>
+        </div>
+        <div class="section-label">업데이트 이력</div>
+        <div style="font-size:11px;color:#6b7280;line-height:1.8">
+          <div style="padding:4px 0;border-bottom:0.5px solid #f3f4f6"><strong>v2.5.0</strong> — 신규 위젯 33개, 프레임 테마, 자연어 입력</div>
+          <div style="padding:4px 0;border-bottom:0.5px solid #f3f4f6"><strong>v2.4.0</strong> — UI/UX 재설계, 그리드 레이아웃</div>
+          <div style="padding:4px 0;border-bottom:0.5px solid #f3f4f6"><strong>v2.3.0</strong> — AI Plus 다중 프로바이더</div>
+          <div style="padding:4px 0"><strong>v2.2.0</strong> — Google 연동, 커뮤니티 기능</div>
+        </div>
+      </div>
+
+      <!-- ── 정보 탭 ── -->
+      <div id="tab-about" style="display:none">
+        <div style="text-align:center;padding:20px 0">
+          <div style="font-size:40px;margin-bottom:8px">🖥️</div>
+          <div style="font-size:18px;font-weight:700;margin-bottom:4px">스마트 바탕화면</div>
+          <div style="font-size:12px;color:#9ca3af;margin-bottom:16px">Smart Desktop v2.5.0</div>
+        </div>
+        <div class="section-label">만든 사람</div>
+        <div style="background:#f9fafb;border-radius:10px;padding:12px;margin-bottom:12px">
+          <div style="font-size:13px;font-weight:600;margin-bottom:4px">홍권능</div>
+          <div style="font-size:11px;color:#6b7280;line-height:1.6">
+            교사 & 직장인을 위한 스마트 대시보드<br>
+            Electron + React 18 + Tailwind CSS
+          </div>
+        </div>
+        <div class="section-label">앱 정보</div>
+        <div style="font-size:11px;color:#6b7280;line-height:2">
+          <div style="display:flex;justify-content:space-between"><span>버전</span><span style="color:#1f2937">2.5.0</span></div>
+          <div style="display:flex;justify-content:space-between"><span>Electron</span><span style="color:#1f2937">28.0.0</span></div>
+          <div style="display:flex;justify-content:space-between"><span>React</span><span style="color:#1f2937">18.2.0</span></div>
+          <div style="display:flex;justify-content:space-between"><span>빌드 날짜</span><span style="color:#1f2937">2026-04-12</span></div>
+        </div>
+        <div class="section-label">라이선스</div>
+        <div style="font-size:10px;color:#9ca3af">MIT License · Open Source</div>
+      </div>
+
+      <!-- ── 기타 탭 공통 ── -->
+      <div id="tab-other" style="display:none;text-align:center;padding:40px 0;color:#9ca3af;font-size:13px">
+        <div style="font-size:40px;margin-bottom:12px">⚙️</div>
+        이 탭의 설정은 실제 앱에서 확인할 수 있습니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// 시계 업데이트
+function updateClock() {
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  document.getElementById('clock').textContent = pad(now.getHours()) + ':' + pad(now.getMinutes());
+  const days = ['일','월','화','수','목','금','토'];
+  document.getElementById('dateStr').textContent = `${now.getMonth()+1}/${now.getDate()} (${days[now.getDay()]})`;
+}
+setInterval(updateClock, 1000); updateClock();
+
+// 캘린더 생성
+function buildCalendar() {
+  const grid = document.getElementById('calGrid');
+  const now = new Date();
+  const year = 2026, month = 3; // 4월
+  const firstDay = new Date(year, month, 1).getDay();
+  const lastDate = new Date(year, month + 1, 0).getDate();
+  const today = now.getDate();
+  const weatherEmojis = { 12: '☀️', 13: '⛅', 14: '🌧️', 15: '☀️', 16: '⛅' };
+  const events = { 8: '교직원 회의', 15: '학부모 상담', 22: '현장학습', 24: '1차 지필' };
+
+  let html = '';
+  for (let i = 0; i < firstDay; i++) html += '<div class="cal-cell"></div>';
+  for (let d = 1; d <= lastDate; d++) {
+    const isToday = d === today;
+    const w = weatherEmojis[d] || '';
+    const ev = events[d] || '';
+    html += `<div class="cal-cell${isToday ? ' today' : ''}">
+      <div>${d}${w ? '<span class="weather">'+w+'</span>' : ''}</div>
+      ${ev ? '<div class="cal-event">'+ev+'</div>' : ''}
+    </div>`;
+  }
+  grid.innerHTML = html;
+}
+buildCalendar();
+
+// 프레임 테마 데이터
+const FRAMES = [
+  { id:'default', label:'기본', radius:'10px', shadow:'0 1px 6px rgba(0,0,0,0.05)', bw:'1px', bs:'solid', blur:'none' },
+  { id:'glass', label:'글래스모피즘', radius:'14px', shadow:'0 4px 16px rgba(0,0,0,0.08)', bw:'1.5px', bs:'solid', blur:'blur(12px)' },
+  { id:'neobrutal', label:'네오브루탈', radius:'3px', shadow:'4px 4px 0 rgba(0,0,0,0.85)', bw:'2.5px', bs:'solid', blur:'none' },
+  { id:'soft', label:'소프트', radius:'18px', shadow:'0 2px 12px rgba(0,0,0,0.04)', bw:'0', bs:'none', blur:'none' },
+  { id:'flat', label:'플랫', radius:'6px', shadow:'none', bw:'0', bs:'none', blur:'none' },
+  { id:'classic', label:'클래식', radius:'4px', shadow:'0 1px 3px rgba(0,0,0,0.08)', bw:'3px', bs:'double', blur:'none' },
+  { id:'darkglass', label:'다크 글래스', radius:'16px', shadow:'0 8px 32px rgba(0,0,0,0.12)', bw:'1px', bs:'solid', blur:'blur(20px)' },
+  { id:'elevated', label:'카드', radius:'12px', shadow:'0 4px 20px rgba(0,0,0,0.1)', bw:'0', bs:'none', blur:'none' },
+];
+
+const COLORS = [
+  // 기존 8개
+  { id:'rose', label:'로즈', emoji:'🌹', accent:'#f43f5e', bg:'#fff1f2', border:'#fecdd3', dark:false },
+  { id:'violet', label:'바이올렛', emoji:'💜', accent:'#7c3aed', bg:'#f5f3ff', border:'#ddd6fe', dark:false },
+  { id:'ocean', label:'오션', emoji:'🌊', accent:'#0284c7', bg:'#f0f9ff', border:'#bae6fd', dark:false },
+  { id:'emerald', label:'에메랄드', emoji:'💎', accent:'#059669', bg:'#ecfdf5', border:'#a7f3d0', dark:false },
+  { id:'amber', label:'앰버', emoji:'🍯', accent:'#d97706', bg:'#fffbeb', border:'#fde68a', dark:false },
+  { id:'slate', label:'슬레이트', emoji:'🪨', accent:'#475569', bg:'#f8fafc', border:'#e2e8f0', dark:false },
+  { id:'midnight', label:'미드나잇', emoji:'🌙', accent:'#6366f1', bg:'#0f172a', border:'#1e293b', dark:true },
+  { id:'charcoal', label:'차콜', emoji:'⚡', accent:'#38bdf8', bg:'#18181b', border:'#27272a', dark:true },
+  // 신규 12개
+  { id:'sakura', label:'벚꽃', emoji:'🌸', accent:'#e8729a', bg:'#fdf2f8', border:'#fbcfe8', dark:false },
+  { id:'lavender', label:'라벤더', emoji:'💐', accent:'#a78bfa', bg:'#f5f3ff', border:'#e9d5ff', dark:false },
+  { id:'mint', label:'민트', emoji:'🍃', accent:'#2dd4bf', bg:'#f0fdfa', border:'#99f6e4', dark:false },
+  { id:'coral', label:'코럴', emoji:'🪸', accent:'#f97066', bg:'#fff7ed', border:'#fed7aa', dark:false },
+  { id:'stone', label:'스톤', emoji:'🏛', accent:'#78716c', bg:'#fafaf9', border:'#e7e5e4', dark:false },
+  { id:'indigo', label:'인디고', emoji:'🔷', accent:'#4f46e5', bg:'#eef2ff', border:'#c7d2fe', dark:false },
+  { id:'mocha', label:'카페모카', emoji:'☕', accent:'#92400e', bg:'#fefcf3', border:'#e8dcc8', dark:false },
+  { id:'aurora', label:'오로라', emoji:'🌌', accent:'#34d399', bg:'#0c1222', border:'#1e3a5f', dark:true },
+  { id:'sunset', label:'선셋', emoji:'🌅', accent:'#fb923c', bg:'#1c1210', border:'#3d2b20', dark:true },
+  { id:'grape', label:'그레이프', emoji:'🍇', accent:'#c084fc', bg:'#110f1a', border:'#2e2745', dark:true },
+  { id:'deepsea', label:'딥씨', emoji:'🐠', accent:'#22d3ee', bg:'#0a1628', border:'#164e63', dark:true },
+  { id:'forest', label:'포레스트', emoji:'🌲', accent:'#4ade80', bg:'#0a1a0f', border:'#1a3d24', dark:true },
+];
+
+let currentFrame = 'default';
+let currentColor = 'rose';
+
+function applyFrame(id) {
+  currentFrame = id;
+  const f = FRAMES.find(x => x.id === id);
+  document.documentElement.style.setProperty('--radius', f.radius);
+  document.documentElement.style.setProperty('--shadow', f.shadow);
+  document.documentElement.style.setProperty('--border-w', f.bw);
+  document.documentElement.style.setProperty('--border-style', f.bs);
+  document.documentElement.style.setProperty('--blur', f.blur);
+  if (f.blur !== 'none') {
+    document.querySelectorAll('.widget').forEach(w => w.style.background = 'rgba(255,255,255,0.6)');
+  } else {
+    document.querySelectorAll('.widget').forEach(w => w.style.background = 'var(--widget)');
+  }
+  renderFrameList();
+}
+
+function applyColor(id) {
+  currentColor = id;
+  const col = COLORS.find(x => x.id === id);
+  document.documentElement.style.setProperty('--accent', col.accent);
+  document.documentElement.style.setProperty('--bg', col.bg);
+  document.documentElement.style.setProperty('--border', col.border);
+  document.querySelector('.app').style.background = col.bg;
+  if (col.dark) {
+    document.documentElement.style.setProperty('--text', '#e2e8f0');
+    document.documentElement.style.setProperty('--widget', col.bg === '#0f172a' ? '#1e293b' : '#1e293b');
+    document.documentElement.style.setProperty('--sub', '#64748b');
+    document.querySelector('.topbar').style.background = 'rgba(15,23,42,0.95)';
+    document.querySelector('.dock').style.background = 'rgba(15,23,42,0.95)';
+    document.querySelectorAll('.widget').forEach(w => { if(!w.style.background.includes('rgba')) w.style.background = '#1e293b'; });
+  } else {
+    document.documentElement.style.setProperty('--text', '#1f2937');
+    document.documentElement.style.setProperty('--widget', '#ffffff');
+    document.documentElement.style.setProperty('--sub', '#9ca3af');
+    document.querySelector('.topbar').style.background = 'rgba(255,255,255,0.95)';
+    document.querySelector('.dock').style.background = 'rgba(255,255,255,0.9)';
+    document.querySelectorAll('.widget').forEach(w => { if(!w.style.background.includes('rgba')) w.style.background = '#ffffff'; });
+  }
+  renderColorList();
+}
+
+function renderFrameList() {
+  const el = document.getElementById('frameList');
+  el.innerHTML = FRAMES.map(f => {
+    const active = currentFrame === f.id;
+    return `<button class="frame-btn${active?' active':''}" onclick="applyFrame('${f.id}')">
+      <div class="preview" style="border-radius:${f.radius};box-shadow:${f.shadow};border:${f.bw==='0'?'none':f.bw+' '+f.bs+' #d1d5db'};">
+        <div class="bar" style="background:var(--accent);width:60%;border-radius:${parseInt(f.radius)>10?3:2}px"></div>
+        <div class="bar" style="background:#e5e7eb;width:80%;border-radius:${parseInt(f.radius)>10?3:2}px"></div>
+      </div>
+      <div class="label">${f.label}</div>
+    </button>`;
+  }).join('');
+}
+
+function renderColorList() {
+  const el = document.getElementById('colorList');
+  el.innerHTML = COLORS.map(col => {
+    const active = currentColor === col.id;
+    return `<div style="text-align:center;width:44px">
+      <button class="color-btn${active?' active':''}" style="background:${col.accent}" onclick="applyColor('${col.id}')" title="${col.label}">${col.emoji}</button>
+      <div style="font-size:8px;color:#9ca3af;margin-top:-2px">${col.label}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleSettings() {
+  const panel = document.getElementById('settingsPanel');
+  const overlay = document.getElementById('settingsOverlay');
+  const isOpen = panel.style.display === 'flex';
+  panel.style.display = isOpen ? 'none' : 'flex';
+  overlay.style.display = isOpen ? 'none' : 'block';
+  panel.style.flexDirection = 'column';
+}
+
+function switchTab(tabId) {
+  document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  const tabs = ['design','widgets','update','about','other'];
+  tabs.forEach(t => { const el = document.getElementById('tab-'+t); if(el) el.style.display = 'none'; });
+  const known = ['design','widgets','update','about'];
+  const target = known.includes(tabId) ? tabId : 'other';
+  document.getElementById('tab-'+target).style.display = 'block';
+}
+
+// 위젯 목록 렌더링
+function renderWidgetList() {
+  const widgets = {
+    'Class': [
+      { key:'timetable', label:'📋 주간 시간표', on:true },
+      { key:'randompick', label:'🎲 랜덤 뽑기', on:true },
+      { key:'teachinglinks', label:'📎 수업 자료', on:true },
+      { key:'attendance', label:'📋 출석 체크', on:false },
+      { key:'noisemeter', label:'🎙 소음 측정기', on:false },
+      { key:'rotationtimer', label:'🔄 모둠 활동 타이머', on:false },
+      { key:'scoreboard', label:'🏆 팀 점수판', on:false },
+    ],
+    'Schedule': [
+      { key:'calendar', label:'📅 캘린더', on:true },
+      { key:'dday', label:'📆 D-Day', on:true },
+      { key:'todos', label:'✅ 할 일', on:true },
+      { key:'timeline', label:'📊 타임라인 뷰', on:false },
+      { key:'eventtemplate', label:'📋 일정 템플릿', on:false },
+      { key:'countdown', label:'⏳ 카운트다운', on:false },
+    ],
+    'Tool': [
+      { key:'memo', label:'📝 메모', on:true },
+      { key:'calc', label:'🔢 계산기', on:true },
+      { key:'stopwatch', label:'⏱ 스톱워치', on:true },
+      { key:'aichat', label:'🤖 AI 채팅', on:true },
+      { key:'journal', label:'📓 일일 저널', on:false },
+      { key:'stickynote', label:'📌 스티커 노트', on:false },
+      { key:'kanban', label:'📋 칸반 보드', on:false },
+      { key:'voicetodo', label:'🎤 음성→할일', on:false },
+      { key:'aisummary', label:'📄 AI 요약', on:false },
+    ],
+    'Life': [
+      { key:'habit', label:'🔥 습관 트래커', on:false },
+      { key:'challenge', label:'🎯 일일 챌린지', on:false },
+      { key:'streak', label:'🔥 연속기록', on:false },
+      { key:'eyerest', label:'👁 눈 휴식 알림', on:false },
+      { key:'stretch', label:'🧘 스트레칭', on:false },
+      { key:'water', label:'💧 수분 섭취', on:false },
+      { key:'xpbadge', label:'🎮 업적 & XP', on:false },
+    ],
+    'Info': [
+      { key:'weather', label:'🌤️ 날씨', on:true },
+      { key:'meal', label:'🍽️ 급식', on:true },
+      { key:'mail', label:'📧 받은 메일', on:true },
+      { key:'dualtz', label:'🌍 세계 시계', on:false },
+      { key:'currency', label:'💱 환율 변환', on:false },
+      { key:'sysmonitor', label:'💻 시스템 모니터', on:false },
+      { key:'rssfeed', label:'📰 뉴스 피드', on:false },
+    ],
+  };
+  widgets['Etc'] = [
+    { key:'quote', label:'📖 오늘의 명언', on:true },
+    { key:'music', label:'🎧 미디어/액자', on:true },
+    { key:'quicklinks', label:'⭐ 바로가기', on:true },
+    { key:'applauncher', label:'🚀 앱 런처', on:false },
+    { key:'photoframe', label:'🖼 사진 프레임', on:false },
+    { key:'clock', label:'🕐 시계', on:false },
+    { key:'system', label:'🖥️ 시스템 제어', on:false },
+    { key:'focus', label:'🎯 포커스 모드', on:false },
+  ];
+  // 총 개수 계산
+  const allW = Object.values(widgets).flat();
+  const onCount = allW.filter(w => w.on).length;
+  document.getElementById('widgetCount').textContent = onCount + '/' + allW.length;
+
+  const targets = { 'Class':'widgetListClass', 'Schedule':'widgetListSchedule', 'Tool':'widgetListTool', 'Life':'widgetListLife', 'Info':'widgetListInfo', 'Etc':'widgetListEtc' };
+  Object.entries(widgets).forEach(([cat, items]) => {
+    const el = document.getElementById(targets[cat]);
+    if (!el) return;
+    el.innerHTML = items.map(w =>
+      `<div class="widget-toggle-row">
+        <span class="wt-label">${w.label}</span>
+        <button class="toggle-switch ${w.on?'on':'off'}" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button>
+      </div>`
+    ).join('');
+  });
+}
+
+renderFrameList();
+renderColorList();
+renderWidgetList();
+
+// 시스템 폰트 로딩
+async function loadFonts() {
+  const sel = document.getElementById('fontSelect');
+  const defaultFonts = ['맑은 고딕','Pretendard','Noto Sans KR','나눔고딕','나눔바른고딕','D2Coding','Consolas','Arial','돋움','굴림','바탕','궁서'];
+  try {
+    if (document.fonts && document.fonts.ready) {
+      await document.fonts.ready;
+      const available = await (async () => {
+        if (window.queryLocalFonts) {
+          const fonts = await window.queryLocalFonts();
+          return [...new Set(fonts.map(f => f.family))].sort();
+        }
+        return defaultFonts;
+      })();
+      sel.innerHTML = available.map(f => `<option${f==='맑은 고딕'?' selected':''}>${f}</option>`).join('');
+    } else {
+      sel.innerHTML = defaultFonts.map(f => `<option${f==='맑은 고딕'?' selected':''}>${f}</option>`).join('');
+    }
+  } catch { sel.innerHTML = defaultFonts.map(f => `<option${f==='맑은 고딕'?' selected':''}>${f}</option>`).join(''); }
+}
+loadFonts();
+</script>
+
+</body>
+</html>

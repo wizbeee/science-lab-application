@@ -1,0 +1,4606 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="claude">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>바이브 코딩 자기주도 연수</title>
+<style>
+/* ============================================================
+   Claude Design Tokens — 실제 claude.ai 에서 추출 (2026-04)
+   ============================================================ */
+
+/* Light Mode */
+[data-theme="claude"][data-mode="light"] {
+  --bg-000: #ffffff;
+  --bg-100: #f8f8f6;
+  --bg-200: #f4f4f1;
+  --bg-300: #efeeeb;
+  --bg-400: #e6e5e0;
+  --text-000: #121212;
+  --text-100: #121212;
+  --text-200: #373734;
+  --text-300: #373734;
+  --text-400: #7b7974;
+  --border: rgba(31, 31, 30, 0.1);
+  --border-strong: rgba(31, 31, 30, 0.2);
+  --accent-brand: #d97757;
+  --brand-000: #c6613f;
+  --accent-link: #2977d6;
+  --success: #578a00;
+  --warning: #a86b00;
+  --danger: #cf3a3a;
+  --user-bubble: #f4f4f1;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.08);
+}
+
+/* Dark Mode */
+[data-theme="claude"][data-mode="dark"] {
+  --bg-000: #2c2c2a;
+  --bg-100: #1f1f1e;
+  --bg-200: #171716;
+  --bg-300: #121212;
+  --bg-400: #0a0a0a;
+  --text-000: #f8f8f6;
+  --text-100: #f8f8f6;
+  --text-200: #c3c2b7;
+  --text-300: #c3c2b7;
+  --text-400: #97958c;
+  --border: rgba(226, 225, 218, 0.1);
+  --border-strong: rgba(226, 225, 218, 0.2);
+  --accent-brand: #d97757;
+  --brand-000: #c6613f;
+  --accent-link: #5ba3f5;
+  --success: #639900;
+  --warning: #b87700;
+  --danger: #e34a4a;
+  --user-bubble: #2c2c2a;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+/* ============================================================
+   Reset & Base
+   ============================================================ */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  background-color: var(--bg-100);
+  color: var(--text-100);
+  font-family:
+    "Anthropic Sans",
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    "Malgun Gothic",
+    "Apple SD Gothic Neo",
+    Roboto,
+    sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+button, input, textarea, select {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+a {
+  color: var(--accent-link);
+  text-decoration: none;
+}
+a:hover { text-decoration: underline; }
+
+h1, h2, h3, h4 { font-weight: 600; line-height: 1.3; }
+h1 { font-size: 32px; }
+h2 { font-size: 24px; }
+h3 { font-size: 19px; }
+h4 { font-size: 16px; }
+
+p { color: var(--text-200); }
+
+/* ============================================================
+   App Layout (Claude Desktop 스타일)
+   ============================================================ */
+.app {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 260px;
+  background-color: var(--bg-200);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 16px 12px;
+  flex-shrink: 0;
+  transition: width 0.2s, padding 0.2s;
+  overflow-y: auto;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  margin-bottom: 16px;
+}
+
+.logo {
+  width: 28px;
+  height: 28px;
+  background: var(--accent-brand);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.logo-text {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text-000);
+  letter-spacing: -0.01em;
+}
+
+.sidebar-section {
+  margin-top: 16px;
+}
+
+.sidebar-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-400);
+  padding: 8px 12px 4px;
+  font-weight: 600;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  color: var(--text-200);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  font-size: 14px;
+  user-select: none;
+}
+.nav-item:hover {
+  background-color: var(--bg-300);
+  color: var(--text-000);
+}
+.nav-item.active {
+  background-color: var(--bg-300);
+  color: var(--text-000);
+  font-weight: 500;
+}
+.nav-item.locked {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.nav-item.locked:hover {
+  background: transparent;
+  color: var(--text-200);
+}
+
+.nav-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-status {
+  margin-left: auto;
+  font-size: 11px;
+  opacity: 0.7;
+}
+.nav-status.done { color: var(--success); }
+
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+/* Main Content */
+.main {
+  flex: 1;
+  overflow-y: auto;
+  background-color: var(--bg-100);
+  position: relative;
+}
+
+.main-inner {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 48px 32px 80px;
+}
+
+/* ============================================================
+   Buttons
+   ============================================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.15s;
+  background: var(--bg-000);
+  color: var(--text-100);
+  border-color: var(--border);
+}
+.btn:hover:not(:disabled) {
+  background: var(--bg-300);
+}
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background: var(--accent-brand);
+  color: #fff;
+  border-color: var(--accent-brand);
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--brand-000);
+  border-color: var(--brand-000);
+}
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+}
+.btn-ghost:hover:not(:disabled) {
+  background: var(--bg-300);
+}
+.btn-lg { padding: 14px 28px; font-size: 16px; }
+.btn-sm { padding: 6px 12px; font-size: 13px; }
+
+/* ============================================================
+   Cards
+   ============================================================ */
+.card {
+  background: var(--bg-000);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+.card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* ============================================================
+   Screens
+   ============================================================ */
+.screen { display: none; animation: fadeIn 0.3s ease; }
+.screen.active { display: block; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Welcome */
+.welcome-hero {
+  text-align: center;
+  padding: 60px 0 40px;
+}
+.welcome-badge {
+  display: inline-block;
+  padding: 6px 14px;
+  background: var(--bg-200);
+  border-radius: 20px;
+  font-size: 12px;
+  color: var(--text-400);
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+.welcome-title {
+  font-size: 44px;
+  margin-bottom: 16px;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, var(--text-000) 0%, var(--accent-brand) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.welcome-desc {
+  font-size: 17px;
+  color: var(--text-200);
+  max-width: 560px;
+  margin: 0 auto 32px;
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin: 32px 0;
+}
+.feature {
+  padding: 20px;
+  background: var(--bg-200);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.feature-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--bg-000);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+}
+.feature-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--text-000);
+}
+.feature-desc {
+  font-size: 13px;
+  color: var(--text-400);
+  line-height: 1.5;
+}
+
+/* Install Guide */
+.install-steps { margin: 24px 0; }
+.install-step {
+  display: flex;
+  gap: 16px;
+  padding: 20px;
+  background: var(--bg-200);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.step-number {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent-brand);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.step-content { flex: 1; }
+.step-title { font-weight: 600; color: var(--text-000); margin-bottom: 4px; }
+.step-desc { color: var(--text-200); font-size: 14px; }
+.step-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 8px 14px;
+  background: var(--bg-000);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--accent-link);
+  font-size: 13px;
+  font-weight: 500;
+}
+.step-link:hover {
+  background: var(--bg-300);
+  text-decoration: none;
+}
+
+.os-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-200);
+  padding: 4px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  width: fit-content;
+  border: 1px solid var(--border);
+}
+.os-tab {
+  padding: 8px 18px;
+  border-radius: 7px;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--text-200);
+  font-size: 14px;
+  font-weight: 500;
+}
+.os-tab.active {
+  background: var(--bg-000);
+  color: var(--text-000);
+  box-shadow: var(--shadow-sm);
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  background: var(--bg-200);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  user-select: none;
+  margin: 20px 0;
+}
+.checkbox-row input { width: 18px; height: 18px; accent-color: var(--accent-brand); cursor: pointer; }
+.checkbox-row label { cursor: pointer; color: var(--text-100); }
+
+/* Survey */
+.progress-bar {
+  height: 4px;
+  background: var(--bg-300);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 32px;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--accent-brand);
+  transition: width 0.3s;
+}
+
+.question-card { padding: 32px; }
+.question-number {
+  font-size: 13px;
+  color: var(--text-400);
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+.question-text {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-000);
+  margin-bottom: 24px;
+  line-height: 1.4;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  background: var(--bg-200);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  margin-bottom: 10px;
+  transition: all 0.15s;
+  color: var(--text-100);
+}
+.option:hover {
+  background: var(--bg-300);
+  border-color: var(--border-strong);
+}
+.option.selected {
+  background: rgba(217, 119, 87, 0.1);
+  border-color: var(--accent-brand);
+}
+.option-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--border-strong);
+  flex-shrink: 0;
+  position: relative;
+}
+.option.selected .option-dot {
+  border-color: var(--accent-brand);
+}
+.option.selected .option-dot::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  background: var(--accent-brand);
+  border-radius: 50%;
+}
+
+.survey-nav {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 24px;
+}
+
+/* Mission Hub */
+.hub-header { margin-bottom: 32px; }
+.hub-greeting {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--text-000);
+  margin-bottom: 8px;
+}
+.hub-subtitle {
+  color: var(--text-400);
+  font-size: 15px;
+}
+
+.mission-grid {
+  display: grid;
+  gap: 16px;
+}
+.mission-card {
+  padding: 24px;
+  cursor: pointer;
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+.mission-card.locked {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.mission-card.locked:hover { box-shadow: var(--shadow-sm); }
+.mission-card.done {
+  border-color: var(--success);
+}
+.mission-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: var(--bg-200);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+}
+.mission-card.done .mission-icon {
+  background: var(--accent-brand);
+  color: #fff;
+  border-color: var(--accent-brand);
+}
+.mission-info { flex: 1; min-width: 0; }
+.mission-num {
+  font-size: 12px;
+  color: var(--text-400);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.mission-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-000);
+  margin: 4px 0 6px;
+}
+.mission-desc {
+  color: var(--text-400);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.mission-meta {
+  display: flex;
+  gap: 14px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-400);
+}
+.mission-arrow {
+  color: var(--text-400);
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+/* Mission Detail (3-Act) */
+.mission-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.back-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--bg-200);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-200);
+}
+.back-btn:hover { background: var(--bg-300); }
+
+.act-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-200);
+  padding: 4px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  border: 1px solid var(--border);
+}
+.act-tab {
+  flex: 1;
+  padding: 10px;
+  text-align: center;
+  border-radius: 9px;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--text-400);
+  font-weight: 500;
+  font-size: 13px;
+  transition: all 0.15s;
+}
+.act-tab.active {
+  background: var(--bg-000);
+  color: var(--text-000);
+  box-shadow: var(--shadow-sm);
+}
+.act-num {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--bg-300);
+  color: var(--text-400);
+  font-size: 11px;
+  line-height: 18px;
+  margin-right: 6px;
+}
+.act-tab.active .act-num {
+  background: var(--accent-brand);
+  color: #fff;
+}
+
+.act-content { animation: fadeIn 0.25s; }
+
+.prompt-box {
+  width: 100%;
+  min-height: 140px;
+  padding: 16px;
+  background: var(--bg-200);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-100);
+  resize: vertical;
+  font-family: inherit;
+}
+.prompt-box:focus {
+  outline: none;
+  border-color: var(--accent-brand);
+  background: var(--bg-000);
+}
+.prompt-box::placeholder { color: var(--text-400); }
+
+.prompt-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.example-prompt {
+  background: var(--bg-200);
+  border-left: 3px solid var(--accent-brand);
+  padding: 16px 20px;
+  border-radius: 8px;
+  margin: 16px 0;
+  color: var(--text-200);
+  line-height: 1.7;
+}
+
+.comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 20px 0;
+}
+@media (max-width: 720px) {
+  .comparison { grid-template-columns: 1fr; }
+}
+.comparison-box {
+  padding: 18px;
+  background: var(--bg-200);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.comparison-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-400);
+  margin-bottom: 10px;
+}
+.comparison-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-100);
+  white-space: pre-wrap;
+}
+.comparison-box.model { border-left: 3px solid var(--accent-brand); }
+
+/* Scoring */
+.score-display {
+  text-align: center;
+  padding: 24px;
+  background: var(--bg-200);
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  margin: 20px 0;
+}
+.score-total {
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--accent-brand);
+  letter-spacing: -0.02em;
+}
+.score-label {
+  color: var(--text-400);
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+.score-bars {
+  display: grid;
+  gap: 12px;
+  text-align: left;
+  max-width: 420px;
+  margin: 0 auto;
+}
+.score-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.score-name {
+  flex-shrink: 0;
+  width: 130px;
+  font-size: 13px;
+  color: var(--text-200);
+}
+.score-bar-track {
+  flex: 1;
+  height: 8px;
+  background: var(--bg-300);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.score-bar-fill {
+  height: 100%;
+  background: var(--accent-brand);
+  border-radius: 4px;
+  transition: width 0.6s ease;
+}
+.score-num {
+  font-size: 13px;
+  color: var(--text-000);
+  font-weight: 600;
+  width: 42px;
+  text-align: right;
+}
+
+.feedback-list {
+  list-style: none;
+  padding: 0;
+}
+.feedback-item {
+  display: flex;
+  gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-200);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.feedback-item:last-child { border-bottom: none; }
+.feedback-bullet {
+  flex-shrink: 0;
+  color: var(--accent-brand);
+  font-weight: 700;
+}
+
+/* API Key Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: var(--bg-000);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 520px;
+  width: 100%;
+  box-shadow: var(--shadow-lg);
+}
+.modal-title { font-size: 20px; font-weight: 600; margin-bottom: 8px; color: var(--text-000); }
+.modal-desc { color: var(--text-400); font-size: 14px; margin-bottom: 20px; }
+
+.input {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--bg-200);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 14px;
+  color: var(--text-100);
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+}
+.input:focus {
+  outline: none;
+  border-color: var(--accent-brand);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.api-key-guide {
+  margin-top: 20px;
+  padding: 16px;
+  background: var(--bg-200);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text-200);
+  line-height: 1.7;
+  display: none;
+}
+.api-key-guide.show { display: block; }
+.api-key-guide ol { padding-left: 20px; }
+.api-key-guide li { margin: 4px 0; }
+
+/* Scenario (Mission 3) */
+.scenario-card {
+  padding: 24px;
+  margin-bottom: 16px;
+  border-left: 4px solid var(--accent-brand);
+}
+.scenario-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.scenario-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--accent-brand);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+}
+.scenario-title { font-weight: 600; color: var(--text-000); }
+
+.fake-result {
+  padding: 14px 18px;
+  background: var(--bg-300);
+  border-radius: 10px;
+  margin: 14px 0;
+  font-size: 13px;
+  color: var(--text-300);
+  border: 1px dashed var(--border-strong);
+}
+.fake-result-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--text-400);
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--text-000);
+  color: var(--bg-100);
+  padding: 12px 20px;
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 200;
+  transition: transform 0.3s;
+  opacity: 0;
+}
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+/* Certificate */
+.certificate {
+  background: var(--bg-000);
+  border: 2px solid var(--accent-brand);
+  border-radius: 16px;
+  padding: 48px 40px;
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto;
+  position: relative;
+}
+.cert-badge {
+  font-size: 32px;
+  margin-bottom: 16px;
+}
+.cert-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-000);
+  margin-bottom: 24px;
+  letter-spacing: -0.02em;
+}
+.cert-name {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--accent-brand);
+  margin: 20px 0;
+  padding: 12px 0;
+  border-bottom: 2px solid var(--accent-brand);
+  display: inline-block;
+  min-width: 240px;
+  outline: none;
+}
+.cert-text {
+  color: var(--text-200);
+  line-height: 1.8;
+  margin: 20px 0;
+}
+.cert-meta {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.cert-meta-item {
+  font-size: 13px;
+  color: var(--text-400);
+}
+.cert-meta-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-000);
+  display: block;
+}
+
+@media print {
+  body * { visibility: hidden; }
+  .certificate, .certificate * { visibility: visible; }
+  .certificate {
+    position: absolute;
+    left: 50%;
+    top: 50px;
+    transform: translateX(-50%);
+    background: #ffffff !important;
+    color: #121212 !important;
+    border-color: #d97757 !important;
+    box-shadow: none;
+  }
+  .certificate .cert-title, .certificate .cert-meta-value { color: #121212 !important; }
+  .certificate .cert-text, .certificate .cert-meta-item { color: #373734 !important; }
+}
+
+/* Responsive */
+@media (max-width: 720px) {
+  .sidebar {
+    width: 60px;
+    padding: 12px 8px;
+  }
+  .logo-text, .sidebar-label, .nav-item span:not(.nav-icon):not(.nav-status) { display: none; }
+  .nav-item { justify-content: center; padding: 10px; }
+  .main-inner { padding: 24px 16px 60px; }
+  .welcome-title { font-size: 32px; }
+  .question-card { padding: 20px; }
+  .question-text { font-size: 18px; }
+}
+
+/* Scrollbar */
+.main::-webkit-scrollbar,
+.sidebar::-webkit-scrollbar { width: 10px; }
+.main::-webkit-scrollbar-track,
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.main::-webkit-scrollbar-thumb,
+.sidebar::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 10px;
+}
+
+/* Utility */
+.text-muted { color: var(--text-400); }
+.mt-4 { margin-top: 16px; }
+.mt-6 { margin-top: 24px; }
+.mb-4 { margin-bottom: 16px; }
+.mb-6 { margin-bottom: 24px; }
+.flex { display: flex; }
+.gap-2 { gap: 8px; }
+.gap-3 { gap: 12px; }
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">✦</div>
+      <div class="logo-text">바이브 코딩</div>
+    </div>
+
+    <div class="nav-item" data-nav="welcome" onclick="navigate('welcome')">
+      <span class="nav-icon">🏠</span>
+      <span>시작</span>
+    </div>
+    <div class="nav-item" data-nav="install" onclick="navigate('install')">
+      <span class="nav-icon">📥</span>
+      <span>설치 가이드</span>
+    </div>
+    <div class="nav-item" data-nav="tabguide" onclick="navigate('tool', 'tabguide')">
+      <span class="nav-icon">👀</span>
+      <span>채팅 vs 코드 탭</span>
+    </div>
+    <div class="nav-item" data-nav="survey" onclick="navigate('survey')">
+      <span class="nav-icon">📋</span>
+      <span>간단 설문</span>
+    </div>
+
+    <div class="sidebar-label" id="missionLabel" style="display:none">미션</div>
+    <div id="missionNav"></div>
+
+    <div class="sidebar-label" id="trainingLabel" style="display:none">프롬프트 연습장</div>
+    <div id="trainingNav"></div>
+
+    <div class="sidebar-label">🔧 실전 강화</div>
+    <div class="nav-item" data-nav="builder" onclick="navigate('tool', 'builder')"><span class="nav-icon">🏗️</span><span>프롬프트 빌더</span></div>
+    <div class="nav-item" data-nav="challenge" onclick="navigate('tool', 'challenge')"><span class="nav-icon">🏆</span><span>데일리 챌린지</span></div>
+
+    <div class="sidebar-label">📚 참고 자료</div>
+    <div class="nav-item" data-nav="glossary" onclick="navigate('tool', 'glossary')"><span class="nav-icon">📖</span><span>용어 사전</span></div>
+    <div class="nav-item" data-nav="templates" onclick="navigate('tool', 'templates')"><span class="nav-icon">📝</span><span>프롬프트 템플릿</span></div>
+    <div class="nav-item" data-nav="faq" onclick="navigate('tool', 'faq')"><span class="nav-icon">❓</span><span>자주 묻는 질문</span></div>
+    <div class="nav-item" data-nav="mistakes" onclick="navigate('tool', 'mistakes')"><span class="nav-icon">🎭</span><span>실수 박물관</span></div>
+    <div class="nav-item" data-nav="theory" onclick="navigate('tool', 'theory')"><span class="nav-icon">💡</span><span>왜 이렇게 해야 하나?</span></div>
+    <div class="nav-item" data-nav="videos" onclick="navigate('tool', 'videos')"><span class="nav-icon">🎥</span><span>영상·문서 자료</span></div>
+    <div class="nav-item" data-nav="tips" onclick="navigate('tool', 'tips')"><span class="nav-icon">💎</span><span>오늘의 꿀팁</span></div>
+    <div class="nav-item" data-nav="checklist" onclick="navigate('tool', 'checklist')"><span class="nav-icon">✅</span><span>좋은 프롬프트 체크리스트</span></div>
+
+    <div class="sidebar-label">🎯 나만의 기록</div>
+    <div class="nav-item" data-nav="card" onclick="navigate('tool', 'card')"><span class="nav-icon">🎴</span><span>프롬프트 카드 만들기</span></div>
+    <div class="nav-item" data-nav="gallery" onclick="navigate('tool', 'gallery')"><span class="nav-icon">🖼️</span><span>결과물 갤러리</span></div>
+    <div class="nav-item" data-nav="weakness" onclick="navigate('tool', 'weakness')"><span class="nav-icon">📊</span><span>내 약점 리포트</span></div>
+    <div class="nav-item" data-nav="subject" onclick="navigate('tool', 'subject')"><span class="nav-icon">📚</span><span>과목별 심화 사례</span></div>
+    <div class="nav-item" data-nav="studytime" onclick="navigate('tool', 'studytime')"><span class="nav-icon">⏱️</span><span>학습 시간 기록</span></div>
+
+    <div class="sidebar-footer">
+      <div class="nav-item" onclick="openApiKeyModal()">
+        <span class="nav-icon">🔑</span>
+        <span>API 키 설정</span>
+      </div>
+      <div class="nav-item" onclick="toggleTheme()">
+        <span class="nav-icon">🌓</span>
+        <span>테마 전환</span>
+      </div>
+      <div class="nav-item" onclick="confirmReset()">
+        <span class="nav-icon">🔄</span>
+        <span>처음부터</span>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="main-inner">
+
+      <section class="screen" id="screen-welcome">
+        <div class="welcome-hero">
+          <div class="welcome-badge">교사를 위한 자기주도 연수</div>
+          <h1 class="welcome-title">바이브 코딩, 시작해볼까요?</h1>
+          <p class="welcome-desc">
+            코딩을 한 번도 해본 적 없어도 괜찮습니다.<br>
+            Claude와 대화하면서 <b>실제로 작동하는 프로그램</b>을 만들어봅니다.
+          </p>
+          <button class="btn btn-primary btn-lg" onclick="navigate('install')">
+            시작하기 →
+          </button>
+        </div>
+
+        <div class="feature-grid">
+          <div class="feature">
+            <div class="feature-icon">💬</div>
+            <div class="feature-title">말로 프로그래밍</div>
+            <div class="feature-desc">Claude에게 원하는 걸 설명하면 진짜 작동하는 코드가 나옵니다</div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">🎯</div>
+            <div class="feature-title">4개 미션</div>
+            <div class="feature-desc">첫 대화부터 자유 제작까지, 약 75분으로 완주</div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">🔧</div>
+            <div class="feature-title">엉뚱한 결과 대처</div>
+            <div class="feature-desc">의도와 다른 결과가 나왔을 때 회복하는 법을 배웁니다</div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">🏆</div>
+            <div class="feature-title">수료증</div>
+            <div class="feature-desc">완주하면 나만의 수료증과 프롬프트 모음을 받습니다</div>
+          </div>
+        </div>
+
+        <div class="card mt-6">
+          <h3>💡 바이브 코딩이 뭔가요?</h3>
+          <p class="mt-4">
+            전통적인 코딩은 문법을 외워서 직접 코드를 작성합니다. 하지만 <b>바이브 코딩</b>은
+            자연어(우리말)로 원하는 걸 설명하면 AI가 코드를 만들어줍니다.
+          </p>
+          <p class="mt-4">
+            여러분이 배울 것은 "어떻게 말해야 원하는 결과가 나오는가"입니다.
+            이것이 바이브 코딩의 핵심 기술이에요.
+          </p>
+        </div>
+      </section>
+
+      <section class="screen" id="screen-install">
+        <h1>Claude 데스크탑 앱 설치</h1>
+        <p class="mt-4 mb-6">
+          연수를 진행하려면 컴퓨터에 Claude 앱이 필요합니다. 몇 분이면 됩니다.
+        </p>
+
+        <div class="os-tabs" id="osTabs">
+          <button class="os-tab" data-os="mac">🍎 Mac</button>
+          <button class="os-tab" data-os="windows">🪟 Windows</button>
+        </div>
+
+        <div class="install-steps" id="installSteps"></div>
+
+        <div class="card mt-6" style="background: var(--bg-200);">
+          <label for="nameInput" style="font-weight:600; color: var(--text-000); display:block; margin-bottom: 8px;">
+            ✨ 어떻게 불러드릴까요?
+          </label>
+          <p class="text-muted" style="font-size:13px; margin-bottom: 12px;">
+            성함을 알려주시면 수료증과 인사말에 사용됩니다. (선택)
+          </p>
+          <input
+            type="text"
+            id="nameInput"
+            placeholder="예: 홍길동"
+            oninput="onNameInput(this.value)"
+            style="width:100%; padding:12px 14px; background: var(--bg-000); border:1px solid var(--border); border-radius:10px; font-size:15px; color: var(--text-100); font-family: inherit;"
+          >
+        </div>
+
+        <div class="checkbox-row">
+          <input type="checkbox" id="installDone" onchange="onInstallCheck()">
+          <label for="installDone">Claude 데스크탑 앱을 설치하고 로그인했어요</label>
+        </div>
+
+        <div class="card mt-6" style="background:rgba(59,130,246,0.08); border:2px solid #3b82f6;">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+            <span style="font-size:24px;">👀</span>
+            <div style="font-weight:700;">설치 후 — 꼭 봐주세요</div>
+          </div>
+          <p style="margin:0; font-size:14px; line-height:1.7;">
+            Claude 앱을 처음 열면 <b>위쪽에 탭이 3개</b> 있어요 (채팅 · Cowork · 코드).<br>
+            우리는 <b>"채팅"</b>과 <b>"코드"</b> 두 개만 쓸 거예요. 어떤 일에 어떤 탭을 써야 하는지 미리 보고 오세요!
+          </p>
+          <button class="btn btn-primary mt-4" onclick="navigate('tool', 'tabguide')">🧭 채팅 vs 코드 탭 가이드 보기 →</button>
+        </div>
+
+        <div class="flex gap-2" style="justify-content: space-between; margin-top: 24px;">
+          <button class="btn" onclick="navigate('welcome')">← 이전</button>
+          <button class="btn btn-primary" id="installNext" disabled onclick="navigate('survey')">설문으로 →</button>
+        </div>
+      </section>
+
+      <section class="screen" id="screen-survey">
+        <div class="progress-bar">
+          <div class="progress-fill" id="surveyProgress" style="width: 20%"></div>
+        </div>
+        <div class="card question-card" id="surveyCard"></div>
+        <div class="survey-nav">
+          <button class="btn" id="surveyPrev" onclick="surveyPrev()">← 이전</button>
+          <button class="btn btn-primary" id="surveyNext" onclick="surveyNext()">다음 →</button>
+        </div>
+      </section>
+
+      <section class="screen" id="screen-hub">
+        <div class="hub-header">
+          <div class="hub-greeting" id="hubGreeting">안녕하세요!</div>
+          <div class="hub-subtitle" id="hubSubtitle">원하는 미션을 선택하세요</div>
+        </div>
+        <div class="mission-grid" id="missionGrid"></div>
+      </section>
+
+      <section class="screen" id="screen-mission">
+        <div class="mission-header">
+          <button class="back-btn" onclick="navigate('hub')">←</button>
+          <div>
+            <div class="mission-num" id="missionNum">미션 1</div>
+            <h1 id="missionTitle">첫 대화</h1>
+            <div id="missionTabBadge" style="margin-top:6px;"></div>
+          </div>
+        </div>
+
+        <div class="act-tabs" id="actTabs"></div>
+
+        <div id="actContent"></div>
+      </section>
+
+      <section class="screen" id="screen-training">
+        <div id="trainingContent"></div>
+      </section>
+
+      <section class="screen" id="screen-tool">
+        <div id="toolContent"></div>
+      </section>
+
+      <section class="screen" id="screen-complete">
+        <div id="completeContent"></div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<div class="modal-overlay" id="apiKeyModal">
+  <div class="modal">
+    <h3 class="modal-title">🔑 Claude API 키</h3>
+    <p class="modal-desc">
+      API 키를 입력하면 AI가 여러분의 프롬프트를 자동으로 채점합니다.<br>
+      <b>없어도 연수 진행이 가능해요.</b> 키는 이 브라우저에만 저장됩니다.
+    </p>
+    <input type="password" class="input" id="apiKeyInput" placeholder="sk-ant-api03-..." autocomplete="off">
+    <a href="#" onclick="toggleApiGuide(); return false;" style="display:inline-block; margin-top: 10px; font-size: 13px;">
+      API 키 발급 방법 보기 →
+    </a>
+    <div class="api-key-guide" id="apiKeyGuide">
+      <ol>
+        <li><a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a> 접속</li>
+        <li>회원가입 (Google 로그인 가능)</li>
+        <li>좌측 메뉴에서 <b>API Keys</b> 클릭</li>
+        <li><b>Create Key</b> 버튼 클릭 → 이름 입력 → 생성</li>
+        <li>생성된 키를 복사해서 위에 붙여넣기</li>
+      </ol>
+      <p style="margin-top: 10px;">
+        💰 신규 가입 시 무료 크레딧이 제공됩니다. 연수 전체 완주 시 약 $0.1~0.3 예상.
+      </p>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeApiKeyModal()">건너뛰기</button>
+      <button class="btn btn-primary" onclick="saveApiKey()">저장</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* STATE & PERSISTENCE */
+const STORAGE_KEY = 'vibe-coding-training-v1';
+let state = {
+  currentScreen: 'welcome',
+  osSelected: null,
+  installConfirmed: false,
+  surveyStep: 0,
+  plan: null,       // 'pro' or 'free'
+  course: null,     // 'beginner7' or 'experienced6'
+  surveyAnswers: {},
+  subject: null,
+  interest: null,
+  helpMode: 'standard',
+  learnStyle: null,
+  userName: '',
+  currentMission: null,
+  currentAct: 1,
+  missionProgress: { 1: 0, 2: 0, 3: 0, 4: 0 },
+  userPrompts: { 1: '', 2: '', 3: '', 4: '' },
+  scores: { 1: null, 2: null, 3: null, 4: null },
+  apiKey: '',
+  themeMode: null,
+  completedAt: null,
+  scenarioProgress: [false, false, false, false],
+  trainingProgress: { 1: [], 2: [], 3: [] },
+  trainingMode: 'quick',
+  currentTrainingLevel: null,
+  currentTool: null,
+  studySessions: [],
+  galleryItems: [],
+  dailyChallengeProgress: {},
+};
+
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  catch (e) { console.warn('Save failed:', e); }
+}
+function loadState() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) Object.assign(state, JSON.parse(saved));
+  } catch (e) { console.warn('Load failed:', e); }
+}
+
+/* THEME */
+function initTheme() {
+  const saved = state.themeMode;
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const mode = saved || (prefersDark ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-mode', mode);
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+    if (!state.themeMode) {
+      document.documentElement.setAttribute('data-mode', e.matches ? 'dark' : 'light');
+    }
+  });
+}
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-mode');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-mode', next);
+  state.themeMode = next;
+  saveState();
+}
+
+/* ROUTING */
+function navigate(screen, subPage) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const target = document.getElementById('screen-' + screen);
+  if (target) target.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const navKey = screen === 'tool' ? subPage : screen;
+  const navEl = document.querySelector(`[data-nav="${navKey}"]`);
+  if (navEl) navEl.classList.add('active');
+  state.currentScreen = screen;
+  if (screen === 'tool') state.currentTool = subPage;
+  saveState();
+  window.scrollTo(0, 0);
+  if (screen === 'install') renderInstall();
+  if (screen === 'survey') renderSurvey();
+  if (screen === 'hub') renderHub();
+  if (screen === 'mission') renderMission();
+  if (screen === 'training') renderTraining();
+  if (screen === 'tool') renderTool(subPage);
+  if (screen === 'complete') renderComplete();
+}
+
+/* TOAST */
+function toast(msg, duration = 2200) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+/* INSTALL GUIDE */
+function detectOS() {
+  const ua = navigator.userAgent.toLowerCase();
+  if (ua.includes('mac')) return 'mac';
+  if (ua.includes('win')) return 'windows';
+  return 'mac';
+}
+
+const INSTALL_STEPS = {
+  mac: [
+    { title: "공식 다운로드 페이지 열기", desc: "아래 링크를 새 탭에서 엽니다.", link: "https://claude.ai/download", linkText: "claude.ai/download" },
+    { title: "Mac용 다운로드 클릭", desc: "페이지에서 'Download for Mac' 버튼을 찾아 클릭하세요." },
+    { title: "DMG 파일 열기", desc: "다운로드된 .dmg 파일을 더블클릭하면 설치 창이 뜹니다." },
+    { title: "Claude 아이콘을 Applications 폴더로 드래그", desc: "설치 창에서 Claude 아이콘을 Applications 폴더로 끌어다 놓으세요." },
+    { title: "Claude 앱 실행 후 로그인", desc: "Launchpad나 Applications에서 Claude를 실행하고 이메일로 로그인합니다." },
+  ],
+  windows: [
+    { title: "공식 다운로드 페이지 열기", desc: "아래 링크를 새 탭에서 엽니다.", link: "https://claude.ai/download", linkText: "claude.ai/download" },
+    { title: "Windows용 다운로드 클릭", desc: "페이지에서 'Download for Windows' 버튼을 찾아 클릭하세요." },
+    { title: "설치 파일 실행", desc: "다운로드된 .exe 파일을 더블클릭합니다. 보안 경고가 뜨면 '실행'을 선택하세요." },
+    { title: "설치 마법사 따라가기", desc: "기본 설정 그대로 '다음' 버튼을 계속 누르면 설치가 완료됩니다." },
+    { title: "Claude 앱 실행 후 로그인", desc: "바탕화면이나 시작 메뉴에서 Claude를 실행하고 이메일로 로그인합니다." },
+  ],
+};
+
+function renderInstall() {
+  if (!state.osSelected) state.osSelected = detectOS();
+  document.querySelectorAll('.os-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.os === state.osSelected);
+  });
+  const steps = INSTALL_STEPS[state.osSelected];
+  const html = steps.map((s, i) => `
+    <div class="install-step">
+      <div class="step-number">${i + 1}</div>
+      <div class="step-content">
+        <div class="step-title">${s.title}</div>
+        <div class="step-desc">${s.desc}</div>
+        ${s.link ? `<a class="step-link" href="${s.link}" target="_blank" rel="noopener">🔗 ${s.linkText}</a>` : ''}
+      </div>
+    </div>
+  `).join('');
+  document.getElementById('installSteps').innerHTML = html;
+  document.getElementById('installDone').checked = state.installConfirmed;
+  document.getElementById('installNext').disabled = !state.installConfirmed;
+  const nameInput = document.getElementById('nameInput');
+  if (nameInput) nameInput.value = state.userName || '';
+}
+
+function onInstallCheck() {
+  state.installConfirmed = document.getElementById('installDone').checked;
+  document.getElementById('installNext').disabled = !state.installConfirmed;
+  saveState();
+}
+
+function onNameInput(v) {
+  state.userName = v.trim();
+  saveState();
+}
+
+document.addEventListener('click', (e) => {
+  const tab = e.target.closest('.os-tab');
+  if (tab) {
+    state.osSelected = tab.dataset.os;
+    saveState();
+    renderInstall();
+  }
+});
+
+/* SURVEY */
+const SURVEY = [
+  {
+    q: "Claude Pro(또는 그 이상)를 구독하고 계신가요?",
+    key: "subscription",
+    desc: "코드 탭 사용 여부가 달라져요. 잘 모르겠으면 '아니요'를 선택하세요.",
+    options: [
+      { text: "💎 네, Pro 이상 구독 중이에요", value: "pro" },
+      { text: "🆓 아니요, 무료로 쓰고 있어요 (또는 잘 모르겠어요)", value: "free" },
+    ]
+  },
+  {
+    q: "ChatGPT나 Claude 같은 생성형 AI에게 뭔가 물어보신 적 있으세요?",
+    key: "ai_exp",
+    options: [
+      { text: "아직 한 번도 없어요, 처음이에요", score: 0 },
+      { text: "한두 번 궁금해서 써본 적 있어요", score: 1 },
+      { text: "가끔 필요할 때 써요", score: 2 },
+      { text: "자주 사용하고 있어요", score: 3 },
+    ]
+  },
+  {
+    q: "컴퓨터에 새 프로그램이나 앱을 설치해보신 적 있으세요?",
+    key: "tech_comfort",
+    options: [
+      { text: "혼자서는 잘 못해요, 도움이 필요해요", score: 0 },
+      { text: "해본 적은 있지만 좀 어려워요", score: 1 },
+      { text: "필요하면 혼자 찾아서 할 수 있어요", score: 2 },
+    ]
+  },
+  {
+    q: "어떤 과목을 가르치세요?",
+    key: "subject",
+    options: [
+      { text: "📖 국어", value: "국어" },
+      { text: "🌏 영어", value: "영어" },
+      { text: "🔢 수학", value: "수학" },
+      { text: "🔬 과학 (물리·화학·생명·지구)", value: "과학" },
+      { text: "📜 사회 (역사·지리·일반사회·윤리)", value: "사회" },
+      { text: "🎨 예체능 (음악·미술·체육)", value: "예체능" },
+      { text: "💻 정보·기술·가정", value: "정보" },
+      { text: "✨ 그 외 / 복수 과목", value: "기타" },
+    ]
+  },
+  {
+    q: "바이브 코딩으로 가장 먼저 만들어보고 싶은 건?",
+    key: "interest",
+    options: [
+      { text: "📊 교무 업무 도우미 (성적/출결/세특)", value: "A" },
+      { text: "📚 학생용 학습 도구 (퀴즈/학습지/암기카드)", value: "B" },
+      { text: "💻 수업 보조 자료 (시연/인터랙티브 자료)", value: "C" },
+      { text: "🎮 재미있는 것 (게임/애니메이션)", value: "D" },
+      { text: "🤔 아직 모르겠어요, 추천해주세요", value: "E" },
+    ]
+  },
+  {
+    q: "어떤 방식으로 배우는 게 편하세요?",
+    key: "style",
+    options: [
+      { text: "🐢 천천히, 하나씩 설명 들으면서", value: "slow" },
+      { text: "🏃 빠르게, 일단 해보면서 익히기", value: "fast" },
+      { text: "👀 예시 먼저 보고 따라하면서", value: "example" },
+    ]
+  },
+];
+
+function renderSurvey() {
+  const step = state.surveyStep;
+  const q = SURVEY[step];
+  const selected = state.surveyAnswers[q.key];
+  const html = `
+    <div class="question-number">질문 ${step + 1} / ${SURVEY.length}</div>
+    <div class="question-text">${q.q}</div>
+    ${q.desc ? `<div class="text-muted" style="font-size:13px; margin-bottom:12px;">${q.desc}</div>` : ''}
+    <div>
+      ${q.options.map((o, i) => `
+        <div class="option ${selected === i ? 'selected' : ''}" onclick="selectOption(${i})">
+          <div class="option-dot"></div>
+          <div>${o.text}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  document.getElementById('surveyCard').innerHTML = html;
+  document.getElementById('surveyProgress').style.width = `${((step + 1) / SURVEY.length) * 100}%`;
+  document.getElementById('surveyPrev').disabled = step === 0;
+  const nextBtn = document.getElementById('surveyNext');
+  nextBtn.disabled = selected === undefined;
+  nextBtn.textContent = step === SURVEY.length - 1 ? '완료 →' : '다음 →';
+}
+
+function selectOption(i) {
+  const q = SURVEY[state.surveyStep];
+  state.surveyAnswers[q.key] = i;
+  saveState();
+  renderSurvey();
+}
+
+function surveyNext() {
+  if (state.surveyAnswers[SURVEY[state.surveyStep].key] === undefined) return;
+  if (state.surveyStep < SURVEY.length - 1) {
+    state.surveyStep++;
+    renderSurvey();
+  } else {
+    finishSurvey();
+  }
+}
+
+function surveyPrev() {
+  if (state.surveyStep > 0) {
+    state.surveyStep--;
+    renderSurvey();
+  }
+}
+
+function finishSurvey() {
+  const a = state.surveyAnswers;
+  // 구독 여부
+  state.plan = SURVEY[0].options[a.subscription].value; // 'pro' or 'free'
+  // AI 경험 → 코스 결정
+  const aiExp = SURVEY[1].options[a.ai_exp].score;
+  const techComfort = SURVEY[2].options[a.tech_comfort].score;
+  state.course = aiExp === 0 ? 'beginner7' : 'experienced6';
+  state.helpMode = (aiExp + techComfort) <= 1 ? 'gentle' : 'standard';
+  state.subject = SURVEY[3].options[a.subject].value;
+  state.interest = SURVEY[4].options[a.interest].value;
+  state.learnStyle = SURVEY[5].options[a.style].value;
+  // 미션 초기화 (코스에 맞게)
+  const totalMissions = state.course === 'beginner7' ? 7 : 6;
+  state.missionProgress = {};
+  for (let i = 1; i <= totalMissions; i++) state.missionProgress[i] = 0;
+  state.missionProgress[1] = 1; // 첫 미션 잠금 해제
+  state.scores = {};
+  for (let i = 1; i <= totalMissions; i++) state.scores[i] = null;
+  saveState();
+  navigate('hub');
+}
+
+/* MISSION HUB */
+const MISSIONS_BEGINNER7 = [
+  { id: 1, icon: "💬", num: "미션 1", title: "첫 대화", desc: "AI에게 처음으로 말을 걸어봅니다", time: "약 10분", level: "★☆☆", tab: "chat", renderer: "chat_intro" },
+  { id: 2, icon: "⚡", num: "미션 2", title: "조건 붙여 요청하기", desc: "역할·형식·제약을 넣어서 정밀하게 요청하기", time: "약 15분", level: "★★☆", tab: "chat", renderer: "chat_conditions" },
+  { id: 3, icon: "⌨️", num: "미션 3", title: "코드 탭 첫 체험", desc: "따라하면서 진짜 작동하는 프로그램을 만들어봅니다", time: "약 15분", level: "★★☆", tab: "code", renderer: "code_first" },
+  { id: 4, icon: "📦", num: "미션 4", title: "결과물 활용법", desc: "만든 걸 HTML·GAS·시트 등으로 어떻게 쓸 수 있는지", time: "약 10분", level: "★☆☆", tab: "info", renderer: "output_guide" },
+  { id: 5, icon: "🔧", num: "미션 5", title: "고쳐 나가기", desc: "만든 프로그램을 수정하고 기능을 추가합니다", time: "약 15분", level: "★★☆", tab: "code", renderer: "code_iterate" },
+  { id: 6, icon: "🛠️", num: "미션 6", title: "엉뚱한 결과 대처", desc: "의도와 다른 결과가 나왔을 때 고치는 법", time: "약 15분", level: "★★★", tab: "code", renderer: "code_debug" },
+  { id: 7, icon: "🚀", num: "미션 7", title: "자유 제작", desc: "배운 것을 총동원해서 진짜 내 도구 만들기", time: "약 25분", level: "★★★", tab: "code", renderer: "free_create" },
+];
+const MISSIONS_EXPERIENCED6 = [
+  { id: 1, icon: "⚡", num: "미션 1", title: "프롬프트 강화", desc: "역할·형식·제약을 넣어서 원하는 결과 얻기", time: "약 15분", level: "★★☆", tab: "chat", renderer: "chat_combined" },
+  { id: 2, icon: "⌨️", num: "미션 2", title: "코드 탭 첫 체험", desc: "따라하면서 진짜 작동하는 프로그램을 만들어봅니다", time: "약 15분", level: "★★☆", tab: "code", renderer: "code_first" },
+  { id: 3, icon: "📦", num: "미션 3", title: "결과물 활용법", desc: "만든 걸 HTML·GAS·시트 등으로 어떻게 쓸 수 있는지", time: "약 10분", level: "★☆☆", tab: "info", renderer: "output_guide" },
+  { id: 4, icon: "🔧", num: "미션 4", title: "고쳐 나가기", desc: "만든 프로그램을 수정하고 기능을 추가합니다", time: "약 15분", level: "★★☆", tab: "code", renderer: "code_iterate" },
+  { id: 5, icon: "🛠️", num: "미션 5", title: "엉뚱한 결과 대처", desc: "의도와 다른 결과가 나왔을 때 고치는 법", time: "약 15분", level: "★★★", tab: "code", renderer: "code_debug" },
+  { id: 6, icon: "🚀", num: "미션 6", title: "자유 제작", desc: "배운 것을 총동원해서 진짜 내 도구 만들기", time: "약 25분", level: "★★★", tab: "code", renderer: "free_create" },
+];
+
+function getMissions() {
+  return state.course === 'beginner7' ? MISSIONS_BEGINNER7 : MISSIONS_EXPERIENCED6;
+}
+function getTotalMissions() { return getMissions().length; }
+function getMissionMeta(id) { return getMissions().find(m => m.id === id); }
+
+function tabBadge(tab) {
+  if (tab === 'chat') return '<span style="display:inline-block; padding:3px 10px; background:rgba(59,130,246,0.15); color:#3b82f6; border-radius:10px; font-size:11px; font-weight:700;">💬 채팅 탭</span>';
+  if (tab === 'code') return '<span style="display:inline-block; padding:3px 10px; background:rgba(168,85,247,0.15); color:#a855f7; border-radius:10px; font-size:11px; font-weight:700;">⌨️ 코드 탭</span>';
+  return '';
+}
+
+function tabHelpBox(tab) {
+  const isPro = state.plan === 'pro';
+  if (tab === 'chat') {
+    const steps = isPro
+      ? `<li>컴퓨터에서 <b>Claude 앱</b>을 더블클릭해서 열어요.</li>
+         <li>화면 <b>맨 위쪽</b>에서 <b>"채팅"</b> 글자를 한 번 클릭해요.</li>
+         <li>화면 <b>아래쪽 긴 칸</b>에 프롬프트를 붙여넣고 <b>Enter 키</b>를 한 번 눌러요.</li>
+         <li>Claude의 답이 글로 나오면 끝이에요.</li>`
+      : `<li>인터넷 브라우저에서 <b>claude.ai</b>에 접속하세요.</li>
+         <li>로그인한 뒤, 화면 <b>아래쪽 긴 칸</b>에 프롬프트를 써요.</li>
+         <li><b>Enter 키</b>를 한 번 눌러요.</li>
+         <li>Claude의 답이 글로 나오면 끝이에요.</li>`;
+    return `
+      <div class="card" style="background:rgba(59,130,246,0.08); border:2px solid #3b82f6; margin-bottom:16px;">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+          <span style="font-size:24px;">💬</span>
+          <div style="font-weight:700; color:#3b82f6;">이 미션은 ${isPro ? '"채팅" 탭' : 'claude.ai 채팅'}에서 해요</div>
+        </div>
+        <ol style="margin:0; padding-left:22px; font-size:13px; line-height:2; color:var(--text-300);">
+          ${steps}
+        </ol>
+      </div>
+    `;
+  }
+  if (tab === 'code') {
+    const steps = isPro
+      ? `<li>컴퓨터에서 <b>Claude 앱</b>을 더블클릭해서 열어요.</li>
+         <li>화면 <b>맨 위쪽</b>에서 <b>"코드"</b> 글자를 한 번 클릭해요. (채팅 옆에 있어요.)</li>
+         <li>화면 <b>아래쪽 긴 칸</b>에 프롬프트를 붙여넣고 <b>Enter 키</b>를 한 번 눌러요.</li>
+         <li><b>10초~1분 기다려요.</b> Claude가 코드를 만들어요.</li>
+         <li>오른쪽이나 가운데에 <b>실제로 작동하는 화면</b>이 떠요. 직접 클릭해보세요!</li>
+         <li>이상하면 다시 채팅창에 <b>"○○ 부분을 △△로 바꿔줘"</b>라고 말해요.</li>`
+      : `<li>인터넷 브라우저에서 <b>claude.ai</b>에 접속하세요.</li>
+         <li>로그인한 뒤, 화면 <b>아래쪽 긴 칸</b>에 <b>"~~ 만들어줘"</b>라고 써요.</li>
+         <li><b>Enter 키</b>를 한 번 눌러요.</li>
+         <li><b>10초~1분 기다려요.</b> Claude가 코드를 만들어요.</li>
+         <li>채팅 <b>오른쪽에 실행 화면</b>이 자동으로 떠요. 직접 클릭해보세요!</li>
+         <li>이상하면 <b>"○○ 부분을 △△로 바꿔줘"</b>라고 추가로 말해요.</li>`;
+    return `
+      <div class="card" style="background:rgba(168,85,247,0.08); border:2px solid #a855f7; margin-bottom:16px;">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+          <span style="font-size:24px;">${isPro ? '⌨️' : '🌐'}</span>
+          <div style="font-weight:700; color:#a855f7;">이 미션은 ${isPro ? '"코드" 탭' : 'claude.ai 채팅'}에서 해요</div>
+        </div>
+        ${!isPro ? '<div style="font-size:12px; color:var(--text-400); margin-bottom:8px;">💡 무료 사용자는 채팅에서 "만들어줘"라고 하면 오른쪽에 실행 화면이 자동으로 뜹니다.</div>' : ''}
+        <ol style="margin:0; padding-left:22px; font-size:13px; line-height:2; color:var(--text-300);">
+          ${steps}
+        </ol>
+      </div>
+    `;
+  }
+  if (tab === 'info') {
+    return `
+      <div class="card" style="background:rgba(34,197,94,0.08); border:2px solid #22c55e; margin-bottom:16px;">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+          <span style="font-size:24px;">📦</span>
+          <div style="font-weight:700; color:#22c55e;">이 미션은 읽고 이해하는 시간이에요</div>
+        </div>
+        <div style="font-size:13px; color:var(--text-300);">직접 뭔가를 만들 필요 없어요. 바이브 코딩으로 만든 결과물이 어떤 형태로 나올 수 있는지 배워요.</div>
+      </div>
+    `;
+  }
+  return '';
+}
+
+function renderHub() {
+  renderSidebarMissions();
+  const interestName = { A: "교무 업무 도우미", B: "학생용 학습 도구", C: "수업 보조 자료", D: "재미있는 것", E: "기본 (영어 단어 카드)" }[state.interest || 'E'];
+  let displayName;
+  if (state.userName && state.subject) displayName = `${state.userName} 선생님 (${state.subject})`;
+  else if (state.userName) displayName = `${state.userName} 선생님`;
+  else if (state.subject) displayName = `${state.subject} 선생님`;
+  else displayName = '선생님';
+  document.getElementById('hubGreeting').textContent = `어서 오세요, ${displayName} 🌟`;
+  document.getElementById('hubSubtitle').textContent = `관심사: ${interestName} · 진행 ${countDone()}/${getTotalMissions()} 완료`;
+
+  const html = getMissions().map(m => {
+    const prog = state.missionProgress[m.id] || 0;
+    const locked = prog === 0;
+    const done = prog === 3;
+    return `
+      <div class="card mission-card ${locked ? 'locked' : ''} ${done ? 'done' : ''}"
+           ${locked ? '' : `onclick="enterMission(${m.id})"`}>
+        <div class="mission-icon">${done ? '✓' : m.icon}</div>
+        <div class="mission-info">
+          <div class="mission-num">${m.num}</div>
+          <div class="mission-title">${m.title}</div>
+          <div class="mission-desc">${m.desc}</div>
+          <div class="mission-meta">
+            <span>⏱ ${m.time}</span>
+            <span>${m.level}</span>
+            ${tabBadge(m.tab)}
+            ${done ? '<span style="color:var(--success)">✓ 완료</span>' : ''}
+            ${locked ? '<span>🔒 잠김</span>' : ''}
+          </div>
+        </div>
+        <div class="mission-arrow">${locked ? '🔒' : '→'}</div>
+      </div>
+    `;
+  }).join('');
+  document.getElementById('missionGrid').innerHTML = html;
+
+  if (countDone() === getTotalMissions()) {
+    document.getElementById('missionGrid').insertAdjacentHTML('beforeend', `
+      <div class="card" style="border-color: var(--accent-brand); text-align: center;">
+        <h3 style="color: var(--accent-brand)">🎉 모든 미션 완료!</h3>
+        <p class="mt-4">수료증을 확인해보세요.</p>
+        <button class="btn btn-primary mt-4" onclick="navigate('complete')">수료증 보기 →</button>
+      </div>
+    `);
+  }
+}
+
+function renderSidebarMissions() {
+  if (!state.interest) return;
+  document.getElementById('missionLabel').style.display = 'block';
+  const html = getMissions().map(m => {
+    const prog = state.missionProgress[m.id] || 0;
+    const locked = prog === 0;
+    const done = prog === 3;
+    return `
+      <div class="nav-item ${locked ? 'locked' : ''}"
+           ${locked ? '' : `onclick="enterMission(${m.id})"`}>
+        <span class="nav-icon">${done ? '✓' : m.icon}</span>
+        <span>${m.title}</span>
+        ${done ? '<span class="nav-status done">완료</span>' : ''}
+      </div>
+    `;
+  }).join('');
+  document.getElementById('missionNav').innerHTML = html;
+  renderSidebarTraining();
+}
+
+function renderSidebarTraining() {
+  if (!state.interest) return;
+  document.getElementById('trainingLabel').style.display = 'block';
+  const html = [1, 2, 3].map(lv => {
+    const L = TRAINING_LEVELS[lv];
+    const unlocked = isTrainingUnlocked(lv);
+    const done = isTrainingCompleted(lv);
+    return `
+      <div class="nav-item ${!unlocked ? 'locked' : ''}"
+           ${unlocked ? `onclick="enterTraining(${lv})"` : ''}>
+        <span class="nav-icon">${done ? '✓' : L.icon}</span>
+        <span>${L.badge} · ${L.title}</span>
+        ${done ? '<span class="nav-status done">완료</span>' : ''}
+      </div>
+    `;
+  }).join('');
+  document.getElementById('trainingNav').innerHTML = html;
+}
+
+function isTrainingUnlocked(level) {
+  // 미션 진행도와 연동: L1은 미션1, L2는 미션2, L3는 미션3 완료 후
+  return (state.missionProgress[level] || 0) === 3;
+}
+
+function isTrainingCompleted(level) {
+  const need = state.trainingMode === 'quick' ? 3 : 5;
+  return (state.trainingProgress[level] || []).length >= need;
+}
+
+function enterTraining(level) {
+  if (!isTrainingUnlocked(level)) {
+    toast(`🔒 미션 ${level}을 먼저 완료해주세요`);
+    return;
+  }
+  state.currentTrainingLevel = level;
+  saveState();
+  navigate('training');
+}
+
+function countDone() {
+  return Object.values(state.missionProgress).filter(p => p === 3).length;
+}
+
+function enterMission(id) {
+  if (state.missionProgress[id] === 0) return;
+  state.currentMission = id;
+  state.currentAct = 1;
+  if (state.missionProgress[id] === 1) state.missionProgress[id] = 2;
+  saveState();
+  navigate('mission');
+}
+
+/* MISSION DATA */
+const MISSION_DATA = {
+  A: {
+    1: {
+      goal: "30명 학생의 성적 평균을 계산하는 간단한 도구 만들기",
+      preview: "📊 입력: 학생 이름과 점수들 → 출력: 각 학생 평균과 반 전체 평균",
+      placeholder: "예: 성적 계산하는 거 만들어줘",
+      modelPrompt: "30명 학생의 국어/영어/수학 점수가 엑셀로 있어. 각 학생의 평균 점수와 반 전체 평균을 계산해서 보여주는 파이썬 코드를 만들어줘. 결과는 점수 순으로 정렬해줘.",
+    },
+    2: {
+      goal: "성적 계산기에 출결 반영과 등급 자동 분류 기능 추가",
+      preview: "📈 성적 + 출결 차감 + 등급(A/B/C/D) 자동 분류",
+      placeholder: "미션 1의 결과를 업그레이드하는 프롬프트를 작성해보세요",
+      modelPrompt: "[역할] 너는 고등학교 교무 업무를 돕는 파이썬 전문가야. [과제] 앞서 만든 성적 계산 코드에 출결 차감(결석 -2점, 지각 -0.5점)과 등급 자동 분류(90↑ A, 80↑ B, 70↑ C, 그 외 D)를 추가해줘. [형식] 주석을 한글로 달아주고, 파일 경로는 내가 바꿀 수 있게 맨 위에 변수로 빼줘. [제약] 엑셀 파일 형식은 건드리지 마.",
+    },
+  },
+  B: {
+    1: {
+      goal: "수학 퀴즈 웹페이지 만들기",
+      preview: "✏️ 문제 → 답 입력 → 정답 확인 → 총점 표시",
+      placeholder: "예: 수학 문제 만들어줘",
+      modelPrompt: "중학교 2학년 일차방정식 퀴즈 10문제를 HTML 웹페이지로 만들어줘. 학생이 답을 입력하면 정답인지 바로 알려주고, 마지막에 총점을 보여주는 기능도 넣어줘.",
+    },
+    2: {
+      goal: "퀴즈에 난이도 선택과 오답 해설 추가",
+      preview: "🎚️ 난이도(상/중/하) + 오답 풀이 단계별 설명",
+      placeholder: "퀴즈를 업그레이드하는 프롬프트를 작성해보세요",
+      modelPrompt: "[역할] 너는 중학교 수학 교사이자 교육용 웹페이지 디자이너야. [과제] 앞서 만든 일차방정식 퀴즈에 난이도 선택(상/중/하)과 오답일 때 풀이 과정을 단계별로 보여주는 기능을 추가해줘. [형식] 디자인은 학생이 집중할 수 있게 밝은 색으로, 문제는 큰 글씨로 해줘. [제약] 외부 라이브러리 없이 순수 HTML/CSS/JS로만 만들어줘.",
+    },
+  },
+  C: {
+    1: {
+      goal: "수업 중 학생을 랜덤으로 뽑는 호명 도구 만들기",
+      preview: "🎲 학생 이름 목록 → 버튼 클릭 → 랜덤으로 한 명 뽑기 → 이름 크게 표시",
+      placeholder: "예: 학생 이름 랜덤으로 뽑는 거 만들어줘",
+      modelPrompt: "수업 중에 학생을 랜덤으로 호명할 수 있는 웹페이지를 만들어줘. 30명의 학생 이름을 입력할 수 있는 칸이 있고, '뽑기' 버튼을 누르면 한 명을 랜덤으로 뽑아서 화면 중앙에 크게 보여줘. 뽑힌 학생은 중복 방지로 다음 뽑기에서 제외되게 해줘.",
+    },
+    2: {
+      goal: "호명 도구에 조 편성 기능과 저장 기능 추가",
+      preview: "👥 자동 조 편성(3~5명) + 명단 저장 기능",
+      placeholder: "호명 도구를 업그레이드하는 프롬프트를 작성해보세요",
+      modelPrompt: "[역할] 너는 교실에서 실제로 쓸 수 있는 수업 도구를 만드는 교육용 웹 개발자야. [과제] 앞서 만든 학생 호명 도구에 '조 자동 편성' 기능(조원 수 선택: 3~5명, 랜덤으로 섞어서 조 나누기)과 학생 명단이 브라우저에 저장되는 기능을 추가해줘. [형식] 칠판에 띄워도 잘 보이게 글씨는 크고, 색상은 선명하게 해줘. [제약] 외부 라이브러리 없이 순수 HTML/CSS/JS로만 만들어줘.",
+    },
+  },
+  D: {
+    1: {
+      goal: "숫자 맞추기 게임 만들기",
+      preview: "🎯 1~100 사이 숫자 → 힌트(크게/작게) → 시도 횟수",
+      placeholder: "예: 게임 만들어줘",
+      modelPrompt: "1부터 100 사이의 숫자를 컴퓨터가 정하면, 내가 숫자를 입력해서 맞추는 웹페이지 게임을 만들어줘. 내 숫자가 더 크면 '작게', 작으면 '크게'라고 알려주고, 몇 번 만에 맞췄는지 세어줘.",
+    },
+    2: {
+      goal: "게임에 난이도, 시간 제한, 효과 추가",
+      preview: "⏰ 난이도 3단계 + 30초 제한 + 축하 애니메이션",
+      placeholder: "게임을 업그레이드하는 프롬프트를 작성해보세요",
+      modelPrompt: "[역할] 너는 재미있는 웹 게임을 만드는 게임 디자이너야. [과제] 앞서 만든 숫자 맞추기 게임에 난이도 3단계(쉬움 1~50, 보통 1~100, 어려움 1~500), 30초 시간 제한, 맞췄을 때 축하 애니메이션을 추가해줘. [형식] 버튼과 글씨는 크고 선명하게. [제약] 외부 이미지나 사운드 파일은 사용하지 말고 이모지와 CSS 애니메이션으로만 해줘.",
+    },
+  },
+  E: {
+    1: {
+      goal: "영어 단어 암기 카드 웹페이지 만들기",
+      preview: "🔤 카드 클릭 → 앞면(영단어) / 뒷면(뜻) 뒤집기",
+      placeholder: "예: 영어 단어 공부하는 거 만들어줘",
+      modelPrompt: "영어 단어 10개와 뜻이 들어있는 암기 카드 웹페이지를 만들어줘. 카드를 클릭하면 앞면(영단어)과 뒷면(뜻)이 뒤집히게 해줘.",
+    },
+    2: {
+      goal: "단어 카드에 직접 추가 기능과 기록 추가",
+      preview: "➕ 단어 직접 추가 + 학습 기록 저장",
+      placeholder: "단어 카드를 업그레이드하는 프롬프트를 작성해보세요",
+      modelPrompt: "[역할] 너는 학습 웹사이트를 만드는 교육 프로그래머야. [과제] 앞서 만든 영어 단어 카드에 내가 직접 단어를 추가할 수 있는 입력 폼과, 오늘 외운 단어 개수를 기록하는 기능을 추가해줘. [형식] 카드 뒤집기는 부드러운 애니메이션으로. [제약] 브라우저를 껐다 켜도 내가 추가한 단어가 남아있게 해줘.",
+    },
+  },
+};
+
+/* SUBJECT-BASED DATA for interest=B (학생용 학습 도구) */
+const SUBJECT_B_DATA = {
+  국어: {
+    1: {
+      goal: "맞춤법 퀴즈 웹페이지 만들기",
+      preview: "✏️ 틀리기 쉬운 맞춤법 10문제 → 정답 확인 → 총점",
+      placeholder: "예: 맞춤법 퀴즈 만들어줘",
+      modelPrompt: "고등학생이 자주 틀리는 한국어 맞춤법 10문제를 HTML 웹페이지로 만들어줘. 예: '되/돼', '안/않', '띄어쓰기' 등. 각 문제는 O/X 형태로 풀고, 오답일 때는 이유를 간단히 설명해주고, 마지막에 총점을 보여줘.",
+    },
+    2: {
+      goal: "맞춤법 퀴즈에 카테고리 선택과 오답 노트 추가",
+      preview: "📚 카테고리(어휘/띄어쓰기/높임말) + 틀린 문제 모음",
+      placeholder: "맞춤법 퀴즈를 업그레이드하는 프롬프트를 작성해보세요",
+      modelPrompt: "[역할] 너는 고등학교 국어 교사이자 교육용 웹페이지 디자이너야. [과제] 앞서 만든 맞춤법 퀴즈에 카테고리 선택(어휘/띄어쓰기/높임말), 틀린 문제만 다시 풀 수 있는 '오답 노트' 기능, 오늘 푼 문제 수 기록을 추가해줘. [형식] 학생이 집중할 수 있게 깔끔한 디자인으로, 문제는 큰 글씨로. [제약] 외부 라이브러리 없이 순수 HTML/CSS/JS로만 만들어줘.",
+    },
+  },
+  영어: {
+    1: {
+      goal: "영어 단어 암기 카드 웹페이지 만들기",
+      preview: "🔤 카드 클릭 → 앞면(영단어) / 뒷면(뜻) 뒤집기",
+      placeholder: "예: 영어 단어 공부하는 거 만들어줘",
+      modelPrompt: "고등학교 수능 필수 영어 단어 10개와 뜻이 들어있는 암기 카드 웹페이지를 만들어줘. 카드를 클릭하면 앞면(영단어)과 뒷면(뜻+예문)이 뒤집히게 해줘. 다음/이전 버튼으로 카드 넘기기도 가능하게.",
+    },
+    2: {
+      goal: "단어 카드에 직접 추가 기능과 학습 기록 추가",
+      preview: "➕ 단어 직접 추가 + 외운 단어 개수 기록 저장",
+      placeholder: "단어 카드를 업그레이드하는 프롬프트를 작성해보세요",
+      modelPrompt: "[역할] 너는 학습 웹사이트를 만드는 영어 교육 프로그래머야. [과제] 앞서 만든 영어 단어 카드에 (1) 내가 직접 단어/뜻/예문을 추가할 수 있는 입력 폼, (2) 오늘 외운 단어 개수 기록, (3) '외웠음' 체크 기능을 추가해줘. [형식] 카드 뒤집기는 부드러운 애니메이션으로. [제약] 브라우저를 껐다 켜도 내가 추가한 단어가 남아있게 localStorage를 사용해줘.",
+    },
+  },
+  수학: {
+    1: {
+      goal: "수학 퀴즈 웹페이지 만들기",
+      preview: "✏️ 일차방정식 10문제 → 답 입력 → 정답 확인 → 총점",
+      placeholder: "예: 수학 문제 만들어줘",
+      modelPrompt: "고등학교 1학년 일차방정식 퀴즈 10문제를 HTML 웹페이지로 만들어줘. 학생이 답을 입력하면 정답인지 바로 알려주고, 마지막에 총점을 보여주는 기능도 넣어줘.",
+    },
+    2: {
+      goal: "퀴즈에 난이도 선택과 풀이 과정 해설 추가",
+      preview: "🎚️ 난이도(상/중/하) + 오답 풀이 단계별 설명",
+      placeholder: "퀴즈를 업그레이드하는 프롬프트를 작성해보세요",
+      modelPrompt: "[역할] 너는 고등학교 수학 교사이자 교육용 웹페이지 디자이너야. [과제] 앞서 만든 일차방정식 퀴즈에 난이도 선택(상/중/하)과 오답일 때 풀이 과정을 단계별로 보여주는 기능을 추가해줘. [형식] 디자인은 학생이 집중할 수 있게 깔끔한 색으로, 문제는 큰 글씨로 해줘. [제약] 외부 라이브러리 없이 순수 HTML/CSS/JS로만 만들어줘.",
+    },
+  },
+  과학: {
+    1: {
+      goal: "주기율표 원소 퀴즈 웹페이지 만들기",
+      preview: "⚗️ 원소기호 → 원소명 맞추기 10문제 → 총점",
+      placeholder: "예: 원소 외우는 퀴즈 만들어줘",
+      modelPrompt: "고등학교 화학 주요 원소 10개(H, He, Li, C, N, O, Na, Mg, Fe, Au 등)의 원소기호를 보고 이름과 원자번호를 맞추는 퀴즈 웹페이지를 만들어줘. 객관식 4지선다로 하고, 정답을 맞추면 그 원소의 간단한 설명을 보여줘.",
+    },
+    2: {
+      goal: "원소 퀴즈에 카테고리와 학습 기록 추가",
+      preview: "📚 분류(금속/비금속/기체) + 오답 원소 다시 풀기",
+      placeholder: "원소 퀴즈를 업그레이드하는 프롬프트를 작성해보세요",
+      modelPrompt: "[역할] 너는 고등학교 화학 교사이자 교육용 웹페이지 개발자야. [과제] 앞서 만든 원소 퀴즈에 (1) 분류 선택(금속/비금속/기체), (2) 틀린 원소만 다시 풀기 기능, (3) 내가 오늘 맞춘 원소 목록 표시를 추가해줘. [형식] 과학 교과서 느낌의 깔끔한 디자인으로. [제약] 외부 라이브러리 없이 HTML/CSS/JS만 사용해줘.",
+    },
+  },
+  사회: {
+    1: {
+      goal: "한국사 연표 퀴즈 웹페이지 만들기",
+      preview: "📜 사건 → 연도 맞추기 10문제 → 정답 확인",
+      placeholder: "예: 역사 연표 퀴즈 만들어줘",
+      modelPrompt: "고등학교 한국사의 주요 사건 10개(예: 임진왜란, 병자호란, 강화도 조약, 3.1 운동 등)의 발생 연도를 맞추는 퀴즈 웹페이지를 만들어줘. 객관식 4지선다로 하고, 정답을 맞추면 그 사건의 배경을 1~2문장으로 간단히 설명해줘.",
+    },
+    2: {
+      goal: "연표 퀴즈에 시대별 필터와 오답 복습 추가",
+      preview: "🕰️ 시대 선택(고대/중세/근대/현대) + 틀린 문제 다시 풀기",
+      placeholder: "역사 퀴즈를 업그레이드하는 프롬프트를 작성해보세요",
+      modelPrompt: "[역할] 너는 고등학교 역사 교사이자 교육용 웹페이지 디자이너야. [과제] 앞서 만든 연표 퀴즈에 (1) 시대별 필터(고대/중세/근대/현대), (2) 틀린 문제만 다시 풀기, (3) 오늘 맞춘 사건 목록을 추가해줘. [형식] 역사 교과서 같은 차분한 색감으로, 문제는 큰 글씨로. [제약] 외부 라이브러리 없이 HTML/CSS/JS만 사용해줘.",
+    },
+  },
+  예체능: {
+    1: {
+      goal: "악기/작곡가/미술 사조 퀴즈 웹페이지 만들기",
+      preview: "🎵 이미지/설명 → 이름 맞추기 10문제 → 정답 확인",
+      placeholder: "예: 악기 이름 맞추는 퀴즈 만들어줘",
+      modelPrompt: "고등학교 음악/미술 수업에서 쓸 수 있는 퀴즈 웹페이지를 만들어줘. 10문제로, 각 문제는 설명을 읽고 해당하는 악기 또는 작곡가 또는 미술 사조를 4지선다로 맞추는 형태야. 예: '바로크 시대의 대표 작곡가는?' → 바흐. 정답을 맞추면 간단한 설명을 보여줘.",
+    },
+    2: {
+      goal: "퀴즈에 분야별 선택과 학습 기록 추가",
+      preview: "🎨 분야(음악/미술/체육) + 오답 다시 풀기",
+      placeholder: "예체능 퀴즈를 업그레이드하는 프롬프트를 작성해보세요",
+      modelPrompt: "[역할] 너는 고등학교 예체능 교사이자 교육용 웹페이지 개발자야. [과제] 앞서 만든 퀴즈에 (1) 분야 선택(음악/미술/체육), (2) 틀린 문제 다시 풀기, (3) 오늘 맞춘 문제 개수 기록을 추가해줘. [형식] 예술적인 느낌의 디자인으로, 색감이 따뜻하게. [제약] 외부 라이브러리 없이 HTML/CSS/JS만 사용해줘.",
+    },
+  },
+  정보: {
+    1: {
+      goal: "컴퓨터 용어 매칭 퀴즈 웹페이지 만들기",
+      preview: "💻 용어 → 뜻 매칭 10문제 → 정답 확인",
+      placeholder: "예: 컴퓨터 용어 퀴즈 만들어줘",
+      modelPrompt: "고등학교 정보 수업에서 쓰는 컴퓨터 주요 용어(알고리즘, 변수, 함수, 반복문, 조건문 등) 10개를 뜻과 매칭하는 퀴즈 웹페이지를 만들어줘. 4지선다로 하고, 정답을 맞추면 그 용어의 예시 코드나 활용 사례를 짧게 보여줘.",
+    },
+    2: {
+      goal: "용어 퀴즈에 카테고리와 복습 기능 추가",
+      preview: "📂 카테고리(기초/프로그래밍/네트워크) + 오답 복습",
+      placeholder: "컴퓨터 용어 퀴즈를 업그레이드하는 프롬프트를 작성해보세요",
+      modelPrompt: "[역할] 너는 고등학교 정보 교사이자 교육용 웹 개발자야. [과제] 앞서 만든 컴퓨터 용어 퀴즈에 (1) 카테고리 선택(기초/프로그래밍/네트워크), (2) 틀린 문제 다시 풀기, (3) 오늘의 정답 수 기록 기능을 추가해줘. [형식] 터미널 느낌의 세련된 디자인으로. [제약] 외부 라이브러리 없이 HTML/CSS/JS만 사용해줘.",
+    },
+  },
+  기타: {
+    1: {
+      goal: "학습용 플래시카드 웹페이지 만들기",
+      preview: "🎴 카드 앞면(질문) → 뒷면(답) 뒤집기 10장",
+      placeholder: "예: 플래시카드 만들어줘",
+      modelPrompt: "학습용 플래시카드 웹페이지를 만들어줘. 10장의 카드가 있고, 각 카드는 클릭하면 앞면(질문)에서 뒷면(정답)으로 뒤집혀. 다음/이전 버튼으로 카드를 넘길 수 있고, 오늘 몇 장을 공부했는지 세어줘.",
+    },
+    2: {
+      goal: "플래시카드에 직접 추가 기능과 기록 추가",
+      preview: "➕ 카드 직접 추가 + 학습 기록 저장",
+      placeholder: "플래시카드를 업그레이드하는 프롬프트를 작성해보세요",
+      modelPrompt: "[역할] 너는 학습 웹사이트를 만드는 교육 프로그래머야. [과제] 앞서 만든 플래시카드에 (1) 내가 직접 질문/답을 추가할 수 있는 입력 폼, (2) 오늘 공부한 카드 개수 기록을 추가해줘. [형식] 카드 뒤집기는 부드러운 애니메이션으로. [제약] 브라우저를 껐다 켜도 내가 추가한 카드가 남아있게 localStorage를 사용해줘.",
+    },
+  },
+};
+
+function getMissionData(id) {
+  const interest = state.interest || 'E';
+  const subject = state.subject || '기타';
+  // For 학생용 학습 도구 (B), use subject-specific data
+  if (interest === 'B') {
+    return (SUBJECT_B_DATA[subject] || SUBJECT_B_DATA['기타'])[id];
+  }
+  return MISSION_DATA[interest][id];
+}
+
+/* MISSION 3 SCENARIOS */
+const SCENARIOS = [
+  {
+    title: "상황 ①  원하던 모습과 전혀 달라요",
+    fakeResult: "선생님은 '학생들이 예쁘게 볼 수 있는 화면'을 원하셨어요. 그런데 Claude가 준 건 검은 바탕에 흰 글씨만 나오는 복잡한 화면이었어요. 모양도 낯설고, 껐다 다시 열면 입력했던 내용도 다 사라져버려요.",
+    lesson: "✨ 더 자세히 말해주기",
+    hint: "'만들어줘' 대신 '어떤 모양'인지 눈에 보이듯 설명해보세요. (예: 버튼, 색깔, 인터넷 브라우저에서 열리는 화면 등)",
+    modelFix: "학생 이름과 점수를 입력할 수 있는 화면을 인터넷 브라우저에서 바로 열 수 있게 만들어줘. 입력한 내용은 아래에 목록으로 보여주고, 껐다 다시 켜도 사라지지 않게 해줘.",
+  },
+  {
+    title: "상황 ②  대부분 좋은데 한 가지가 이상해요",
+    fakeResult: "이번에는 할 일 목록이 잘 만들어졌어요. 입력도 되고, 체크 표시도 되고, 지우기도 잘 돼요. 그런데 딱 하나, 창을 껐다가 다시 열면 입력했던 할 일이 모두 사라져버려요.",
+    lesson: "✨ 필요한 부분만 고쳐달라고 말하기",
+    hint: "잘된 건 그대로 두고 싶다면, '그것만 고쳐줘'라고 명확히 말해보세요. 전체를 다시 요청하면 오히려 잘됐던 부분까지 바뀔 수 있어요.",
+    modelFix: "방금 만든 할 일 목록에서 저장 기능만 고쳐줘. 창을 껐다가 다시 열어도 입력했던 할 일이 그대로 남아있게만 해줘. 나머지 부분은 절대 바꾸지 말아줘.",
+  },
+  {
+    title: "상황 ③  고칠수록 점점 이상해져요",
+    fakeResult: "처음엔 잘 됐었는데, '여기 좀 바꿔줘', '이것도 추가해줘' 하면서 세 번 고쳤더니 이상해졌어요. 원래 잘되던 것까지 망가져서, 지금은 처음보다 더 못한 상태가 되었어요.",
+    lesson: "✨ 잘 되던 때로 돌아가자고 말하기",
+    hint: "계속 고치려고 하지 말고, '아까 잘되던 때로 돌아가자'고 말해보세요. 처음부터 다시 시작하는 게 빠를 때가 있어요.",
+    modelFix: "아까 두 번째로 만들어준 게 가장 좋았어. 그때 걸로 다시 돌아가자. 거기서부터 천천히, 한 번에 하나씩만 조심해서 바꿔줘.",
+  },
+  {
+    title: "상황 ④  이전 모양이 더 좋았어요",
+    fakeResult: "'달력 기능 추가해줘'라고 했더니 달력은 생겼어요. 그런데 원래 깔끔했던 화면이 복잡해지고 글씨도 작아졌어요. 달력은 필요한데, 전에 깔끔했던 모양이 더 마음에 들었어요.",
+    lesson: "✨ 좋았던 부분은 유지하라고 말하기",
+    hint: "무엇이 좋았는지 구체적으로 말해주세요. (예: '큰 글씨', '흰 배경', '단순한 버튼') 그리고 새 기능은 '눈에 띄지 않게 추가'해달라고 요청하세요.",
+    modelFix: "전에 있던 깔끔한 모양(큰 글씨, 단순한 버튼, 흰 배경)은 그대로 두고, 달력만 화면 한쪽에 작게 넣어줘. 전체적인 느낌은 바뀌지 않게 해줘.",
+  },
+];
+
+/* PROMPT 연습장 DATA (3 levels × 5 exercises) */
+const TRAINING_LEVELS = {
+  1: {
+    title: "프롬프트 4대 요소",
+    icon: "🌱",
+    badge: "초급",
+    concept: "좋은 프롬프트는 네 가지를 담고 있어요:\n\n① **역할** — Claude에게 누구처럼 답할지 알려줌\n② **과제** — 정확히 무엇을 원하는지\n③ **형식** — 어떤 형태로 받고 싶은지\n④ **제약** — 하지 말아야 할 것",
+    exercises: [
+      {
+        title: "① 역할 부여하기",
+        lesson: "Claude에게 '너는 ○○ 전문가야'라고 시작하면 훨씬 전문적인 답변이 나와요.",
+        bad: "시 써줘",
+        good: "너는 따뜻한 감성의 시인이야. 가을을 주제로 4줄 짜리 짧은 시를 써줘.",
+        task: "'요리법 알려줘' 프롬프트에 **역할**을 추가해서 고쳐 써보세요.",
+        model: "너는 30년 경력의 한식 요리사야. 초보자도 실패하지 않을 김치찌개 레시피를 단계별로 알려줘.",
+      },
+      {
+        title: "② 과제 명확히 하기",
+        lesson: "'뭔가 만들어줘'가 아니라 정확히 무엇을, 얼마나, 누구를 위해 만드는지 말해요.",
+        bad: "학습지 만들어줘",
+        good: "고등학교 2학년 영어 현재완료 시제를 연습할 수 있는 A4 1장 학습지를 만들어줘. 객관식 5문제 + 주관식 5문제로.",
+        task: "'운동 계획 짜줘' 프롬프트를 더 구체적인 과제로 바꿔보세요.",
+        model: "40대 직장인이 주 3회 30분씩 집에서 할 수 있는 4주 운동 계획을 짜줘. 근력 운동과 유산소를 골고루 포함하고, 기구 없이 가능한 동작으로만.",
+      },
+      {
+        title: "③ 형식 지정하기",
+        lesson: "결과물 형태를 미리 말해주면 바로 쓸 수 있는 답을 받을 수 있어요.",
+        bad: "책 추천해줘",
+        good: "과학 입문서 5권을 '제목 | 저자 | 한 줄 설명' 형태의 표로 추천해줘.",
+        task: "'오늘 할 일 정리해줘' 프롬프트에 **출력 형식**을 지정해보세요.",
+        model: "오늘 할 일을 '시간 | 일정 | 우선순위(상/중/하)' 표 형식으로 정리해줘. 우선순위 높은 것부터 위에.",
+      },
+      {
+        title: "④ 제약 조건 달기",
+        lesson: "'하지 말아야 할 것'을 명시하면 원치 않는 결과를 피할 수 있어요.",
+        bad: "설명해줘",
+        good: "이 개념을 초등학생도 이해할 수 있게 3문장 이내로, 어려운 한자어 없이 설명해줘.",
+        task: "'글 요약해줘' 프롬프트에 **제약**을 2개 이상 추가해보세요.",
+        model: "이 글을 3줄 이내로, 고등학생이 이해할 쉬운 말로 요약해줘. 원문 표현을 그대로 쓰지 말고 내 말로 바꿔서.",
+      },
+      {
+        title: "🎯 4요소 통합 연습",
+        lesson: "네 가지를 모두 담아서 막연한 요청을 실전용으로 바꿔봅니다.",
+        bad: "퀴즈 만들어줘",
+        good: "[역할] 중학교 수학 교사로서 [과제] 중1 정수와 유리수 퀴즈 10문제를 [형식] HTML 웹페이지로, 4지선다로, 답 입력 후 바로 채점되게 [제약] 외부 라이브러리 없이 순수 HTML/CSS/JS만으로 만들어줘.",
+        task: "'일정 관리해줘'를 **4요소(역할+과제+형식+제약)** 를 모두 담아 고쳐 써보세요.",
+        model: "[역할] 너는 개인 비서처럼 체계적으로 일정을 관리해주는 조수야. [과제] 내 이번 주 일정(월요일 회의 2건, 화요일 수업 3개, 수요일 출장 등)을 정리하고 우선순위를 매겨줘. [형식] '요일 | 시간 | 일정 | 우선순위 | 메모' 표로. [제약] 과거 일정은 제외하고, 겹치는 일정은 빨간색으로 표시해줘.",
+      },
+    ],
+  },
+  2: {
+    title: "예시와 단계별 지시",
+    icon: "🌿",
+    badge: "중급",
+    concept: "좋은 **예시 하나**가 긴 설명 10개보다 효과적이에요 (Few-shot).\n복잡한 일은 여러 **단계로 쪼개어** 지시하면 훨씬 정확해져요.\n**상황 맥락**과 **금지 조건**을 함께 주면 완성도가 올라갑니다.",
+    exercises: [
+      {
+        title: "① 예시 제공 (Few-shot)",
+        lesson: "원하는 출력의 예시 1~2개를 보여주면 Claude가 정확히 이해해요.",
+        bad: "학생 이름 정리해줘",
+        good: "학생 이름을 이 형식대로 정리해줘.\n예시: '홍길동 3215' → '홍길동(3학년 2반 15번)'\n목록: 김영희 2108, 박민수 1123, ...",
+        task: "'회의록 작성해줘' 프롬프트에 **출력 예시**를 1개 포함해보세요.",
+        model: "회의록을 아래 예시와 같은 형태로 작성해줘.\n예시:\n- 일시: 2026-04-10 14:00\n- 참석: 김○○, 이○○\n- 주요 논의: 1) 예산 집행 2) 일정 조정\n- 결정 사항: ...\n- 다음 회의: 2026-04-17\n\n이번 회의 내용: [아래 내용 참고]",
+      },
+      {
+        title: "② 단계별로 지시하기",
+        lesson: "한 번에 모든 걸 시키지 말고, '1단계 → 2단계 → 3단계' 순으로 쪼개요.",
+        bad: "이 글 분석해줘",
+        good: "이 글을 다음 단계로 분석해줘:\n1) 핵심 주장을 한 문장으로\n2) 주요 근거 3개\n3) 반론 가능성\n4) 내 결론",
+        task: "'학생 성적 피드백 써줘'를 **3~4단계로 쪼개서** 지시해보세요.",
+        model: "학생 성적 피드백을 다음 단계로 작성해줘:\n1) 잘한 점 2가지 (구체적 수치와 함께)\n2) 아쉬운 점 1가지 (부드럽게)\n3) 다음 학기 개선 방향 2가지 (실천 가능한 수준)\n4) 학부모께 전할 한 문장 격려",
+      },
+      {
+        title: "③ 상황 맥락 제공하기",
+        lesson: "누가, 언제, 어떤 상황에서 이걸 필요로 하는지 알려주면 완전히 다른 답이 나와요.",
+        bad: "학부모께 편지 써줘",
+        good: "고등학교 3학년 담임 교사가, 수능 한 달 전에 학부모께 격려 편지를 써. 학생들이 지쳐있는 시기라 부담되지 않게, 진심이 담긴 5~7문장으로.",
+        task: "'사과 문자 작성해줘' 프롬프트에 **상황 맥락**을 자세히 추가해보세요.",
+        model: "중학교 교사가 학부모에게 사과 문자를 보내려고 해. 상황: 학급 단톡방에 공지를 늦게 올려서 학부모가 준비물을 못 챙겼음. 톤: 진심 어린 사과 + 재발 방지 약속. 길이: 3~4문장. 너무 격식 차리지 않고 친근하게.",
+      },
+      {
+        title: "④ 금지 조건 명시하기",
+        lesson: "'이건 하지 마'라고 명시하면 원치 않는 스타일을 피할 수 있어요.",
+        bad: "친절하게 답해줘",
+        good: "친절하게 답하되, 과한 이모지나 '!!' 같은 감탄사는 쓰지 말고, 차분한 비즈니스 톤 유지.",
+        task: "'설명문 써줘' 프롬프트에 **하지 말아야 할 것**을 2~3개 명시해보세요.",
+        model: "이 개념을 설명하는 글을 써줘. 단, 다음은 하지 마:\n- 어려운 전문 용어 사용 금지\n- '~것 같아요', '~인 듯합니다' 같은 모호한 표현 금지\n- 1000자 넘지 말 것",
+      },
+      {
+        title: "🎯 중급 통합 연습",
+        lesson: "예시 + 단계 + 맥락 + 금지를 모두 한 프롬프트에 녹여봅니다.",
+        bad: "학습 계획 만들어줘",
+        good: "고3 수험생을 위한 4주 수학 학습 계획을 아래 단계로 만들어줘:\n1) 현재 수준 진단 질문 5개\n2) 주간 목표 설정\n3) 일별 학습 내용\n4) 주말 복습 방법\n출력 예시: '1주차 월요일: 함수 기초 / 오후 2시 / 1시간 / 문제 10개'\n금지: 하루 3시간 초과 계획 ❌, 휴식 없는 계획 ❌",
+        task: "'우리 반 소통 개선 계획'을 주제로 **예시+단계+맥락+금지**를 모두 담아 작성해보세요.",
+        model: "고등학교 1학년 담임 교사가 학급 소통 문제를 개선하려고 해 (현재 맥락: 학생들이 서로 대화 안 함, 모둠 활동 참여도 낮음).\n다음 단계로 4주 계획을 세워줘:\n1) 현재 상황 파악 방법 (설문 예시 포함)\n2) 주차별 실천 활동\n3) 성공 지표 설정\n4) 주간 점검 방법\n출력 예시: '1주차: 서로 이름 부르기 미션 - 하루 5명 이상 이름 부르기'\n금지: 강제 활동 ❌, 경쟁 기반 활동 ❌, 교사 일방 강의 ❌",
+      },
+    ],
+  },
+  3: {
+    title: "사고 유도와 구조화",
+    icon: "🌳",
+    badge: "상급",
+    concept: "상급에서는 Claude에게 **'사고 과정'을 드러내게** 하고, 출력 형식을 **강제로 고정**시켜요.\n자기 검증을 요청하고, 여러 조건을 정교하게 결합합니다.\n이 단계가 되면 바로 업무에 쓸 수 있는 결과를 얻을 수 있어요.",
+    exercises: [
+      {
+        title: "① 단계별 사고 유도 (Chain of Thought)",
+        lesson: "'답만 말하지 말고 생각 과정을 보여줘'라고 하면 정확도가 크게 올라가요.",
+        bad: "답이 뭐야?",
+        good: "다음 문제를 풀 때, '먼저 ~, 다음으로 ~, 마지막으로 ~' 순으로 사고 과정을 단계별로 보여주고 마지막에 최종 답을 써줘.",
+        task: "'이 학생 성적 하락 원인 분석해줘' 프롬프트에 **단계별 사고 유도**를 추가해보세요.",
+        model: "다음 학생의 성적 하락 원인을 분석할 때, 성급하게 결론 내리지 말고 아래 순서로 사고해줘:\n1단계: 데이터에서 관찰된 사실만 나열 (추측 금지)\n2단계: 가능한 원인 가설 3~5개\n3단계: 각 가설의 근거 평가 (데이터와 일치도)\n4단계: 가장 가능성 높은 원인 선정\n5단계: 근거가 불충분한 부분 명시\n마지막에 최종 결론을 요약해줘.",
+      },
+      {
+        title: "② 구조화된 출력 강제하기",
+        lesson: "JSON, 표, 특정 마크다운 형식을 강제하면 그대로 다른 프로그램에 복붙할 수 있어요.",
+        bad: "학생 명단 정리해줘",
+        good: "학생 명단을 아래 JSON 형식으로 출력해줘. 다른 설명은 하지 말고 JSON만:\n[{\"name\": \"\", \"grade\": 0, \"class\": 0, \"number\": 0}]",
+        task: "'회의 안건 목록 정리' 프롬프트에 **구조화된 출력(표)** 을 강제해보세요.",
+        model: "회의 안건을 아래 마크다운 표로만 출력해줘. 다른 설명은 일절 하지 말 것:\n\n| 번호 | 안건 | 담당자 | 예상 시간 | 우선순위 |\n|------|------|--------|-----------|----------|\n\n각 안건은 한 줄로 간결하게. 우선순위는 상/중/하로만.",
+      },
+      {
+        title: "③ 자기 검증 요청하기",
+        lesson: "Claude에게 '한 번 만든 뒤 다시 검토해줘'라고 하면 스스로 실수를 잡아요.",
+        bad: "번역해줘",
+        good: "이 영어 문장을 한국어로 번역해줘. 번역 후, 어색한 표현이나 오역이 있는지 스스로 검토하고, 더 자연스러운 버전이 있다면 '수정안'으로 함께 제안해줘.",
+        task: "'요약문 작성해줘' 프롬프트에 **자기 검증** 지시를 추가해보세요.",
+        model: "이 글을 5문장 이내로 요약해줘. 요약 후 다음을 스스로 확인해줘:\n1) 원문의 핵심 주장이 포함되었는가?\n2) 빠뜨린 중요 정보가 있는가?\n3) 내가 원문에 없는 내용을 추가하지 않았는가?\n만약 문제가 있다면 수정된 버전을 '최종본'으로 다시 써줘.",
+      },
+      {
+        title: "④ 역할 + 제약 정교화",
+        lesson: "여러 제약을 세밀하게 조합하면 마치 편집자에게 교정받은 것처럼 완성도 높은 결과가 나와요.",
+        bad: "글 다듬어줘",
+        good: "너는 20년 경력의 한국어 편집자야. 이 글을 다음 기준으로 다듬어줘:\n(1) 문장 길이 2줄 이내\n(2) 수동태→능동태\n(3) '~것' 표현 최소화\n(4) 원문 의미는 보존\n수정 전후 차이를 표로 보여줘.",
+        task: "'이 보고서 더 좋게 만들어줘'를 **역할 + 제약 4개 이상 + 비교 출력**을 담아 고쳐 써보세요.",
+        model: "너는 공공기관 보고서를 15년간 작성해온 전문 기획자야. 이 보고서를 다음 기준으로 개선해줘:\n(1) 핵심 결론을 맨 앞으로 (역피라미드 구조)\n(2) 한 문단당 한 주제 원칙\n(3) 숫자는 모두 비교 가능한 형태로 (예: 전년 대비 %)\n(4) 전문 용어 사용 시 첫 등장에만 풀이 괄호\n(5) 결론부에 '다음 행동'을 최소 3개 제안\n\n출력: '수정 전 | 수정 후 | 변경 이유' 3열 표로 주요 수정 사항 5개 이상 보여줘.",
+      },
+      {
+        title: "🎯 상급 통합 연습",
+        lesson: "사고 유도 + 구조화 + 자기 검증을 모두 한 프롬프트에 녹여냅니다.",
+        bad: "새 학기 수업 계획 짜줘",
+        good: "(상급 통합 - 아래 모범 답안 참고)",
+        task: "'교내 행사 기획서 작성'을 주제로, **사고 유도 + 구조화된 출력 + 자기 검증** 3가지를 모두 담은 프롬프트를 작성해보세요.",
+        model: "너는 고등학교 행사 기획 전문가야. 교내 체육대회 기획서를 아래 순서로 만들어줘:\n\n[사고 단계]\n1단계: 목표와 성공 기준 정의\n2단계: 참여자/예산/공간 제약 파악\n3단계: 프로그램 후보 5개 브레인스토밍\n4단계: 각 후보의 실행 난이도 평가\n5단계: 최종 3개 선정 + 이유\n\n[출력 형식 - 이 형식 그대로 출력할 것]\n# 체육대회 기획서\n## 1. 개요 (목적/일시/장소/대상)\n## 2. 프로그램 (표: 시간 | 활동 | 담당 | 준비물)\n## 3. 예산 (표: 항목 | 수량 | 단가 | 소계)\n## 4. 안전 대책 (3가지 이상)\n## 5. 비상 계획\n\n[자기 검증]\n기획서 완성 후, 다음을 스스로 확인하고 누락이 있으면 보완해줘:\n- 모든 시간대에 담당자가 지정되었는가?\n- 안전사고 예방책이 구체적인가?\n- 우천 시 대안이 포함되었는가?",
+      },
+    ],
+  },
+};
+
+/* MISSION RENDERING */
+function renderMission() {
+  const id = state.currentMission;
+  if (!id) return;
+  const meta = getMissionMeta(id);
+  document.getElementById('missionNum').textContent = meta.num;
+  document.getElementById('missionTitle').textContent = meta.title;
+  document.getElementById('missionTabBadge').innerHTML = tabBadge(meta.tab);
+  // 미션 유형에 따라 탭 개수 결정
+  const actLabels = {
+    chat_intro: ['목표', '내 프롬프트', '모범 비교'],
+    chat_conditions: ['목표', '내 프롬프트', '모범 비교'],
+    chat_combined: ['목표', '내 프롬프트', '모범 비교'],
+    code_first: ['소개', '따라하기'],
+    output_guide: ['소개', '결과물 종류'],
+    code_iterate: ['소개', '업그레이드'],
+    code_debug: ['소개', '대처법'],
+    free_create: ['목표', '내 프롬프트'],
+  };
+  const labels = actLabels[meta.renderer] || ['1', '2', '3'];
+  document.getElementById('actTabs').innerHTML = labels.map((l, i) =>
+    `<button class="act-tab ${state.currentAct === i + 1 ? 'active' : ''}" data-act="${i+1}" onclick="switchAct(${i+1})"><span class="act-num">${i+1}</span>${l}</button>`
+  ).join('');
+  const rendererMap = {
+    chat_intro: () => renderMission12(id),
+    chat_conditions: () => renderMission12(id),
+    chat_combined: () => renderMission12(id),
+    code_first: () => renderMissionCodeFirst(id),
+    output_guide: () => renderMissionOutputGuide(id),
+    code_iterate: () => renderMissionCodeIterate(id),
+    code_debug: () => renderMissionCodeDebug(id),
+    free_create: () => renderMission4(),
+  };
+  const fn = rendererMap[meta.renderer];
+  if (fn) fn();
+  else renderMission12(id);
+}
+
+function switchAct(n) {
+  state.currentAct = n;
+  saveState();
+  renderMission();
+}
+
+function renderMission12(id) {
+  const data = getMissionData(id);
+  const meta = getMissionMeta(id);
+  const act = state.currentAct;
+  let html = '';
+
+  if (act === 1) {
+    html = `
+      ${tabHelpBox(meta.tab)}
+      <div class="card">
+        <h3>🎯 이번에 만들 것</h3>
+        <p class="mt-4"><b>${data.goal}</b></p>
+        <div class="example-prompt mt-4">${data.preview}</div>
+        <p class="mt-4">어떻게 요청하면 이것을 만들 수 있을까요? 다음 단계에서 직접 작성해봅니다.</p>
+        <button class="btn btn-primary mt-6" onclick="switchAct(2)">내 프롬프트 작성하기 →</button>
+      </div>
+    `;
+  } else if (act === 2) {
+    const saved = state.userPrompts[id] || '';
+    html = `
+      <div class="card">
+        <h3>✍️ 내 프롬프트 작성</h3>
+        <p class="mt-4 text-muted">Claude에게 어떻게 말해야 원하는 결과가 나올까요? 자유롭게 작성해보세요.</p>
+        <textarea class="prompt-box mt-4" id="userPromptInput" placeholder="${data.placeholder}">${escapeHtml(saved)}</textarea>
+        <div class="prompt-toolbar">
+          <button class="btn btn-sm" onclick="copyPrompt()">📋 복사</button>
+          <button class="btn btn-sm" onclick="openClaude()">💬 Claude 앱 사용법</button>
+          <button class="btn btn-primary btn-sm" onclick="gradePrompt()">⭐ 채점받기</button>
+        </div>
+        <p class="mt-4 text-muted" style="font-size:13px">
+          💡 Claude 데스크탑 앱을 열어서 이 프롬프트를 붙여넣고 결과를 확인한 후 다음 단계로 넘어가세요.
+        </p>
+      </div>
+      <div id="scoreResult" class="mt-6"></div>
+    `;
+  } else if (act === 3) {
+    const myPrompt = state.userPrompts[id] || '(작성하지 않음)';
+    html = `
+      <div class="card">
+        <h3>📖 모범 프롬프트와 비교해보세요</h3>
+        <div class="comparison">
+          <div class="comparison-box">
+            <div class="comparison-title">내가 쓴 프롬프트</div>
+            <div class="comparison-text">${escapeHtml(myPrompt)}</div>
+          </div>
+          <div class="comparison-box model">
+            <div class="comparison-title">모범 프롬프트</div>
+            <div class="comparison-text">${escapeHtml(data.modelPrompt)}</div>
+          </div>
+        </div>
+        <h4 class="mt-6">🔍 무엇이 다른가요?</h4>
+        <ul class="feedback-list mt-4">
+          ${getDiffPoints(myPrompt, data.modelPrompt).map(p => `
+            <li class="feedback-item"><span class="feedback-bullet">•</span>${p}</li>
+          `).join('')}
+        </ul>
+        <button class="btn btn-primary mt-6" onclick="completeMission(${id})">이 미션 완료 ✓</button>
+      </div>
+    `;
+  }
+
+  document.getElementById('actContent').innerHTML = html;
+  if (act === 2 && state.scores[id]) setTimeout(() => renderScore(state.scores[id]), 30);
+}
+
+function getDiffPoints(my, model) {
+  const points = [];
+  if (my.length < 30) points.push("내 프롬프트가 많이 짧아요. 모범은 구체적인 정보(숫자, 형식, 제약)를 담고 있습니다.");
+  if (!/역할|너는|당신/.test(my) && /역할|너는|당신/.test(model)) points.push("모범 프롬프트는 Claude에게 먼저 '역할'을 주고 시작합니다. 이러면 더 전문적인 답변을 얻을 수 있어요.");
+  if (!/형식|형태|HTML|파이썬|엑셀|웹페이지/.test(my)) points.push("결과물의 '형식'(HTML, 파이썬, 엑셀 등)을 명시하면 원하는 형태로 바로 받을 수 있습니다.");
+  if (!/제약|없이|말고|하지/.test(my) && /제약|없이|말고|하지/.test(model)) points.push("'제약 조건'(예: 외부 라이브러리 없이)을 명시하면 원치 않는 복잡함을 방지할 수 있어요.");
+  if (points.length === 0) points.push("훌륭해요! 내 프롬프트도 충분히 구체적입니다. 모범 프롬프트의 표현 방식만 참고해보세요.");
+  return points;
+}
+
+function renderMission3() {
+  const act = state.currentAct;
+  let html = '';
+  if (act === 1) {
+    html = `
+      ${tabHelpBox('chat')}
+      <div class="card">
+        <h3>🎯 바이브 코딩에서 가장 중요한 것</h3>
+        <p class="mt-4">Claude에게 부탁했을 때, 처음부터 원하는 결과가 나오지 않을 때가 많아요. 그건 <b>여러분 잘못이 아니에요</b>. 누구나 그래요.</p>
+        <p class="mt-4">중요한 건, 그럴 때 <b>어떻게 다시 말해서 원하는 걸 얻는가</b>예요. 이게 바이브 코딩에서 가장 오래 쓰는 능력입니다.</p>
+        <div class="example-prompt mt-6">
+          💡 이번 미션에서는 실제로 자주 마주치는 <b>4가지 상황</b>을 보여드려요. 각 상황마다 어떻게 다시 말하면 좋을지 직접 써보세요. 모범 답안과 비교도 할 수 있어요.
+        </div>
+        <p class="mt-6 text-muted" style="font-size:13px;">
+          걱정 마세요. 답이 하나만 있는 게 아니에요. 중요한 건 <b>'구체적으로 말하는 연습'</b>입니다.
+        </p>
+        <button class="btn btn-primary mt-6" onclick="switchAct(2)">4가지 상황 보러 가기 →</button>
+      </div>
+    `;
+  } else if (act === 2) {
+    html = SCENARIOS.map((s, i) => {
+      const done = state.scenarioProgress[i];
+      return `
+        <div class="card scenario-card" style="${done ? 'border-left-color: var(--success);' : ''}">
+          <div class="scenario-header">
+            <div class="scenario-num">${i + 1}</div>
+            <div class="scenario-title">${s.title}</div>
+            ${done ? '<span style="margin-left:auto; color:var(--success)">✓</span>' : ''}
+          </div>
+          <div class="fake-result">
+            <div class="fake-result-label">내가 받은 결과</div>
+            ${s.fakeResult}
+          </div>
+          <p class="mt-4"><b>📚 배울 기술:</b> ${s.lesson}</p>
+          <p class="mt-4 text-muted" style="font-size:13px">💡 ${s.hint}</p>
+          <textarea class="prompt-box mt-4" id="scen-${i}" placeholder="재요청 프롬프트를 작성해보세요..."></textarea>
+          <div class="prompt-toolbar">
+            <button class="btn btn-sm" onclick="checkScenario(${i})">✓ 모범 답안 보기</button>
+          </div>
+          <div id="scen-feedback-${i}"></div>
+        </div>
+      `;
+    }).join('');
+    html += `
+      <div class="card mt-6" style="text-align:center">
+        <p>4개 시나리오를 모두 확인했다면</p>
+        <button class="btn btn-primary mt-4" onclick="switchAct(3)">정리 보기 →</button>
+      </div>
+    `;
+  } else if (act === 3) {
+    html = `
+      <div class="card">
+        <h3>🎓 이번 미션에서 배운 것</h3>
+        <p class="mt-4 text-muted">4가지 상황에서 배운 '회복하는 말하기'를 정리해볼게요.</p>
+        <ul class="feedback-list mt-4">
+          <li class="feedback-item"><span class="feedback-bullet">1.</span><b>더 자세히 말해주기</b> — 원한 모양이 어떤지 눈에 보이듯 설명하기</li>
+          <li class="feedback-item"><span class="feedback-bullet">2.</span><b>필요한 부분만 고쳐달라고 하기</b> — "그것만 바꿔줘, 나머지는 그대로"</li>
+          <li class="feedback-item"><span class="feedback-bullet">3.</span><b>잘 되던 때로 돌아가기</b> — 계속 고치기보다 이전 상태부터 다시</li>
+          <li class="feedback-item"><span class="feedback-bullet">4.</span><b>좋았던 부분 유지하기</b> — 무엇이 좋았는지 구체적으로 말하며 추가</li>
+        </ul>
+        <div class="example-prompt mt-6">
+          💡 이 4가지만 기억하세요. 엉뚱한 결과가 나와도 당황하지 않고 차근차근 고쳐나갈 수 있어요.
+        </div>
+        <button class="btn btn-primary mt-6" onclick="completeMission(3)">미션 3 완료 ✓</button>
+      </div>
+    `;
+  }
+  document.getElementById('actContent').innerHTML = html;
+}
+
+function checkScenario(i) {
+  const input = document.getElementById(`scen-${i}`);
+  const userText = input.value.trim();
+  if (!userText) { toast("먼저 재요청 프롬프트를 작성해보세요"); return; }
+  state.scenarioProgress[i] = true;
+  saveState();
+  const fb = document.getElementById(`scen-feedback-${i}`);
+  fb.innerHTML = `
+    <div class="comparison mt-4">
+      <div class="comparison-box">
+        <div class="comparison-title">내 답</div>
+        <div class="comparison-text">${escapeHtml(userText)}</div>
+      </div>
+      <div class="comparison-box model">
+        <div class="comparison-title">모범 답안</div>
+        <div class="comparison-text">${escapeHtml(SCENARIOS[i].modelFix)}</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderMission4() {
+  const mid = state.currentMission;
+  const act = state.currentAct;
+  const saved = state.userPrompts[mid] || '';
+  let html = '';
+  if (act === 1) {
+    html = `
+      ${tabHelpBox('code')}
+      <div class="card">
+        <h3>🚀 자유 제작 — 가볍게, 재미있게</h3>
+        <p class="mt-4">마지막 미션이에요. 이번엔 <b>아주 작고 귀여운 것</b>을 만들어봅니다.</p>
+        <p class="mt-4 text-muted">큰 프로그램을 만들 필요 없어요. <b>단순하고 재미있는 것</b> 하나면 충분해요. 처음엔 작게 시작해야 성공 경험이 쌓여요.</p>
+
+        <div class="example-prompt mt-4">
+          💡 이런 것들은 어떠세요? <b>3~5줄의 짧은 프롬프트</b>로도 충분히 만들 수 있어요:<br><br>
+          🎲 <b>오늘 점심 뭐 먹지?</b> — 버튼 누르면 메뉴 랜덤 추천<br>
+          ⏰ <b>25분 집중 타이머</b> — 수업 중 써먹기 좋음<br>
+          🎁 <b>오늘의 응원 한마디</b> — 클릭하면 격려 문구 뽑기<br>
+          📅 <b>D-day 카운터</b> — 방학까지 며칠 남았나?<br>
+          🌈 <b>기분 색깔 일기</b> — 오늘 기분을 색으로 고르기<br>
+          🎨 <b>클릭하면 색이 바뀌는 화면</b> — 가장 단순한 시작<br>
+          🎯 <b>오늘의 할 일 1개 뽑기</b> — 여러 개 적고 하나만 뽑아주기<br>
+          🎪 <b>주사위 굴리기</b> — 1~6 중 랜덤
+        </div>
+
+        <p class="mt-6" style="color: var(--text-200); font-size: 14px;">
+          💭 <b>왜 작게 시작하나요?</b><br>
+          작은 걸 확실히 만들어본 경험이 큰 프로그램을 만드는 자신감의 시작이에요.
+          오늘 작은 하나를 완성하면, 내일은 기능을 조금씩 더 추가할 수 있어요.
+        </p>
+
+        <button class="btn btn-primary mt-6" onclick="switchAct(2)">마음에 드는 거 정했어요 →</button>
+      </div>
+    `;
+  } else if (act === 2) {
+    html = `
+      <div class="card">
+        <h3>✍️ 짧게, 명확하게 적어보세요</h3>
+        <p class="mt-4 text-muted">짧아도 괜찮아요. <b>1~3문장</b>이면 충분해요.</p>
+        <p class="mt-4 text-muted" style="font-size:13px">
+          💡 담으면 좋은 것: <b>무엇을</b> 만들지 · <b>어떻게 생겼는지</b> · <b>어떤 동작</b>을 하는지<br>
+          ✨ 예시: "점심 메뉴 5개 중에 하나를 랜덤으로 뽑아주는 화면을 만들어줘. 버튼을 누르면 메뉴 이름이 크게 나오게."
+        </p>
+        <textarea class="prompt-box mt-4" id="userPromptInput" placeholder="예: 버튼을 누르면 1~6 숫자가 나오는 주사위 화면을 만들어줘. 크고 잘 보이게.">${escapeHtml(saved)}</textarea>
+        <div class="prompt-toolbar">
+          <button class="btn btn-sm" onclick="copyPrompt()">📋 복사</button>
+          <button class="btn btn-primary btn-sm" onclick="gradePrompt()">⭐ 채점받기</button>
+        </div>
+      </div>
+      <div id="scoreResult" class="mt-6"></div>
+      <div class="card mt-6" style="text-align:center">
+        <p>Claude 앱에 붙여넣어 실제로 만들어봤나요?</p>
+        <button class="btn btn-primary mt-4" onclick="completeMission(${mid})">네, 완료했어요 →</button>
+      </div>
+    `;
+  }
+  document.getElementById('actContent').innerHTML = html;
+  if (act === 2 && state.scores[mid]) setTimeout(() => renderScore(state.scores[mid]), 30);
+}
+
+/* ============================================================
+   신규 미션 렌더러
+   ============================================================ */
+
+/* 코드 탭 첫 체험 (따라하기) */
+function renderMissionCodeFirst(id) {
+  const meta = getMissionMeta(id);
+  const act = state.currentAct;
+  let html = '';
+  if (act === 1) {
+    html = `
+      ${tabHelpBox(meta.tab)}
+      <div class="card">
+        <h3>🎯 처음으로 프로그램을 만들어봐요</h3>
+        <p class="mt-4">이제부터 진짜 <b>바이브 코딩</b>이에요. AI에게 말로 부탁하면 <b>실제로 작동하는 프로그램</b>이 나와요.</p>
+        <p class="mt-4">어렵지 않아요. 지금부터 <b>한 줄씩 따라하면</b> 돼요.</p>
+        <div class="card mt-4" style="background:var(--bg-100); border-left:4px solid var(--accent-brand);">
+          <strong>📋 오늘 만들 것: 주사위 굴리기</strong>
+          <p class="mt-2" style="font-size:14px;">버튼을 누르면 1~6 중 하나가 크게 나오는 화면이에요.</p>
+        </div>
+        <button class="btn btn-primary mt-6" onclick="switchAct(2)">따라하기 시작 →</button>
+      </div>
+    `;
+  } else if (act === 2) {
+    html = `
+      <div class="card">
+        <h3>📝 1단계: 이 문장을 복사하세요</h3>
+        <p class="mt-4 text-muted">아래 문장을 그대로 복사해서 ${state.plan === 'pro' ? '코드 탭' : 'claude.ai 채팅창'}에 붙여넣고 Enter를 눌러요.</p>
+        <div class="example-prompt mt-4" style="font-size:16px; line-height:1.8; cursor:pointer;" onclick="navigator.clipboard.writeText('버튼을 누르면 1~6 중 랜덤으로 숫자 하나가 크게 나오는 주사위 웹페이지를 만들어줘. 숫자는 화면 가운데에 아주 크게 보이게.').then(() => toast('복사되었어요 ✓'))">
+          "버튼을 누르면 1~6 중 랜덤으로 숫자 하나가 크게 나오는 주사위 웹페이지를 만들어줘. 숫자는 화면 가운데에 아주 크게 보이게."
+          <div style="font-size:12px; color:var(--accent-brand); margin-top:8px;">👆 클릭하면 복사돼요</div>
+        </div>
+      </div>
+
+      <div class="card mt-4">
+        <h3>👀 2단계: 결과를 확인하세요</h3>
+        <p class="mt-4">잠깐 기다리면 ${state.plan === 'pro' ? '화면에 주사위 프로그램이 나타나요' : '오른쪽에 실행 화면이 떠요'}.</p>
+        <p class="mt-4"><b>"굴리기" 버튼을 한 번 눌러보세요.</b> 숫자가 바뀌나요?</p>
+        <ul style="margin-top:12px; padding-left:20px; font-size:14px; line-height:2;">
+          <li>✅ 숫자가 바뀌면 → <b>성공!</b> 방금 바이브 코딩을 한 거예요!</li>
+          <li>⚠️ 안 뜨거나 이상하면 → 괜찮아요, "다시 만들어줘"라고 말해보세요</li>
+        </ul>
+      </div>
+
+      <div class="card mt-4">
+        <h3>💡 3단계: 생각해보기</h3>
+        <p class="mt-4">방금 여러분이 한 일을 정리하면:</p>
+        <ol style="margin-top:8px; padding-left:22px; font-size:14px; line-height:2;">
+          <li>만들고 싶은 걸 <b>말로 설명</b>했어요</li>
+          <li>AI가 <b>코드를 대신 만들었어요</b></li>
+          <li>결과가 <b>실제로 작동</b>했어요</li>
+        </ol>
+        <p class="mt-4" style="color:var(--accent-brand); font-weight:600;">이게 바이브 코딩의 전부예요. 코드를 몰라도, 말만 잘하면 됩니다.</p>
+      </div>
+
+      <button class="btn btn-primary mt-6" onclick="completeMission(${id})">이 미션 완료 ✓</button>
+    `;
+  }
+  document.getElementById('actContent').innerHTML = html;
+}
+
+/* 결과물 활용법 */
+function renderMissionOutputGuide(id) {
+  const meta = getMissionMeta(id);
+  const act = state.currentAct;
+  let html = '';
+  if (act === 1) {
+    html = `
+      ${tabHelpBox(meta.tab)}
+      <div class="card">
+        <h3>📦 바이브 코딩으로 만든 건 어떻게 쓸 수 있나요?</h3>
+        <p class="mt-4">앞에서 주사위를 만들어 봤죠? 그런데 이걸 <b>다른 사람에게 보여주거나, 매일 쓰려면</b> 어떻게 해야 할까요?</p>
+        <p class="mt-4">바이브 코딩으로 만들 수 있는 결과물은 여러 종류가 있어요. 하나씩 알아볼게요.</p>
+        <button class="btn btn-primary mt-6" onclick="switchAct(2)">결과물 종류 보기 →</button>
+      </div>
+    `;
+  } else if (act === 2) {
+    html = `
+      <div class="card" style="border-left:4px solid #3b82f6;">
+        <div style="font-size:11px; color:#3b82f6; font-weight:700; margin-bottom:6px;">가장 쉬움</div>
+        <h3>🌐 HTML 파일 (웹페이지)</h3>
+        <p class="mt-2 text-muted" style="font-size:14px; line-height:1.7;">앞에서 만든 주사위가 바로 이거예요. Claude가 만들어준 코드를 <b>.html 파일</b>로 저장하면 <b>브라우저에서 더블클릭만</b> 해도 열려요.</p>
+        <div class="card mt-3" style="background:var(--bg-100);">
+          <strong>이럴 때 쓰세요</strong>
+          <ul style="margin:8px 0 0; padding-left:18px; font-size:13px; line-height:1.8;">
+            <li>학생 이름 뽑기, 타이머, 퀴즈 같은 수업 도구</li>
+            <li>다른 선생님에게 파일 하나만 보내면 바로 쓸 수 있음</li>
+          </ul>
+        </div>
+        <div class="card mt-3" style="background:var(--bg-100);">
+          <strong>📤 공유하려면</strong>
+          <ol style="margin:8px 0 0; padding-left:18px; font-size:13px; line-height:1.8;">
+            <li>Claude가 만들어준 코드를 복사해요</li>
+            <li>메모장(텍스트 편집기)에 붙여넣기</li>
+            <li><b>"다른 이름으로 저장"</b> → 파일 이름 끝을 <b>.html</b>로 바꾸기 (예: 주사위.html)</li>
+            <li>그 파일을 카톡이나 이메일로 보내면 끝!</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="card mt-4" style="border-left:4px solid #22c55e;">
+        <div style="font-size:11px; color:#22c55e; font-weight:700; margin-bottom:6px;">구글 사용자라면</div>
+        <h3>📊 Google Apps Script (GAS)</h3>
+        <p class="mt-2 text-muted" style="font-size:14px; line-height:1.7;">구글 스프레드시트나 구글 문서에서 돌아가는 프로그램이에요. <b>"구글 시트에서 자동으로 ○○ 해줘"</b>라고 부탁하면 Claude가 GAS 코드를 만들어줘요.</p>
+        <div class="card mt-3" style="background:var(--bg-100);">
+          <strong>이럴 때 쓰세요</strong>
+          <ul style="margin:8px 0 0; padding-left:18px; font-size:13px; line-height:1.8;">
+            <li>성적 자동 계산, 출석 자동 체크</li>
+            <li>구글 폼 응답 자동 정리</li>
+            <li>이메일 자동 발송</li>
+          </ul>
+        </div>
+        <div class="card mt-3" style="background:var(--bg-100);">
+          <strong>📤 쓰려면</strong>
+          <ol style="margin:8px 0 0; padding-left:18px; font-size:13px; line-height:1.8;">
+            <li>구글 시트를 열고 메뉴에서 <b>"확장 프로그램 → Apps Script"</b> 클릭</li>
+            <li>Claude가 만든 코드를 붙여넣기</li>
+            <li>▶ 실행 버튼 누르면 끝!</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="card mt-4" style="border-left:4px solid #f59e0b;">
+        <div style="font-size:11px; color:#f59e0b; font-weight:700; margin-bottom:6px;">엑셀 사용자라면</div>
+        <h3>📗 구글 시트 함수 / 엑셀 매크로</h3>
+        <p class="mt-2 text-muted" style="font-size:14px; line-height:1.7;"><b>"이 시트에서 ○○ 자동으로 해주는 수식 만들어줘"</b>라고 하면 복잡한 수식이나 매크로를 만들어줘요.</p>
+        <div class="card mt-3" style="background:var(--bg-100);">
+          <strong>이럴 때 쓰세요</strong>
+          <ul style="margin:8px 0 0; padding-left:18px; font-size:13px; line-height:1.8;">
+            <li>성적 산출, 석차 자동 매기기</li>
+            <li>출결 통계 자동 정리</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card mt-4" style="border-left:4px solid #8b5cf6;">
+        <div style="font-size:11px; color:#8b5cf6; font-weight:700; margin-bottom:6px;">인터넷 주소로 공유</div>
+        <h3>🔗 GitHub Pages</h3>
+        <p class="mt-2 text-muted" style="font-size:14px; line-height:1.7;">HTML 파일을 인터넷에 올려서 <b>링크 하나만</b> 보내면 누구나 쓸 수 있게 해요. 지금 이 연수 프로그램도 이 방법으로 만들어졌어요!</p>
+        <div class="card mt-3" style="background:var(--bg-100);">
+          <strong>📤 쓰려면</strong>
+          <p style="margin:8px 0 0; font-size:13px;">GitHub 가입 → 저장소 만들기 → 파일 올리기 → Pages 설정. Claude에게 <b>"이 HTML 파일을 GitHub Pages에 올리는 방법 알려줘"</b>라고 물어보면 단계별로 알려줘요.</p>
+        </div>
+      </div>
+
+      <div class="card mt-4" style="border-left:4px solid #ec4899;">
+        <div style="font-size:11px; color:#ec4899; font-weight:700; margin-bottom:6px;">고급 — 나중에 도전해도 돼요</div>
+        <h3>🐍 Python 스크립트 / 실행 파일</h3>
+        <p class="mt-2 text-muted" style="font-size:14px; line-height:1.7;">컴퓨터에서 직접 실행되는 프로그램이에요. 파일 정리, 데이터 분석 같은 복잡한 작업에 쓰여요. 지금 당장은 몰라도 괜찮아요.</p>
+      </div>
+
+      <div class="card mt-6" style="background:var(--bg-100); text-align:center;">
+        <p style="margin:0; font-size:15px; line-height:1.8;">
+          🌱 <b>처음에는 HTML 파일</b>부터 시작하세요.<br>
+          가장 쉽고, 가장 바로 써먹을 수 있어요.<br>
+          익숙해지면 GAS나 GitHub Pages로 확장하면 돼요.
+        </p>
+      </div>
+
+      <button class="btn btn-primary mt-6" onclick="completeMission(${id})">이 미션 완료 ✓</button>
+    `;
+  }
+  document.getElementById('actContent').innerHTML = html;
+}
+
+/* 고쳐 나가기 */
+function renderMissionCodeIterate(id) {
+  const meta = getMissionMeta(id);
+  const act = state.currentAct;
+  let html = '';
+  if (act === 1) {
+    html = `
+      ${tabHelpBox(meta.tab)}
+      <div class="card">
+        <h3>🔧 바이브 코딩의 진짜 실력 = 고쳐 나가기</h3>
+        <p class="mt-4">처음부터 완벽하게 나오는 경우는 거의 없어요. <b>한 번 만들고 → 보고 → 고쳐달라고 말하고 → 다시 보고</b> ... 이걸 반복하는 게 바이브 코딩이에요.</p>
+        <p class="mt-4">이번 미션에서는 앞에서 만든 주사위를 <b>3번 업그레이드</b>해 볼 거예요.</p>
+        <button class="btn btn-primary mt-6" onclick="switchAct(2)">업그레이드 시작 →</button>
+      </div>
+    `;
+  } else if (act === 2) {
+    html = `
+      <div class="card" style="border-left:4px solid #3b82f6;">
+        <h3>🎨 업그레이드 1: 디자인 바꾸기</h3>
+        <p class="mt-4 text-muted">앞에서 만든 주사위 화면이 아직 열려 있다면 거기에 이어서 말하세요. 없다면 새로 시작해도 돼요.</p>
+        <div class="example-prompt mt-4" style="cursor:pointer;" onclick="navigator.clipboard.writeText('숫자를 더 크게 해줘. 그리고 배경색을 파란색으로, 숫자 색은 흰색으로 바꿔줘.').then(() => toast('복사되었어요 ✓'))">
+          "숫자를 더 크게 해줘. 그리고 배경색을 파란색으로, 숫자 색은 흰색으로 바꿔줘."
+          <div style="font-size:12px; color:var(--accent-brand); margin-top:4px;">👆 클릭하면 복사</div>
+        </div>
+        <p class="mt-4" style="font-size:13px;">이렇게 말하면 Claude가 기존 프로그램을 <b>수정</b>해줘요. 처음부터 다시 만드는 게 아니라 <b>바꿔달라는 부분만</b> 고쳐줘요.</p>
+      </div>
+
+      <div class="card mt-4" style="border-left:4px solid #22c55e;">
+        <h3>➕ 업그레이드 2: 기능 추가하기</h3>
+        <div class="example-prompt mt-4" style="cursor:pointer;" onclick="navigator.clipboard.writeText('주사위를 굴린 횟수를 화면 아래에 표시해줘. 그리고 초기화 버튼도 하나 추가해줘.').then(() => toast('복사되었어요 ✓'))">
+          "주사위를 굴린 횟수를 화면 아래에 표시해줘. 그리고 초기화 버튼도 하나 추가해줘."
+          <div style="font-size:12px; color:var(--accent-brand); margin-top:4px;">👆 클릭하면 복사</div>
+        </div>
+        <p class="mt-4" style="font-size:13px;">이번엔 <b>없던 기능을 추가</b>해달라고 했어요. Claude는 기존 프로그램에 새 기능을 붙여줘요.</p>
+      </div>
+
+      <div class="card mt-4" style="border-left:4px solid #f59e0b;">
+        <h3>🔀 업그레이드 3: 나만의 아이디어 넣기</h3>
+        <p class="mt-4 text-muted">이번엔 여러분이 직접 써보세요. 이 주사위에 뭘 더하고 싶나요?</p>
+        <textarea class="prompt-box mt-4" id="iterateInput" placeholder="예: 주사위 2개를 동시에 굴리게 해줘 / 소리가 나게 해줘 / 애니메이션을 넣어줘...">${state.userPrompts['iterate'] || ''}</textarea>
+        <div style="display:flex; gap:8px; margin-top:12px;">
+          <button class="btn btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('iterateInput').value).then(() => toast('복사되었어요 ✓'))">📋 복사</button>
+          <button class="btn btn-sm" onclick="state.userPrompts['iterate'] = document.getElementById('iterateInput').value; saveState(); toast('저장됨 ✓');">💾 저장</button>
+        </div>
+      </div>
+
+      <div class="card mt-6" style="background:var(--bg-100);">
+        <strong>💡 정리</strong>
+        <p class="mt-2" style="font-size:14px; line-height:1.8;">
+          바이브 코딩의 핵심은 <b>"한 번에 완성"이 아니라 "조금씩 고쳐 나가기"</b>예요.<br>
+          마음에 안 드는 부분이 있으면 그냥 말하면 돼요:<br>
+          • "○○ 부분을 △△로 바꿔줘"<br>
+          • "여기에 □□ 기능도 추가해줘"<br>
+          • "색깔을 더 밝게 해줘"
+        </p>
+      </div>
+
+      <button class="btn btn-primary mt-6" onclick="completeMission(${id})">이 미션 완료 ✓</button>
+    `;
+  }
+  document.getElementById('actContent').innerHTML = html;
+}
+
+/* 엉뚱한 결과 대처 (코드 탭 버전) */
+function renderMissionCodeDebug(id) {
+  const meta = getMissionMeta(id);
+  const act = state.currentAct;
+  let html = '';
+  if (act === 1) {
+    html = `
+      ${tabHelpBox(meta.tab)}
+      <div class="card">
+        <h3>🛠️ 내가 원한 게 아닌데?</h3>
+        <p class="mt-4">바이브 코딩을 하다 보면 이런 일이 꼭 생겨요:</p>
+        <ul style="margin-top:12px; padding-left:20px; font-size:14px; line-height:2;">
+          <li>❌ 버튼을 눌러도 아무 반응이 없어요</li>
+          <li>❌ 화면이 안 뜨거나 하얗게만 나와요</li>
+          <li>❌ 만들어달라고 한 거랑 전혀 다른 게 나왔어요</li>
+          <li>❌ 일부만 되고 나머지는 안 돼요</li>
+        </ul>
+        <p class="mt-4"><b>이건 여러분 잘못이 아니에요.</b> 누구나 겪어요. 중요한 건, 이럴 때 <b>어떻게 말해야 하는가</b>예요.</p>
+        <button class="btn btn-primary mt-6" onclick="switchAct(2)">대처법 배우기 →</button>
+      </div>
+    `;
+  } else if (act === 2) {
+    html = `
+      <h3 class="mb-4">🔧 상황별 대처법 4가지</h3>
+
+      <div class="card" style="border-left:4px solid #ef4444;">
+        <div style="font-size:11px; color:#ef4444; font-weight:700; margin-bottom:6px;">상황 1</div>
+        <h3>화면이 안 뜨거나 하얗게 나와요</h3>
+        <p class="mt-2 text-muted" style="font-size:14px;">Claude가 만든 코드에 오류가 있는 거예요.</p>
+        <div class="card mt-3" style="background:var(--bg-100);">
+          <strong>이렇게 말하세요 👇</strong>
+          <div class="example-prompt mt-2" style="cursor:pointer;" onclick="navigator.clipboard.writeText('화면이 안 나와요. 오류가 있는 것 같아요. 확인하고 다시 만들어줘.').then(() => toast('복사 ✓'))">
+            "화면이 안 나와요. 오류가 있는 것 같아요. 확인하고 다시 만들어줘."
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-4" style="border-left:4px solid #f59e0b;">
+        <div style="font-size:11px; color:#f59e0b; font-weight:700; margin-bottom:6px;">상황 2</div>
+        <h3>원한 거랑 전혀 다른 게 나왔어요</h3>
+        <p class="mt-2 text-muted" style="font-size:14px;">내 설명이 부족했거나 Claude가 다르게 이해한 거예요.</p>
+        <div class="card mt-3" style="background:var(--bg-100);">
+          <strong>이렇게 말하세요 👇</strong>
+          <div class="example-prompt mt-2" style="cursor:pointer;" onclick="navigator.clipboard.writeText('이건 내가 원한 게 아니야. 내가 원한 건 [구체적으로 설명]. 처음부터 다시 만들어줘.').then(() => toast('복사 ✓'))">
+            "이건 내가 원한 게 아니야. 내가 원한 건 [구체적으로 설명]. 처음부터 다시 만들어줘."
+          </div>
+        </div>
+        <p class="mt-3 text-muted" style="font-size:13px;">💡 핵심: <b>"내가 원한 건 ○○"</b>을 꼭 덧붙이세요. 뭐가 틀렸는지 모르면 Claude도 못 고쳐요.</p>
+      </div>
+
+      <div class="card mt-4" style="border-left:4px solid #3b82f6;">
+        <div style="font-size:11px; color:#3b82f6; font-weight:700; margin-bottom:6px;">상황 3</div>
+        <h3>일부만 되고 나머지는 안 돼요</h3>
+        <p class="mt-2 text-muted" style="font-size:14px;">되는 부분은 좋고, 안 되는 부분만 콕 찍어 말해야 해요.</p>
+        <div class="card mt-3" style="background:var(--bg-100);">
+          <strong>이렇게 말하세요 👇</strong>
+          <div class="example-prompt mt-2" style="cursor:pointer;" onclick="navigator.clipboard.writeText('버튼은 잘 되는데, 카운터가 안 올라가요. 카운터 부분만 고쳐줘.').then(() => toast('복사 ✓'))">
+            "버튼은 잘 되는데, 카운터가 안 올라가요. 카운터 부분만 고쳐줘."
+          </div>
+        </div>
+        <p class="mt-3 text-muted" style="font-size:13px;">💡 핵심: <b>"○○은 잘 되는데 △△가 안 돼"</b> 형태로 말하면 Claude가 정확히 고쳐요.</p>
+      </div>
+
+      <div class="card mt-4" style="border-left:4px solid #8b5cf6;">
+        <div style="font-size:11px; color:#8b5cf6; font-weight:700; margin-bottom:6px;">상황 4</div>
+        <h3>너무 복잡해져서 엉켜버렸어요</h3>
+        <p class="mt-2 text-muted" style="font-size:14px;">여러 번 고치다 보면 코드가 꼬이는 경우가 있어요.</p>
+        <div class="card mt-3" style="background:var(--bg-100);">
+          <strong>이렇게 말하세요 👇</strong>
+          <div class="example-prompt mt-2" style="cursor:pointer;" onclick="navigator.clipboard.writeText('지금까지 만든 거 다 잊고, 처음부터 새로 만들어줘. 내가 원하는 건: [전체 요구사항 다시 정리]').then(() => toast('복사 ✓'))">
+            "지금까지 만든 거 다 잊고, 처음부터 새로 만들어줘. 내가 원하는 건: [전체 요구사항 다시 정리]"
+          </div>
+        </div>
+        <p class="mt-3 text-muted" style="font-size:13px;">💡 핵심: 때로는 <b>새로 시작</b>하는 게 빨라요. 부끄러운 게 아니에요!</p>
+      </div>
+
+      <div class="card mt-6" style="background:var(--bg-100); text-align:center;">
+        <p style="margin:0; font-size:15px; line-height:1.8;">
+          🌱 <b>기억하세요</b><br>
+          ① 당황하지 마세요 — 모든 바이브 코더가 겪어요<br>
+          ② <b>뭐가 어떻게 잘못됐는지</b> 구체적으로 말하세요<br>
+          ③ 안 되면 새로 시작해도 괜찮아요
+        </p>
+      </div>
+
+      <button class="btn btn-primary mt-6" onclick="completeMission(${id})">이 미션 완료 ✓</button>
+    `;
+  }
+  document.getElementById('actContent').innerHTML = html;
+}
+
+/* SCORING */
+function localScore(prompt) {
+  const scores = { clarity: 0, detail: 0, context: 0, practical: 0 };
+  const len = prompt.trim().length;
+
+  if (/만들|작성|생성|해줘|만들어/.test(prompt)) scores.clarity += 10;
+  if (/웹페이지|파이썬|엑셀|HTML|앱|스크립트|코드/.test(prompt)) scores.clarity += 15;
+
+  if (len > 30) scores.detail += 8;
+  if (len > 80) scores.detail += 8;
+  if (/\d/.test(prompt)) scores.detail += 9;
+
+  if (/역할|너는|당신은|전문가|교사|개발자/.test(prompt)) scores.context += 15;
+  if (/학생|수업|업무|학교|반/.test(prompt)) scores.context += 10;
+
+  if (/형식|형태|보여|정렬|저장|표시/.test(prompt)) scores.practical += 10;
+  if (/제약|없이|말고|하지/.test(prompt)) scores.practical += 10;
+  if (len > 50 && len < 400) scores.practical += 5;
+
+  Object.keys(scores).forEach(k => scores[k] = Math.min(25, scores[k]));
+  const total = Object.values(scores).reduce((a, b) => a + b, 0);
+
+  const feedback = [];
+  if (scores.clarity < 15) feedback.push("어떤 형태(웹페이지/파일/앱)로 만들지 명시하면 더 좋아요");
+  if (scores.detail < 15) feedback.push("구체적인 숫자나 예시를 넣으면 결과가 더 정확해집니다");
+  if (scores.context < 15) feedback.push("Claude에게 '너는 ○○ 전문가야' 같은 역할을 부여해보세요");
+  if (scores.practical < 15) feedback.push("'외부 라이브러리 없이' 같은 제약 조건을 추가하면 깔끔한 결과가 나옵니다");
+  if (feedback.length === 0) feedback.push("아주 잘 작성했어요! 이 정도면 원하는 결과를 얻을 확률이 높습니다.");
+
+  return { scores, total, feedback, source: 'local' };
+}
+
+async function aiScore(prompt, missionData) {
+  if (!state.apiKey) return null;
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': state.apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5-20250929',
+        max_tokens: 600,
+        messages: [{
+          role: 'user',
+          content: `당신은 바이브 코딩 초보자를 위한 프롬프트 코치입니다. 다음 사용자의 프롬프트를 4개 항목으로 채점해주세요.\n\n목표: ${missionData?.goal || '자유 제작'}\n사용자 프롬프트: "${prompt}"\n\n다음 형식의 JSON만 출력하세요 (설명 없이):\n{"clarity": 0-25, "detail": 0-25, "context": 0-25, "practical": 0-25, "feedback": ["개선점 1", "개선점 2", "개선점 3"]}\n\n평가 기준:\n- clarity (뭘 원하는지): 원하는 결과물이 명확한가\n- detail (얼마나 자세한지): 필요한 정보를 충분히 담았는가\n- context (상황 설명): 역할/배경/사용자 맥락이 있는가\n- practical (실제로 쓸 수 있을지): 현실적으로 동작 가능한 요청인가\n\n피드백은 친근한 한국어로, 초보자가 이해하기 쉽게 작성해주세요.`
+        }]
+      })
+    });
+    if (!res.ok) throw new Error('API error ' + res.status);
+    const data = await res.json();
+    const text = data.content[0].text.trim();
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('JSON not found');
+    const parsed = JSON.parse(jsonMatch[0]);
+    const scores = {
+      clarity: parsed.clarity,
+      detail: parsed.detail,
+      context: parsed.context,
+      practical: parsed.practical,
+    };
+    return {
+      scores,
+      total: Object.values(scores).reduce((a, b) => a + b, 0),
+      feedback: parsed.feedback || [],
+      source: 'ai',
+    };
+  } catch (e) {
+    console.warn('AI scoring failed:', e);
+    toast("AI 채점 실패 — 자가 채점으로 전환");
+    return null;
+  }
+}
+
+async function gradePrompt() {
+  const input = document.getElementById('userPromptInput');
+  const prompt = input.value.trim();
+  if (prompt.length < 5) {
+    toast("프롬프트를 먼저 작성해주세요");
+    return;
+  }
+  const id = state.currentMission;
+  state.userPrompts[id] = prompt;
+  saveState();
+
+  const resultEl = document.getElementById('scoreResult');
+  resultEl.innerHTML = '<div class="card" style="text-align:center"><p>채점 중...</p></div>';
+
+  let result = null;
+  if (state.apiKey) {
+    const data = id <= 2 ? getMissionData(id) : null;
+    result = await aiScore(prompt, data);
+  }
+  if (!result) result = localScore(prompt);
+
+  state.scores[id] = result;
+  saveState();
+  renderScore(result);
+}
+
+function renderScore(result) {
+  const resultEl = document.getElementById('scoreResult');
+  if (!resultEl) return;
+  const s = result.scores;
+  resultEl.innerHTML = `
+    <div class="card">
+      <div class="score-display">
+        <div class="score-total">${result.total}<span style="font-size:24px; color:var(--text-400)">점</span></div>
+        <div class="score-label">${result.source === 'ai' ? '🤖 AI 채점' : '📋 자가 채점 (API 키 없음)'}</div>
+        <div class="score-bars">
+          ${[
+            ['뭘 원하는지', s.clarity],
+            ['얼마나 자세한지', s.detail],
+            ['상황 설명', s.context],
+            ['실제로 쓸 수 있을지', s.practical],
+          ].map(([name, v]) => `
+            <div class="score-row">
+              <div class="score-name">${name}</div>
+              <div class="score-bar-track"><div class="score-bar-fill" style="width:${(v/25)*100}%"></div></div>
+              <div class="score-num">${v}/25</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <h4 class="mt-6">💡 개선 포인트</h4>
+      <ul class="feedback-list mt-4">
+        ${result.feedback.map(f => `<li class="feedback-item"><span class="feedback-bullet">•</span>${escapeHtml(f)}</li>`).join('')}
+      </ul>
+      ${state.currentMission <= 2 ? '<button class="btn btn-primary mt-6" onclick="switchAct(3)">모범 프롬프트 보기 →</button>' : ''}
+    </div>
+  `;
+}
+
+/* HELPERS */
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function copyPrompt() {
+  const input = document.getElementById('userPromptInput');
+  if (!input || !input.value.trim()) { toast("먼저 프롬프트를 작성해주세요"); return; }
+  navigator.clipboard.writeText(input.value).then(() => {
+    toast("📋 복사 완료! Claude 앱에 붙여넣어 보세요");
+  }).catch(() => {
+    input.select();
+    document.execCommand('copy');
+    toast("📋 복사 완료!");
+  });
+}
+
+function openClaude() {
+  toast("Claude 데스크탑 앱을 실행한 후 프롬프트를 붙여넣으세요");
+}
+
+function completeMission(id) {
+  const total = getTotalMissions();
+  state.missionProgress[id] = 3;
+  if (id < total) state.missionProgress[id + 1] = Math.max(1, state.missionProgress[id + 1] || 0);
+  saveState();
+  toast(`🎉 미션 ${id} 완료!`);
+  setTimeout(() => {
+    if (id === total) navigate('complete');
+    else navigate('hub');
+  }, 800);
+}
+
+/* API KEY MODAL */
+function openApiKeyModal() {
+  document.getElementById('apiKeyModal').classList.add('active');
+  document.getElementById('apiKeyInput').value = state.apiKey || '';
+}
+function closeApiKeyModal() {
+  document.getElementById('apiKeyModal').classList.remove('active');
+  document.getElementById('apiKeyGuide').classList.remove('show');
+}
+function saveApiKey() {
+  const v = document.getElementById('apiKeyInput').value.trim();
+  state.apiKey = v;
+  saveState();
+  closeApiKeyModal();
+  toast(v ? "✓ API 키 저장됨" : "API 키 제거됨");
+}
+function toggleApiGuide() {
+  document.getElementById('apiKeyGuide').classList.toggle('show');
+}
+
+/* COMPLETE SCREEN */
+function renderComplete() {
+  if (!state.completedAt) state.completedAt = new Date().toISOString();
+  saveState();
+  const name = state.userName || '완주자';
+  const date = new Date(state.completedAt).toLocaleDateString('ko-KR');
+  const totalScore = Object.values(state.scores).filter(Boolean).reduce((sum, s) => sum + (s?.total || 0), 0);
+
+  const html = `
+    <div class="certificate" id="certificate">
+      <div class="cert-badge">✦</div>
+      <div class="cert-title">바이브 코딩 수료증</div>
+      <div class="cert-text">
+        위 사람은 Claude와 함께<br>
+        바이브 코딩 4개 미션을 완료하였기에<br>
+        이를 증명합니다
+      </div>
+      <div class="cert-name" contenteditable="true" id="certName" onblur="saveName(this)">${escapeHtml(name)}</div>
+      <div class="cert-meta">
+        <div class="cert-meta-item">
+          <span class="cert-meta-value">${date}</span>
+          완료 일자
+        </div>
+        <div class="cert-meta-item">
+          <span class="cert-meta-value">4</span>
+          완료한 미션
+        </div>
+        <div class="cert-meta-item">
+          <span class="cert-meta-value">${totalScore}</span>
+          총 점수
+        </div>
+      </div>
+    </div>
+
+    <div class="flex gap-3 mt-6" style="justify-content:center; flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="window.print()">🖨 인쇄하기</button>
+      <button class="btn" onclick="navigate('hub')">← 미션으로 돌아가기</button>
+    </div>
+
+    <div class="card mt-6">
+      <h3>📚 내가 쓴 프롬프트 모음</h3>
+      <p class="mt-4 text-muted">연수 중 작성한 프롬프트들입니다. 나만의 성장 기록이에요.</p>
+      ${getMissions().map(m => state.userPrompts[m.id] ? `
+        <div class="comparison-box mt-4">
+          <div class="comparison-title">${m.num} — ${m.title}</div>
+          <div class="comparison-text">${escapeHtml(state.userPrompts[m.id])}</div>
+        </div>
+      ` : '').join('')}
+    </div>
+
+    <div class="card mt-6" style="border-left: 4px solid var(--accent-brand);">
+      <h3>🚀 이제 뭘 더 해볼 수 있을까요?</h3>
+      <p class="mt-4">모든 미션을 완료하셨어요! 이제 조금 더 <b>실제 수업과 업무에 쓸 수 있는 도구</b>들도 만들어보실 수 있어요.</p>
+      <p class="mt-4 text-muted" style="font-size:13px;">
+        💡 아래 6가지 프로젝트는 미션 4보다 살짝 더 복잡하지만, 여전히 하나의 프롬프트로 시작할 수 있어요. 막히면 <b>미션 3에서 배운 4가지 회복 방법</b>(더 자세히 말하기 · 부분만 고치기 · 되돌리기 · 좋았던 부분 유지하기)을 떠올리세요.
+      </p>
+
+      <div class="mt-6">
+        ${renderNextStepIdeas()}
+      </div>
+
+      <div class="example-prompt mt-6">
+        ✨ <b>꿀팁 — 더 복잡한 걸 만들 때의 비밀</b><br><br>
+        1. <b>작게 시작, 조금씩 추가</b> — 처음에 다 넣으려 하지 마세요. 핵심 기능 하나 완성 → 테스트 → 기능 하나 추가 → 테스트. 이게 가장 안전한 방법이에요.<br><br>
+        2. <b>"이미 있는 코드에" 라고 말하기</b> — 새로운 기능을 추가할 때는 "아까 만든 코드에 ○○만 추가해줘, 다른 건 건드리지 마"라고 명확히 말하세요.<br><br>
+        3. <b>복사해두기</b> — 잘 작동하는 버전이 나오면 <b>꼭 메모장이나 다른 파일에 복사해두세요</b>. 망가지면 되돌아갈 수 있어요.<br><br>
+        4. <b>한 번에 한 가지만 바꾸기</b> — 여러 개를 동시에 바꿔달라고 하면 어디서 문제가 생겼는지 알 수 없어요.
+      </div>
+    </div>
+
+    <div class="card mt-6" style="text-align:center;">
+      <h3>🌱 오늘이 시작이에요</h3>
+      <p class="mt-4 text-muted">
+        바이브 코딩은 한 번 배우고 끝나는 게 아니라 <b>매일 조금씩 쓰면서 느는 기술</b>이에요.<br>
+        오늘 만든 작은 프로그램 하나를 내일 조금 더 좋게 만들어보세요. 그게 전부예요.
+      </p>
+      <p class="mt-6" style="color: var(--accent-brand); font-weight: 600;">
+        ${state.userName || '선생님'}, 첫걸음을 내딛어주셔서 감사합니다 🌟
+      </p>
+    </div>
+  `;
+  document.getElementById('completeContent').innerHTML = html;
+}
+
+/* 다음 단계 프로젝트 아이디어 */
+const NEXT_STEP_IDEAS = [
+  {
+    icon: "📊",
+    title: "학급 대시보드",
+    desc: "오늘의 공지 + 시간표 + D-day + 생일자를 한 화면에 모아 보여주는 수업 시작 화면",
+    prompt: "우리 반 학생들에게 보여줄 '오늘의 학급 대시보드' 웹페이지를 만들어줘. 화면 위쪽에는 오늘 날짜와 D-day(예: 방학까지 D-20), 가운데에는 오늘의 공지사항(직접 입력 가능), 아래에는 이번 주 시간표를 넣어줘. 깔끔한 디자인으로, 칠판에 띄워도 잘 보이게 글씨는 크게.",
+  },
+  {
+    icon: "🎯",
+    title: "연습 문제 자동 뽑기",
+    desc: "과목/난이도를 고르면 그 조건에 맞는 문제 5개를 랜덤으로 뽑아주는 연습 도구",
+    prompt: "연습 문제 뽑기 웹페이지를 만들어줘. 미리 등록해둔 문제 20개(내가 입력 가능) 중에서, '난이도 선택(쉬움/보통/어려움)' → '뽑기' 버튼을 누르면 해당 난이도 문제 5개를 랜덤으로 골라 화면에 보여주는 방식이야. 껐다 켜도 내가 입력한 문제가 남아있게 해줘.",
+  },
+  {
+    icon: "📝",
+    title: "학생 기록 쪽지",
+    desc: "학생 이름을 선택하면 그 학생에 대한 관찰 기록을 입력하고 날짜별로 모아보는 도구",
+    prompt: "학생 관찰 기록 웹페이지를 만들어줘. 왼쪽에는 학생 이름 목록(내가 추가/수정 가능), 오른쪽에는 선택한 학생의 관찰 기록 목록과 새 기록 입력창이 있어. 각 기록은 날짜와 함께 저장되고, 껐다 켜도 사라지지 않게 해줘. 디자인은 깔끔하고 차분하게.",
+  },
+  {
+    icon: "⏱️",
+    title: "수업 타임라인 타이머",
+    desc: "수업 한 차시(45분)를 여러 단계로 나눠 자동으로 시간을 알려주는 타이머",
+    prompt: "45분 수업용 타임라인 타이머 웹페이지를 만들어줘. 내가 미리 단계를 입력할 수 있어(예: '도입 5분', '활동 1 - 15분', '활동 2 - 20분', '정리 5분'). 시작 버튼을 누르면 전체 타이머가 돌아가면서 각 단계가 끝날 때마다 다음 단계 이름이 크게 화면에 뜨게 해줘.",
+  },
+  {
+    icon: "🎨",
+    title: "개념 시각화 도구",
+    desc: "슬라이더를 움직이면 그래프·도형·비율 등이 실시간으로 바뀌는 수업용 자료",
+    prompt: "[역할] 너는 수업에서 쓸 수 있는 인터랙티브 시각화 자료를 만드는 개발자야. [과제] 내가 가르치는 과목(예: 수학의 일차함수)에 대한 시각화 자료를 만들어줘. 화면 위쪽에 그래프(또는 도형)가 있고, 아래쪽에 슬라이더 2~3개가 있어서 슬라이더를 움직이면 위쪽 그래프가 실시간으로 바뀌는 형태야. [제약] 외부 라이브러리 없이 순수 HTML/CSS/JS로만, 학생들이 직관적으로 이해할 수 있게.",
+  },
+  {
+    icon: "📬",
+    title: "학부모 알림장 만들기",
+    desc: "오늘의 알림 내용을 입력하면 깔끔한 가정통신문 디자인으로 자동 완성",
+    prompt: "가정통신문 만들기 웹페이지를 만들어줘. 내가 '제목', '날짜', '알림 내용(여러 줄)', '준비물'을 입력하면, 화면 아래쪽에 깔끔하고 예쁜 통신문 미리보기가 실시간으로 만들어져. '인쇄' 버튼을 누르면 통신문 부분만 A4 크기로 인쇄되게 해줘.",
+  },
+];
+
+function renderNextStepIdeas() {
+  return NEXT_STEP_IDEAS.map((idea, i) => `
+    <div class="card mt-4" style="padding: 18px; background: var(--bg-200);">
+      <div style="display:flex; align-items:flex-start; gap:14px;">
+        <div style="font-size:28px; flex-shrink:0;">${idea.icon}</div>
+        <div style="flex:1; min-width:0;">
+          <div style="font-weight:600; color: var(--text-000); font-size:16px; margin-bottom:4px;">${idea.title}</div>
+          <div class="text-muted" style="font-size:13px; margin-bottom:12px;">${idea.desc}</div>
+          <details style="margin-top:8px;">
+            <summary style="cursor:pointer; color: var(--accent-brand); font-size:13px; font-weight:500;">
+              💬 추천 프롬프트 보기
+            </summary>
+            <div class="comparison-box model mt-4" style="padding:14px;">
+              <div class="comparison-text" style="font-size:13px;">${escapeHtml(idea.prompt)}</div>
+              <button class="btn btn-sm mt-4" onclick="copyNextStepPrompt(${i})">📋 프롬프트 복사</button>
+            </div>
+          </details>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function copyNextStepPrompt(i) {
+  const text = NEXT_STEP_IDEAS[i].prompt;
+  navigator.clipboard.writeText(text).then(() => {
+    toast("📋 복사 완료! Claude 앱에 붙여넣어 보세요");
+  }).catch(() => {
+    toast("📋 복사 완료!");
+  });
+}
+
+function saveName(el) {
+  state.userName = el.textContent.trim() || '완주자';
+  saveState();
+}
+
+/* PROMPT 연습장 RENDERING */
+function renderTraining() {
+  const lv = state.currentTrainingLevel || 1;
+  const L = TRAINING_LEVELS[lv];
+  const mode = state.trainingMode || 'quick';
+  const total = mode === 'quick' ? 3 : 5;
+  const exercises = L.exercises.slice(0, total);
+  const doneIdx = state.trainingProgress[lv] || [];
+
+  const html = `
+    <div class="mission-header">
+      <button class="back-btn" onclick="navigate('hub')">←</button>
+      <div>
+        <div class="mission-num">${L.badge} · 프롬프트 연습장</div>
+        <h1>${L.icon} ${L.title}</h1>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>💡 이번 레벨에서 배울 것</h3>
+      <p class="mt-4" style="white-space: pre-line; color: var(--text-200);">${L.concept}</p>
+    </div>
+
+    <div class="card mt-6" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+      <div>
+        <div style="font-weight:600; color:var(--text-000);">연습 모드</div>
+        <div class="text-muted" style="font-size:13px;">원하는 깊이로 학습할 수 있어요</div>
+      </div>
+      <div class="os-tabs" style="margin-bottom:0;">
+        <button class="os-tab ${mode === 'quick' ? 'active' : ''}" onclick="setTrainingMode('quick')">🏃 빠르게 (3개)</button>
+        <button class="os-tab ${mode === 'full' ? 'active' : ''}" onclick="setTrainingMode('full')">📚 충분히 (5개)</button>
+      </div>
+    </div>
+
+    <div class="progress-bar mt-6">
+      <div class="progress-fill" style="width:${(doneIdx.length / total) * 100}%"></div>
+    </div>
+    <div class="text-muted" style="font-size:13px; margin-bottom:16px; text-align:center;">
+      ${doneIdx.length} / ${total} 완료
+    </div>
+
+    ${exercises.map((ex, i) => renderExercise(lv, i, ex, doneIdx.includes(i))).join('')}
+
+    ${doneIdx.length >= total ? `
+      <div class="card mt-6" style="text-align:center; border-color: var(--success);">
+        <h3 style="color: var(--success);">🎉 ${L.badge} 레벨 완료!</h3>
+        <p class="mt-4">${lv < 3 ? `다음 레벨은 미션 ${lv + 1} 완료 후 열립니다.` : '모든 레벨을 마스터했어요!'}</p>
+        <button class="btn mt-4" onclick="navigate('hub')">허브로 돌아가기</button>
+      </div>
+    ` : ''}
+  `;
+  document.getElementById('trainingContent').innerHTML = html;
+}
+
+function renderExercise(lv, i, ex, done) {
+  return `
+    <div class="card scenario-card mt-6" style="${done ? 'border-left-color: var(--success);' : ''}">
+      <div class="scenario-header">
+        <div class="scenario-num">${i + 1}</div>
+        <div class="scenario-title">${ex.title}</div>
+        ${done ? '<span style="margin-left:auto; color:var(--success)">✓</span>' : ''}
+      </div>
+      <p class="mt-4" style="color: var(--text-200);">${ex.lesson}</p>
+
+      <div class="comparison mt-4">
+        <div class="comparison-box">
+          <div class="comparison-title">❌ 아쉬운 프롬프트</div>
+          <div class="comparison-text">${escapeHtml(ex.bad)}</div>
+        </div>
+        <div class="comparison-box model">
+          <div class="comparison-title">✅ 좋은 프롬프트</div>
+          <div class="comparison-text">${escapeHtml(ex.good)}</div>
+        </div>
+      </div>
+
+      <div class="example-prompt mt-4">
+        <b>📝 실습:</b> ${ex.task}
+      </div>
+      <textarea class="prompt-box mt-4" id="tr-${lv}-${i}" placeholder="여기에 직접 작성해보세요..."></textarea>
+      <div class="prompt-toolbar">
+        <button class="btn btn-sm" onclick="copyTraining(${lv}, ${i})">📋 복사</button>
+        <button class="btn btn-primary btn-sm" onclick="checkTraining(${lv}, ${i})">✓ 모범 답안 보기</button>
+      </div>
+      <div id="tr-fb-${lv}-${i}"></div>
+    </div>
+  `;
+}
+
+function setTrainingMode(mode) {
+  state.trainingMode = mode;
+  saveState();
+  renderTraining();
+  renderSidebarTraining();
+}
+
+function checkTraining(lv, i) {
+  const input = document.getElementById(`tr-${lv}-${i}`);
+  const userText = input.value.trim();
+  if (!userText) { toast("먼저 작성해보세요"); return; }
+
+  const ex = TRAINING_LEVELS[lv].exercises[i];
+  if (!state.trainingProgress[lv]) state.trainingProgress[lv] = [];
+  if (!state.trainingProgress[lv].includes(i)) {
+    state.trainingProgress[lv].push(i);
+  }
+  saveState();
+
+  const fb = document.getElementById(`tr-fb-${lv}-${i}`);
+  fb.innerHTML = `
+    <div class="comparison mt-4">
+      <div class="comparison-box">
+        <div class="comparison-title">내 답</div>
+        <div class="comparison-text">${escapeHtml(userText)}</div>
+      </div>
+      <div class="comparison-box model">
+        <div class="comparison-title">모범 답안</div>
+        <div class="comparison-text">${escapeHtml(ex.model)}</div>
+      </div>
+    </div>
+    <p class="text-muted mt-4" style="font-size:13px;">
+      💡 정답은 하나가 아니에요. 모범 답안의 '어떤 요소가 들어갔는지'를 참고하세요.
+    </p>
+  `;
+  toast("✓ 완료 표시됨");
+  renderSidebarTraining();
+
+  // 전체 완료 시 progress bar 갱신을 위해 짧은 지연 후 재렌더
+  const total = state.trainingMode === 'quick' ? 3 : 5;
+  if (state.trainingProgress[lv].length >= total) {
+    setTimeout(() => renderTraining(), 400);
+  } else {
+    // progress bar만 갱신
+    const bar = document.querySelector('#screen-training .progress-fill');
+    if (bar) bar.style.width = `${(state.trainingProgress[lv].length / total) * 100}%`;
+    const counter = document.querySelector('#screen-training .text-muted');
+    if (counter) counter.textContent = `${state.trainingProgress[lv].length} / ${total} 완료`;
+  }
+}
+
+function copyTraining(lv, i) {
+  const input = document.getElementById(`tr-${lv}-${i}`);
+  if (!input || !input.value.trim()) { toast("먼저 작성해보세요"); return; }
+  navigator.clipboard.writeText(input.value).then(() => {
+    toast("📋 복사 완료! Claude 앱에서 실제로 써보세요");
+  }).catch(() => {
+    input.select();
+    document.execCommand('copy');
+    toast("📋 복사 완료!");
+  });
+}
+
+/* RESET */
+function confirmReset() {
+  if (confirm('모든 진행 상황을 초기화할까요? 되돌릴 수 없어요.')) {
+    localStorage.removeItem(STORAGE_KEY);
+    location.reload();
+  }
+}
+
+/* ============================================================
+   TOOLS — 모든 참고 자료/실전 강화/기록 페이지
+   ============================================================ */
+
+const TOOL_DATA = {
+  /* ─── A1. 용어 사전 ─── */
+  glossary: [
+    { cat: 'github', term: 'GitHub (깃허브)', short: '코드를 인터넷에 저장하고 공유하는 창고', desc: '구글 드라이브 같은 건데 코드 전용이에요. 전 세계 개발자가 여기에 코드를 올리고 함께 작업합니다.', meet: '"깃허브에 올려서 공유하세요" 같은 말을 들을 때' },
+    { cat: 'github', term: '저장소 (Repository, Repo)', short: '하나의 프로젝트가 담긴 폴더', desc: '깃허브에 만드는 개별 프로젝트 공간이에요. 프로젝트 하나당 저장소 하나를 만들어요.', meet: '"새 저장소 만드세요" 같은 말을 들을 때' },
+    { cat: 'github', term: '커밋 (Commit)', short: '"여기까지 저장해줘" 라는 저장 지점', desc: '글쓰기의 Ctrl+S와 비슷해요. 다만 변경 이유도 함께 적어둡니다.', meet: '"이 내용을 커밋하세요" 같은 말을 들을 때' },
+    { cat: 'github', term: '푸시 (Push)', short: '내 컴퓨터의 변경사항을 깃허브에 올리기', desc: '커밋한 내용을 인터넷(깃허브)에 업로드하는 과정이에요.', meet: '"변경사항을 푸시하세요" 같은 말을 들을 때' },
+    { cat: 'github', term: '풀 (Pull)', short: '깃허브에 올라온 최신 변경사항을 내 컴퓨터로 가져오기', desc: '푸시의 반대예요. 다른 사람이 올린 내용을 내려받는 거예요.', meet: '"최신 버전을 풀 받으세요"' },
+    { cat: 'github', term: '브랜치 (Branch)', short: '원본을 건드리지 않고 실험하는 복사본', desc: '원본 문서를 복사해서 거기서 수정 실험을 하는 것과 비슷해요. 실험이 성공하면 원본에 합칩니다.', meet: '"새 브랜치를 만드세요"' },
+    { cat: 'github', term: 'GitHub Pages (깃허브 페이지스)', short: '깃허브가 무료로 제공하는 웹사이트 호스팅', desc: '깃허브에 올린 HTML 파일을 자동으로 웹사이트처럼 접속할 수 있게 해줘요.', meet: '"Pages로 배포하세요"' },
+
+    { cat: 'basic', term: '코드 (Code)', short: '컴퓨터에게 내리는 명령어 모음', desc: '사람이 쓴 "이렇게 동작하라"는 지시문이에요. Claude가 만들어주는 결과물이기도 해요.', meet: '항상 만나게 됩니다' },
+    { cat: 'basic', term: '컴파일 (Compile)', short: '사람이 쓴 코드를 컴퓨터가 이해할 수 있게 번역', desc: '사람의 말(코드)을 컴퓨터의 말(기계어)로 바꾸는 과정이에요. 번역 작업으로 생각하면 돼요.', meet: '"이 코드를 컴파일하세요"' },
+    { cat: 'basic', term: '디버깅 (Debugging)', short: '코드의 오류를 찾아서 고치는 일', desc: '버그(bug, 벌레)를 잡는다는 뜻이에요. 프로그램이 이상하게 작동할 때 원인을 찾아 고치는 과정이에요.', meet: '"디버깅이 필요해요"' },
+    { cat: 'basic', term: '라이브러리 (Library)', short: '남이 미리 만들어둔 코드 모음', desc: '직접 안 만들어도 가져다 쓸 수 있는 기능 상자예요. 예: 달력 만들기 라이브러리.', meet: '"이 라이브러리를 써보세요"' },
+    { cat: 'basic', term: '패키지 (Package)', short: '라이브러리를 설치 가능한 형태로 묶은 것', desc: '라이브러리와 거의 같은 의미인데, 설치 단위를 말할 때 씁니다.', meet: '"패키지를 설치하세요"' },
+    { cat: 'basic', term: 'API', short: '프로그램끼리 대화하는 약속', desc: '식당 주문 카운터 같은 거예요. 내가 "이거 주세요" 하면 "여기 있습니다" 하고 돌려주는 창구.', meet: '"Claude API 키를 넣으세요"' },
+    { cat: 'basic', term: '오픈소스 (Open Source)', short: '코드를 누구나 볼 수 있게 공개한 것', desc: '레시피를 공개한 음식점 같은 거예요. 다른 사람도 보고 쓰고 개선할 수 있어요.', meet: '"이건 오픈소스예요"' },
+
+    { cat: 'form', term: 'HTML', short: '웹페이지의 뼈대를 만드는 언어', desc: '웹브라우저에서 열리는 화면이 HTML로 만들어져 있어요. 이 연수 프로그램도 HTML 파일 하나예요.', meet: '"HTML 파일을 더블클릭하세요"' },
+    { cat: 'form', term: 'CSS', short: '웹페이지의 모양(색, 크기, 배치)을 꾸미는 언어', desc: 'HTML이 뼈대라면 CSS는 옷과 화장이에요.', meet: '"CSS로 꾸며주세요"' },
+    { cat: 'form', term: 'JavaScript (자바스크립트, JS)', short: '웹페이지를 움직이게 만드는 언어', desc: '버튼 클릭 시 반응하거나 계산이 이뤄지는 건 모두 JS가 합니다.', meet: '"자바스크립트로 만들어주세요"' },
+    { cat: 'form', term: 'EXE 파일 (.exe)', short: 'Windows에서 더블클릭해서 실행하는 프로그램 파일', desc: '윈도우 전용 설치/실행 파일이에요. 한글, 엑셀 같은 프로그램이 모두 exe로 시작해요.', meet: '"exe로 만들어주세요"' },
+    { cat: 'form', term: 'APK 파일 (.apk)', short: '안드로이드 앱 설치 파일', desc: '구글 플레이스토어에서 받는 앱의 원본 파일이에요.', meet: '"APK로 설치해주세요"' },
+    { cat: 'form', term: 'GAS (Google Apps Script)', short: '구글 서비스(스프레드시트 등)를 자동화하는 코드', desc: '구글 스프레드시트에 직접 넣을 수 있는 코드예요. 학교에서 엑셀 자동화할 때 자주 써요.', meet: '"구글 스프레드시트 자동화해주세요"' },
+    { cat: 'form', term: '웹앱 (Web App)', short: '설치 없이 브라우저에서 바로 쓰는 프로그램', desc: '카카오맵 웹 버전, 네이버 메일 같은 것들이 모두 웹앱이에요.', meet: '"웹앱으로 만들어주세요"' },
+    { cat: 'form', term: '모바일 앱 (Mobile App)', short: '폰에 설치해서 쓰는 프로그램', desc: '앱스토어/플레이스토어에서 받는 앱을 말해요. 만들기는 웹앱보다 복잡해요.', meet: '"앱으로 만들어주세요"' },
+    { cat: 'form', term: 'JSON', short: '데이터를 적어두는 표준 형식', desc: '이름, 나이, 주소 같은 정보를 컴퓨터가 읽기 좋게 정리한 텍스트예요.', meet: '"JSON으로 저장해주세요"' },
+
+    { cat: 'vibe', term: '프롬프트 (Prompt)', short: 'AI에게 보내는 요청 문장', desc: '여러분이 Claude에게 "이런 거 만들어줘" 하고 치는 모든 말이 프롬프트예요.', meet: '이 연수에서 계속 만나요' },
+    { cat: 'vibe', term: '토큰 (Token)', short: 'AI가 글을 세는 단위', desc: '약 1글자~1단어 정도예요. Claude는 토큰 수로 비용과 길이를 계산합니다.', meet: '"토큰을 많이 써요"' },
+    { cat: 'vibe', term: '컨텍스트 (Context)', short: 'Claude가 기억하고 있는 대화 전체', desc: '대화방 하나에서 지금까지 주고받은 모든 말이 컨텍스트예요. 너무 길어지면 잊어버려요.', meet: '"컨텍스트가 길어요"' },
+    { cat: 'vibe', term: '역할 부여 (Role Assignment)', short: 'Claude에게 "너는 ○○ 전문가야"라고 시작하는 기법', desc: '역할을 주면 그 전문가 수준의 답변이 나와요. 바이브 코딩 핵심 기술 중 하나.', meet: '미션 2부터 배워요' },
+    { cat: 'vibe', term: 'Few-shot (예시 주기)', short: 'AI에게 예시 몇 개를 주고 비슷하게 하라고 시키는 기법', desc: '원하는 출력의 예시를 1~2개 보여주면 Claude가 정확히 이해해요.', meet: '프롬프트 연습장 중급에서' },
+    { cat: 'vibe', term: 'Chain of Thought (단계별 사고)', short: 'AI에게 "생각 과정을 단계별로 보여줘"라고 시키는 기법', desc: '답만 시키지 않고 과정을 설명하게 하면 정확도가 올라가요.', meet: '프롬프트 연습장 상급에서' },
+    { cat: 'vibe', term: '할루시네이션 (Hallucination)', short: 'AI가 모르는 것을 아는 척 지어내는 현상', desc: '직역하면 "환각"이에요. 그럴듯하지만 사실이 아닌 답을 말할 때를 말해요.', meet: '"할루시네이션 주의"' },
+    { cat: 'vibe', term: '파인튜닝 (Fine-tuning)', short: '특정 목적에 맞게 AI를 추가 학습시키는 것', desc: '학교 업무용 AI를 따로 만들고 싶을 때 쓰는 고급 기술이에요. 초보자는 몰라도 됩니다.', meet: '"파인튜닝된 모델"' },
+  ],
+
+  /* ─── A2. 프롬프트 템플릿 ─── */
+  templates: [
+    { cat: '교무', title: '출결 데이터 정리', prompt: '[역할] 너는 고등학교 교무 업무를 돕는 데이터 전문가야. [과제] 30명 학생의 월간 출결 데이터(출/결/지각/조퇴)를 입력하면 학생별 출석률, 결석 일수, 개선 필요 학생 명단을 자동으로 뽑는 파이썬 스크립트를 만들어줘. [형식] 결과는 이름 | 출석률 | 지각 횟수 | 코멘트 표로. [제약] 파일 경로는 맨 위 변수로 빼줘.' },
+    { cat: '교무', title: '세특(과목별 세부능력 특기사항) 초안 작성', prompt: '[역할] 너는 고등학교 교사이자 교육부 세특 가이드라인에 정통한 작성자야. [과제] 학생 이름, 주요 활동, 태도 키워드를 입력하면 500자 내외의 세특 초안을 생성하는 웹페이지를 만들어줘. [형식] 입력창 + 생성 버튼 + 복사 버튼. [제약] 구체 사실 기반, 과장 금지, "~함"체 사용.' },
+    { cat: '교무', title: '가정통신문 생성기', prompt: '[역할] 너는 학부모가 읽기 좋은 가정통신문을 쓰는 교사야. [과제] 제목/날짜/내용/준비물을 입력하면 깔끔한 A4 미리보기와 인쇄 버튼이 있는 웹페이지를 만들어줘. [형식] 격식 있는 존댓말. [제약] 이모지 금지.' },
+    { cat: '교무', title: '학급 좌석 배치 섞기', prompt: '[역할] 너는 학급 관리 도우미야. [과제] 학생 이름 30개를 입력하면 5×6 좌석 배치를 랜덤으로 섞어주는 웹페이지를 만들어줘. [형식] 새로고침 안 해도 "다시 섞기" 버튼으로 재배치. [제약] 특정 학생끼리 떼어놓는 규칙 입력 가능하게.' },
+
+    { cat: '수업', title: '개념 시각화 자료', prompt: '[역할] 너는 인터랙티브 수업 자료를 만드는 교육 개발자야. [과제] 중학교 2학년 "일차함수 y=ax+b"를 시각화하는 웹페이지를 만들어줘. 슬라이더로 a, b 값을 바꾸면 실시간으로 그래프가 변하게. [형식] 왼쪽 그래프, 오른쪽 슬라이더. [제약] 외부 라이브러리 없이 순수 HTML/CSS/JS.' },
+    { cat: '수업', title: '실시간 퀴즈 생성', prompt: '[역할] 너는 교사용 실시간 퀴즈 제작 도구 개발자야. [과제] 내가 문제와 선택지를 입력하면, 학생들이 보는 화면에 문제가 뜨고 답을 고르면 결과가 차트로 모이는 웹페이지를 만들어줘. [형식] 교사 화면과 학생 화면 분리. [제약] 혼자 테스트할 수 있게 브라우저 탭 2개로.' },
+    { cat: '수업', title: '단어/개념 암기 카드', prompt: '[역할] 너는 학습 앱 개발자야. [과제] 내가 단어와 뜻(또는 개념과 설명) 20쌍을 입력하면, 카드 형태로 보여주고 클릭하면 뒤집히는 암기 웹페이지를 만들어줘. [형식] 다음/이전 버튼, 오늘 본 카드 수 표시. [제약] 내용은 브라우저에 저장되게.' },
+    { cat: '수업', title: '수업 타임라인 타이머', prompt: '[역할] 너는 수업 운영 도구 개발자야. [과제] 45분 수업을 "도입-활동1-활동2-정리"로 나누고, 각 단계 시간을 미리 설정하면 자동으로 타이머가 돌아가는 웹페이지를 만들어줘. [형식] 현재 단계를 크게 표시, 남은 시간 카운트다운.' },
+
+    { cat: '학생용', title: '랜덤 호명 뽑기', prompt: '[역할] 너는 교실 수업 도구 개발자야. [과제] 학생 이름을 입력받아 버튼을 누르면 한 명을 랜덤으로 뽑아 화면 가운데에 크게 보여주는 웹페이지를 만들어줘. 중복 방지 기능 포함. [형식] 학생 명단은 브라우저에 저장.' },
+    { cat: '학생용', title: '조 편성기', prompt: '[역할] 너는 학급 관리 도구 개발자야. [과제] 학생 명단과 조원 수(3~5명)를 입력하면 랜덤으로 조를 나누어 표시하는 웹페이지를 만들어줘. [형식] 조별 카드로 표시. [제약] 같은 조가 되면 안 되는 학생 지정 가능.' },
+    { cat: '학생용', title: '진도 체크 보드', prompt: '[역할] 너는 교실 진도 관리 도구 개발자야. [과제] 내가 단원과 학생 명단을 입력하면 각 학생의 진도를 체크할 수 있는 표 형태 웹페이지를 만들어줘. [형식] 완료한 건 초록색. [제약] 데이터는 브라우저에 저장.' },
+
+    { cat: '일반', title: '글 요약·해설', prompt: '[역할] 너는 학생이 이해하기 쉬운 글로 바꿔주는 국어 교사야. [과제] 내가 긴 글을 붙여넣으면 (1) 3줄 요약 (2) 핵심 단어 5개 설명 (3) 이해 확인 질문 3개를 순서대로 출력해줘. [형식] 번호별 마크다운. [제약] 원문 표현 그대로 쓰지 말고 쉬운 말로.' },
+    { cat: '일반', title: '문제 해설 만들기', prompt: '[역할] 너는 수학 교사이자 친절한 튜터야. [과제] 문제와 정답을 주면 (1) 풀이 과정을 단계별로 (2) 학생이 자주 하는 실수 (3) 비슷한 유형 문제 1개를 출력해줘. [제약] 초등 저학년도 알 수 있게 쉬운 용어로.' },
+  ],
+
+  /* ─── A3. FAQ ─── */
+  faq: [
+    { q: '답이 너무 길어요. 짧게 받고 싶어요.', a: '프롬프트 끝에 "3문장 이내로", "100자 이내로" 같은 길이 제약을 추가해보세요. 또는 "결론만 말해줘"라고 하면 바로 핵심만 나옵니다.' },
+    { q: 'Claude가 영어로 답해요.', a: '프롬프트 마지막에 "한국어로 답해줘"를 추가하세요. 한 번 알려주면 그 대화에서는 계속 한국어로 답합니다.' },
+    { q: '원하는 것과 다른 결과가 자꾸 나와요.', a: '미션 3에서 배운 "더 자세히 말해주기"를 써보세요. 모양(색, 버튼, 화면 형태)을 눈에 보이듯 설명하면 훨씬 정확해집니다.' },
+    { q: '만든 프로그램을 어떻게 실행하나요?', a: 'HTML 파일이라면 더블클릭만 하면 브라우저에서 바로 열립니다. 파이썬 코드는 별도 프로그램(VS Code 등)이 필요해서 초보자에게는 HTML을 추천합니다.' },
+    { q: '코드가 작동 안 해요. 오류가 나와요.', a: '오류 메시지 전체를 복사해서 Claude에게 "이 오류를 해결해줘"라고 붙여넣으면 원인과 해결법을 알려줍니다.' },
+    { q: '대화가 점점 이상해져요.', a: '대화가 길어지면 Claude가 앞부분을 잊기도 해요. 새 대화(New chat)를 시작하고, 지금까지 만든 코드 전체를 붙여넣고 다시 요청하세요.' },
+    { q: 'Claude가 "죄송합니다, 그건 할 수 없어요"라고 해요.', a: '보통 더 구체적으로 설명하면 해결돼요. "왜 할 수 없는지" 물어보고, 그 이유에 대한 대안을 함께 제시해보세요.' },
+    { q: '같은 요청인데 매번 다른 답이 나와요.', a: 'AI는 매번 조금씩 다르게 답해요. 마음에 드는 답이 나왔을 때 "이 버전을 저장해둘게"라고 말하면 안전합니다.' },
+    { q: 'API 키가 뭔가요? 꼭 필요한가요?', a: 'Claude를 웹사이트가 아니라 프로그램에서 직접 부를 때 쓰는 열쇠예요. 이 연수에서는 자동 채점을 받고 싶을 때만 필요하고, 없어도 완주 가능합니다.' },
+    { q: '만든 걸 다른 사람과 공유하고 싶어요.', a: 'HTML 파일이면 카카오톡/이메일로 보내면 돼요. 더 쉽게는 깃허브에 올리면 URL로 공유할 수 있습니다. (이 연수 프로그램도 그렇게 배포됐어요!)' },
+  ],
+
+  /* ─── A4. 실수 박물관 ─── */
+  mistakes: [
+    { title: '너무 막연한 요청', bad: '수업 자료 만들어줘', good: '중2 과학 "광합성" 단원 수업용 5분짜리 인트로 슬라이드를 HTML로 만들어줘. 사진 1장 + 핵심 3가지 + 오늘 배울 것.', why: '"수업 자료"는 너무 광범위해요. 과목·주제·분량·형태를 구체적으로 알려줘야 해요.' },
+    { title: '결과물 형태를 안 말함', bad: '성적 정리해줘', good: '30명 성적을 엑셀에서 읽어 평균·등수를 계산하는 파이썬 스크립트를 만들어줘. 결과는 CSV로 저장.', why: '"정리"는 추상적이에요. "스크립트? 웹페이지? 문서?" 형태를 명시해야 해요.' },
+    { title: '역할 부여 안 함', bad: '글 고쳐줘', good: '너는 20년 경력의 한국어 편집자야. 이 글의 문장을 짧고 명확하게 다듬어줘.', why: '역할을 주면 그 전문가 수준의 답이 나와요. 안 주면 일반적인 답만 받아요.' },
+    { title: '한 번에 너무 많이 요청', bad: '회원가입, 로그인, 게시판, 댓글, 좋아요 다 만들어줘', good: '먼저 회원가입 화면만 만들어줘. 이메일과 비밀번호 입력, 가입 버튼.', why: '큰 덩어리는 오류가 많아요. 작게 나눠서 하나씩 완성하세요.' },
+    { title: '제약 조건 누락', bad: '애니메이션 넣어줘', good: '애니메이션 넣어줘. 단, 외부 라이브러리 없이 순수 CSS로만.', why: '제약이 없으면 Claude가 복잡한 라이브러리를 쓸 수 있어요.' },
+    { title: '"더 좋게 해줘" 추상 요청', bad: '이거 더 예쁘게 해줘', good: '버튼 색을 #2563eb 파랑으로, 글씨 크기를 18px로, 모서리를 8px 둥글게.', why: '"예쁘게"는 기준이 없어요. 구체적인 수치로 말해야 해요.' },
+    { title: '잘 되던 걸 통째로 재요청', bad: '(대화가 길어졌을 때) 처음부터 다시 만들어줘', good: '앞서 만든 코드 그대로 두고, 저장 기능만 localStorage로 바꿔줘.', why: '전체 재생성은 이전에 잘 되던 부분도 바뀔 수 있어요. 부분 수정이 안전합니다.' },
+    { title: '감정적 표현만 사용', bad: '이거 이상해!!! 다시 해줘!!!', good: '방금 코드의 3번째 줄에서 오류가 났어. "undefined" 메시지. 원인 확인 부탁해.', why: 'Claude는 무엇이 이상한지 모릅니다. 구체적 증상을 알려주세요.' },
+    { title: '맥락 없이 갑자기 질문', bad: '여기서 뭐가 문제야?', good: '앞서 만든 퀴즈 앱에서 "정답 제출" 버튼을 눌렀을 때 아무 반응이 없어. 어느 부분이 문제일까?', why: '무엇을 말하는지 맥락 없으면 답할 수 없어요.' },
+    { title: '결과 확인 없이 다음 단계', bad: '(작동 확인 안 하고) 다음 기능 추가해줘', good: '방금 코드 테스트해보니 잘 작동해. 이제 우선순위 기능을 추가해줘.', why: '잘 안 되는 상태에 기능을 더하면 더 망가져요. 한 단계씩 확인하세요.' },
+  ],
+
+  /* ─── C1. 왜 이렇게 해야 하나? (이론 근거) ─── */
+  theory: [
+    { title: '역할 부여가 왜 효과적일까?', content: 'AI 모델은 학습 데이터에서 "전문가가 쓴 글"을 수십억 개 봤어요. "너는 ○○ 전문가야"라고 시작하면 모델이 "전문가 모드"로 전환되면서 관련 용어·구조·깊이가 달라집니다. 연구에 따르면 역할 부여만으로 정답률이 10~30% 상승한다고 보고됩니다.' },
+    { title: '예시(Few-shot)가 강력한 이유', content: '설명 10줄보다 좋은 예시 1개가 더 명확해요. AI는 예시에서 패턴을 인식해서 비슷한 방식으로 답합니다. 이를 "in-context learning"이라고 부르며, 모델 크기와 관계없이 보편적으로 효과가 있습니다.' },
+    { title: '단계별 사고(Chain of Thought) 원리', content: '복잡한 문제를 한 번에 풀려면 실수가 많아요. "1단계, 2단계, 3단계..." 순서로 사고하라고 시키면 각 단계에서 검증하며 답을 찾습니다. 수학·논리 문제에서 정답률이 극적으로 올라갑니다.' },
+    { title: '제약 조건이 왜 필요한가', content: '"하지 마"라는 말이 "해라"보다 강력할 때가 있어요. 제약을 주면 AI가 불필요한 방향으로 확장하지 않고 원하는 답에 집중합니다. "외부 라이브러리 없이"가 대표적인 예입니다.' },
+    { title: '작게 쪼개기의 힘', content: '인간도 그렇지만 AI도 한 번에 큰 문제를 풀면 세부 오류가 많아져요. 작은 단위로 쪼개서 각각 완성한 뒤 합치는 게 훨씬 정확합니다. 소프트웨어 공학의 기본 원칙이기도 해요.' },
+    { title: '"말만 한다고 되는 건가?" — 프롬프트 엔지니어링의 위치', content: '프롬프트 작성은 단순히 "말 예쁘게 하기"가 아니에요. 모델의 학습 방식을 이해하고, 그 특성에 맞게 입력을 설계하는 공학적 접근이에요. 연구자들이 "prompt engineering"이라는 용어로 공식화했습니다.' },
+  ],
+
+  /* ─── C2. 영상·문서 자료 ─── */
+  videos: [
+    { title: '공식 Anthropic 프롬프트 가이드', type: '문서', desc: 'Claude 제작사가 직접 쓴 프롬프트 작성 가이드. 모든 공식 기법이 정리되어 있어요.', url: 'https://docs.anthropic.com/claude/docs/prompt-engineering' },
+    { title: 'Anthropic 유튜브 채널', type: '영상', desc: 'Claude 기능 소개·사용 예시·업데이트 영상을 공식으로 제공해요.', url: 'https://www.youtube.com/@anthropic-ai' },
+    { title: 'Learn Prompting (무료 영문 강의)', type: '강의', desc: '프롬프트 엔지니어링 입문부터 고급까지 체계적인 무료 강의.', url: 'https://learnprompting.org/' },
+    { title: 'OpenAI 프롬프트 엔지니어링 가이드', type: '문서', desc: 'ChatGPT 제작사의 가이드지만 Claude에도 대부분 적용돼요.', url: 'https://platform.openai.com/docs/guides/prompt-engineering' },
+    { title: '한국어 프롬프트 엔지니어링 커뮤니티', type: '커뮤니티', desc: '한국어로 정보를 공유하는 오픈채팅·디스코드 커뮤니티 검색.', url: 'https://www.google.com/search?q=한국어+프롬프트+엔지니어링+커뮤니티' },
+    { title: 'Claude Cookbook (공식 예제)', type: '코드 예제', desc: 'Claude를 실제로 쓰는 다양한 시나리오의 코드 예제 모음.', url: 'https://github.com/anthropics/anthropic-cookbook' },
+  ],
+
+  /* ─── C3. 오늘의 꿀팁 ─── */
+  tips: [
+    '💎 답이 애매할 때는 "예시 3개 보여줘"라고 해보세요. 구체적인 예시가 나오면 그중 마음에 드는 걸 선택해서 발전시킬 수 있어요.',
+    '💎 코드를 수정할 때는 "이 부분만 바꾸고 나머지는 그대로 둬줘"를 꼭 추가하세요. 안 그러면 잘 되던 부분도 바뀔 수 있어요.',
+    '💎 오류 메시지는 영어라도 그대로 복사해서 주세요. 직접 설명하는 것보다 훨씬 정확합니다.',
+    '💎 "한국어로 답해줘"를 맨 앞에 한 번만 써도 그 대화 내내 한국어로 답합니다.',
+    '💎 완성된 코드는 항상 복사해서 메모장에 붙여넣어 두세요. 언제든 돌아갈 수 있는 "백업"이에요.',
+    '💎 긴 대화는 피로해요. 새 주제는 새 대화(New chat)로 시작하세요. 더 빠르고 정확해집니다.',
+    '💎 "더 좋게 해줘" 대신 "글자 크기를 18px로", "색을 파란색으로"처럼 구체적 수치로 말하세요.',
+    '💎 Claude에게 "이 코드의 문제점을 3가지 찾아줘"라고 하면 놓치고 있던 버그를 미리 잡을 수 있어요.',
+    '💎 한글 주석을 원하면 "코드에 한글로 주석 달아줘"라고 명시하세요. 기본값은 영어입니다.',
+    '💎 복잡한 걸 만들 땐 "먼저 전체 구조만 설명해줘"라고 먼저 시키세요. 구조 확인 후 단계별로 진행하면 실수가 줄어요.',
+  ],
+
+  /* ─── C4. 체크리스트 ─── */
+  checklist: [
+    { item: '역할을 부여했나요? (예: "너는 ○○ 전문가야")', ex: '너는 고등학교 수학 교사야...' },
+    { item: '구체적인 과제를 명시했나요?', ex: '학생 30명의 점수를 평균내고 등수를 매기는 도구...' },
+    { item: '결과물의 형식을 말했나요?', ex: 'HTML 웹페이지로 / 파이썬 스크립트로 / 표 형태로...' },
+    { item: '수치와 숫자를 포함했나요?', ex: '10문제, 5개 선택지, 30초 제한...' },
+    { item: '제약 조건을 추가했나요?', ex: '외부 라이브러리 없이 / 500자 이내로...' },
+    { item: '한국어로 답하라고 했나요?', ex: '모든 설명과 주석은 한국어로' },
+    { item: '저장/지속 여부를 명시했나요?', ex: '브라우저를 껐다 켜도 데이터가 남게' },
+    { item: '사용자 맥락을 알려줬나요?', ex: '고등학교 수업에서 학생들에게 보여줄 용도' },
+    { item: '예시 출력을 제공했나요? (Few-shot)', ex: '예: "홍길동 | 95점 | 3등" 형태로' },
+    { item: '단계별 사고를 유도했나요? (복잡한 문제일 때)', ex: '1단계: 문제 분석 / 2단계: 해결 방안 / 3단계: 구현' },
+  ],
+
+};
+
+function renderTool(page) {
+  const el = document.getElementById('toolContent');
+  const renderers = {
+    glossary: renderToolGlossary,
+    templates: renderToolTemplates,
+    faq: renderToolFAQ,
+    mistakes: renderToolMistakes,
+    theory: renderToolTheory,
+    videos: renderToolVideos,
+    tips: renderToolTips,
+    checklist: renderToolChecklist,
+    builder: renderToolBuilder,
+    challenge: renderToolChallenge,
+    card: renderToolCard,
+    gallery: renderToolGallery,
+    weakness: renderToolWeakness,
+    subject: renderToolSubject,
+    studytime: renderToolStudytime,
+    tabguide: renderToolTabguide,
+  };
+  const fn = renderers[page];
+  if (fn) fn(el);
+  else el.innerHTML = '<div class="card"><h3>준비 중</h3><p class="mt-4">이 페이지는 곧 추가됩니다.</p></div>';
+}
+
+function toolHeader(icon, title, desc) {
+  return `
+    <div class="mission-header">
+      <button class="back-btn" onclick="navigate('hub')">←</button>
+      <div>
+        <div class="mission-num">참고 자료</div>
+        <h1>${icon} ${title}</h1>
+      </div>
+    </div>
+    ${desc ? `<p class="text-muted mb-6">${desc}</p>` : ''}
+  `;
+}
+
+/* A1 — 용어 사전 */
+let glossaryState = { search: '', cat: 'all' };
+function renderToolGlossary(el) {
+  const cats = [
+    { id: 'all', label: '전체' },
+    { id: 'github', label: '🌐 GitHub/공유' },
+    { id: 'basic', label: '🛠️ 개발 기초' },
+    { id: 'form', label: '💻 프로그램 형태' },
+    { id: 'vibe', label: '🎯 바이브 코딩' },
+  ];
+  const q = glossaryState.search.toLowerCase();
+  const items = TOOL_DATA.glossary.filter(t => {
+    if (glossaryState.cat !== 'all' && t.cat !== glossaryState.cat) return false;
+    if (q && !(t.term + t.short + t.desc).toLowerCase().includes(q)) return false;
+    return true;
+  });
+  el.innerHTML = `
+    ${toolHeader('📖', '용어 사전', '바이브 코딩을 하면서 마주치는 용어들을 쉬운 말로 설명합니다.')}
+    <input type="text" class="input mb-4" placeholder="🔍 용어 검색..." value="${escapeHtml(glossaryState.search)}" oninput="updateGlossarySearch(this.value)" style="width:100%; margin-bottom:16px;">
+    <div class="os-tabs" style="flex-wrap:wrap; width:100%;">
+      ${cats.map(c => `<button class="os-tab ${glossaryState.cat === c.id ? 'active' : ''}" onclick="filterGlossary('${c.id}')">${c.label}</button>`).join('')}
+    </div>
+    <div class="mt-6">
+      ${items.length === 0 ? '<div class="card"><p class="text-muted" style="text-align:center;">검색 결과가 없어요.</p></div>' :
+        items.map(t => `
+        <div class="card mt-4">
+          <h3>${escapeHtml(t.term)}</h3>
+          <p class="mt-4" style="color: var(--accent-brand); font-weight:600;">${escapeHtml(t.short)}</p>
+          <p class="mt-4">${escapeHtml(t.desc)}</p>
+          <p class="text-muted mt-4" style="font-size:13px;">💬 언제 만나나요: ${escapeHtml(t.meet)}</p>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+function updateGlossarySearch(v) { glossaryState.search = v; renderToolGlossary(document.getElementById('toolContent')); document.querySelector('#toolContent input')?.focus(); }
+function filterGlossary(c) { glossaryState.cat = c; renderToolGlossary(document.getElementById('toolContent')); }
+
+/* A2 — 프롬프트 템플릿 */
+let templatesState = { cat: '전체' };
+function renderToolTemplates(el) {
+  const cats = ['전체', '교무', '수업', '학생용', '일반'];
+  const items = templatesState.cat === '전체' ? TOOL_DATA.templates : TOOL_DATA.templates.filter(t => t.cat === templatesState.cat);
+  el.innerHTML = `
+    ${toolHeader('📝', '프롬프트 템플릿', '바로 복사해서 쓸 수 있는 검증된 프롬프트 모음입니다. 내 상황에 맞게 조금만 수정하면 됩니다.')}
+    <div class="os-tabs" style="flex-wrap:wrap; width:100%;">
+      ${cats.map(c => `<button class="os-tab ${templatesState.cat === c ? 'active' : ''}" onclick="filterTemplates('${c}')">${c}</button>`).join('')}
+    </div>
+    ${items.map((t, i) => `
+      <div class="card mt-6">
+        <h3>${escapeHtml(t.title)}</h3>
+        <p class="text-muted mt-4" style="font-size:13px;">카테고리: ${escapeHtml(t.cat)}</p>
+        <div class="comparison-box model mt-4">
+          <div class="comparison-text">${escapeHtml(t.prompt)}</div>
+        </div>
+        <button class="btn btn-primary btn-sm mt-4" onclick="copyTemplate(${i})">📋 이 프롬프트 복사</button>
+      </div>
+    `).join('')}
+  `;
+}
+function filterTemplates(c) { templatesState.cat = c; renderToolTemplates(document.getElementById('toolContent')); }
+function copyTemplate(i) {
+  const items = templatesState.cat === '전체' ? TOOL_DATA.templates : TOOL_DATA.templates.filter(t => t.cat === templatesState.cat);
+  navigator.clipboard.writeText(items[i].prompt).then(() => toast('📋 복사 완료!'));
+}
+
+/* A3 — FAQ */
+function renderToolFAQ(el) {
+  el.innerHTML = `
+    ${toolHeader('❓', '자주 묻는 질문', '실제로 많이 겪는 상황과 해결 방법입니다.')}
+    ${TOOL_DATA.faq.map((f, i) => `
+      <div class="card mt-4">
+        <details>
+          <summary style="cursor:pointer; font-weight:600; color: var(--text-000); font-size:15px;">Q${i+1}. ${escapeHtml(f.q)}</summary>
+          <p class="mt-4">${escapeHtml(f.a)}</p>
+        </details>
+      </div>
+    `).join('')}
+  `;
+}
+
+/* A4 — 실수 박물관 */
+function renderToolMistakes(el) {
+  el.innerHTML = `
+    ${toolHeader('🎭', '실수 박물관', '초보자가 자주 하는 실수를 Before/After로 비교합니다. 내가 한 적 있는지 체크해보세요!')}
+    ${TOOL_DATA.mistakes.map((m, i) => `
+      <div class="card mt-4">
+        <h3>#${i+1}. ${escapeHtml(m.title)}</h3>
+        <div class="comparison mt-4">
+          <div class="comparison-box">
+            <div class="comparison-title">❌ 이렇게 하면 안 돼요</div>
+            <div class="comparison-text">${escapeHtml(m.bad)}</div>
+          </div>
+          <div class="comparison-box model">
+            <div class="comparison-title">✅ 이렇게 하세요</div>
+            <div class="comparison-text">${escapeHtml(m.good)}</div>
+          </div>
+        </div>
+        <p class="mt-4 text-muted" style="font-size:13px;"><b>💡 왜?</b> ${escapeHtml(m.why)}</p>
+      </div>
+    `).join('')}
+  `;
+}
+
+/* C1 — 이론 */
+function renderToolTheory(el) {
+  el.innerHTML = `
+    ${toolHeader('💡', '왜 이렇게 해야 하나?', '각 기법이 왜 효과적인지 과학적 배경을 간단히 설명합니다.')}
+    ${TOOL_DATA.theory.map(t => `
+      <div class="card mt-4">
+        <h3>${escapeHtml(t.title)}</h3>
+        <p class="mt-4">${escapeHtml(t.content)}</p>
+      </div>
+    `).join('')}
+  `;
+}
+
+/* C2 — 영상·문서 */
+function renderToolVideos(el) {
+  el.innerHTML = `
+    ${toolHeader('🎥', '영상·문서 자료', '더 깊이 공부하고 싶을 때 참고할 외부 자료들입니다.')}
+    ${TOOL_DATA.videos.map(v => `
+      <div class="card mt-4">
+        <h3>${escapeHtml(v.title)}</h3>
+        <p class="text-muted mt-4" style="font-size:13px;">📂 ${escapeHtml(v.type)}</p>
+        <p class="mt-4">${escapeHtml(v.desc)}</p>
+        <a href="${v.url}" target="_blank" rel="noopener" class="btn btn-sm mt-4" style="display:inline-flex;">🔗 자료 열기</a>
+      </div>
+    `).join('')}
+  `;
+}
+
+/* C3 — 꿀팁 */
+function renderToolTips(el) {
+  // 날짜 기반으로 매일 하나만 바뀌게 (하루에 동일한 팁 고정)
+  const d = new Date();
+  const dayNum = Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
+  const idx = dayNum % TOOL_DATA.tips.length;
+  const tip = TOOL_DATA.tips[idx];
+  const dateStr = `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
+  const weekday = ['일', '월', '화', '수', '목', '금', '토'][d.getDay()];
+  el.innerHTML = `
+    ${toolHeader('💎', '오늘의 꿀팁', '매일 자정에 새로운 팁 하나로 바뀝니다. 내일 또 들러 주세요.')}
+    <div class="card" style="background: linear-gradient(135deg, rgba(217,119,87,0.08), rgba(217,119,87,0.02)); border: 2px solid var(--accent-brand); text-align:center;">
+      <div style="font-size:12px; color:var(--text-400); letter-spacing:0.5px;">${dateStr} (${weekday})</div>
+      <div style="font-size:32px; margin:16px 0 12px;">💡</div>
+      <p style="font-size:20px; line-height:1.9; font-weight:500; margin:0;">${escapeHtml(tip)}</p>
+    </div>
+    <div class="card mt-4" style="background:var(--bg-100); text-align:center;">
+      <p class="text-muted" style="margin:0; font-size:13px;">
+        ✨ 이 팁은 <b>오늘 하루 동안만</b> 보여요. 내일 자정이 지나면 다른 팁으로 바뀝니다.
+      </p>
+    </div>
+  `;
+}
+
+/* C4 — 체크리스트 */
+function renderToolChecklist(el) {
+  el.innerHTML = `
+    ${toolHeader('✅', '좋은 프롬프트 체크리스트', '프롬프트를 보내기 전에 이 10가지를 체크해보세요. 인쇄해서 책상에 붙여두면 좋아요.')}
+    <div class="card">
+      ${TOOL_DATA.checklist.map((c, i) => `
+        <div class="checkbox-row" style="margin:8px 0;">
+          <input type="checkbox" id="chk-${i}">
+          <label for="chk-${i}" style="flex:1;">
+            <b>${i+1}. ${escapeHtml(c.item)}</b>
+            <div class="text-muted" style="font-size:12px; margin-top:4px;">예시: ${escapeHtml(c.ex)}</div>
+          </label>
+        </div>
+      `).join('')}
+      <button class="btn btn-primary mt-6" onclick="window.print()">🖨️ 체크리스트 인쇄하기</button>
+    </div>
+  `;
+}
+
+/* F2 — 단축키 */
+/* ============================================================
+   채팅 vs 코드 탭 안내 (가장 먼저 봐야 하는 페이지)
+   ============================================================ */
+function renderToolTabguide(el) {
+  el.innerHTML = `
+    <div class="mission-header">
+      <button class="back-btn" onclick="navigate('hub')">←</button>
+      <div>
+        <div class="mission-num">꼭 봐주세요</div>
+        <h1>👀 채팅 탭과 코드 탭, 언제 뭘 써요?</h1>
+      </div>
+    </div>
+
+    <div class="card" style="background:var(--bg-100);">
+      <p style="font-size:15px; line-height:1.8; margin:0;">
+        Claude 데스크탑 앱을 처음 열면 화면 위쪽에 <b>탭 3개</b>가 있어요.<br>
+        <b>채팅</b>, <b>Cowork</b>, <b>코드</b> — 이렇게요.<br>
+        이 중에서 우리는 <b>"채팅"</b>과 <b>"코드"</b> 두 개만 쓸 거예요.<br>
+        Cowork는 안 써도 돼요. 신경 쓰지 마세요. 😌
+      </p>
+    </div>
+
+    <h2 class="mt-6" style="font-size:20px;">📌 한눈에 보기</h2>
+
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:12px;">
+      <div class="card" style="border-color:#3b82f6; border-width:2px;">
+        <div style="font-size:32px; margin-bottom:8px;">💬</div>
+        <h3 style="color:#3b82f6; margin-bottom:8px;">채팅 탭</h3>
+        <p style="font-size:14px; line-height:1.7; margin:0;">
+          Claude와 <b>그냥 말로 대화</b>할 때 써요.<br>
+          답이 <b>글</b>로만 나오면 충분한 일이요.
+        </p>
+        <div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border);">
+          <div style="font-size:12px; color:var(--text-400); margin-bottom:6px;">이럴 때 써요 👇</div>
+          <ul style="margin:0; padding-left:18px; font-size:13px; line-height:1.8;">
+            <li>"운수 좋은 날 줄거리 알려줘"</li>
+            <li>"이 이메일 좀 다듬어줘"</li>
+            <li>"학생한테 할 칭찬 한 줄 추천해줘"</li>
+            <li>"이 영어 문장 한국어로 번역해줘"</li>
+            <li>"수업 아이디어 5개만 줘"</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card" style="border-color:#a855f7; border-width:2px;">
+        <div style="font-size:32px; margin-bottom:8px;">⌨️</div>
+        <h3 style="color:#a855f7; margin-bottom:8px;">코드 탭</h3>
+        <p style="font-size:14px; line-height:1.7; margin:0;">
+          진짜 <b>실행되는 프로그램</b>을 만들고 싶을 때 써요.<br>
+          버튼을 누르면 뭔가 일어나는 그런 거요.
+        </p>
+        <div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border);">
+          <div style="font-size:12px; color:var(--text-400); margin-bottom:6px;">이럴 때 써요 👇</div>
+          <ul style="margin:0; padding-left:18px; font-size:13px; line-height:1.8;">
+            <li>"학생 이름 뽑기 프로그램 만들어줘"</li>
+            <li>"45분 수업 타이머 만들어줘"</li>
+            <li>"단어 카드 뒤집기 페이지 만들어줘"</li>
+            <li>"점수 계산기 만들어줘"</li>
+            <li>"조 짜기 도구 만들어줘"</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="mt-6" style="font-size:20px;">🤔 헷갈리면 이렇게 골라요</h2>
+
+    <div class="card mt-3">
+      <div style="font-size:15px; line-height:2;">
+        <b>스스로에게 물어보세요:</b><br>
+        <span style="display:inline-block; padding:8px 14px; background:var(--bg-200); border-radius:12px; margin:6px 0;">"Claude의 답을 <b>읽기만</b> 해도 되나요?"</span>
+      </div>
+      <div style="margin-top:16px; display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+        <div style="padding:14px; background:rgba(59,130,246,0.1); border-radius:10px; border-left:3px solid #3b82f6;">
+          <div style="font-weight:700; color:#3b82f6; margin-bottom:4px;">✅ 네, 읽기만 해도 돼요</div>
+          <div style="font-size:13px;">→ <b>채팅 탭</b>으로 가세요 💬</div>
+        </div>
+        <div style="padding:14px; background:rgba(168,85,247,0.1); border-radius:10px; border-left:3px solid #a855f7;">
+          <div style="font-weight:700; color:#a855f7; margin-bottom:4px;">❌ 아니요, 클릭하거나 입력해야 돼요</div>
+          <div style="font-size:13px;">→ <b>코드 탭</b>으로 가세요 ⌨️</div>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="mt-6" style="font-size:20px;">👶 처음이라면 — 이렇게 따라하세요</h2>
+
+    <h3 class="mt-4" style="color:#3b82f6;">💬 채팅 탭 따라하기</h3>
+    <div class="card" style="border-left:4px solid #3b82f6;">
+      <ol style="margin:0; padding-left:24px; font-size:14px; line-height:2.2;">
+        <li>컴퓨터에서 <b>Claude 앱</b>을 더블클릭해서 열어요.</li>
+        <li>화면 <b>맨 위쪽</b>을 봐요. <b>채팅</b> · <b>Cowork</b> · <b>코드</b> 글자가 보여요.</li>
+        <li><b>"채팅"</b> 글자를 한 번 클릭해요. (아마 처음부터 채팅이 켜져 있을 거예요.)</li>
+        <li>화면 <b>아래쪽</b>에 글자를 쓸 수 있는 <b>긴 네모 칸</b>이 있어요.</li>
+        <li>그 칸에 하고 싶은 말을 그냥 써요. 예: <span style="background:var(--bg-200); padding:2px 8px; border-radius:6px;">"안녕? 너 누구야?"</span></li>
+        <li>키보드의 <b>Enter 키</b>를 한 번 눌러요. (한 번만요!)</li>
+        <li>잠깐 기다리면 Claude가 답을 글로 보여줘요. 끝이에요. 🎉</li>
+      </ol>
+    </div>
+
+    <h3 class="mt-6" style="color:#a855f7;">⌨️ 코드 탭 따라하기</h3>
+    <div class="card" style="border-left:4px solid #a855f7;">
+      <ol style="margin:0; padding-left:24px; font-size:14px; line-height:2.2;">
+        <li>컴퓨터에서 <b>Claude 앱</b>을 더블클릭해서 열어요.</li>
+        <li>화면 <b>맨 위쪽</b>에서 <b>"코드"</b> 글자를 찾아요. (채팅 옆에 있어요.)</li>
+        <li><b>"코드"</b> 글자를 한 번 클릭해요. 화면이 살짝 바뀌어요.</li>
+        <li>여기서도 화면 <b>아래쪽</b>에 글자 쓰는 칸이 있어요.</li>
+        <li>그 칸에 <b>"~~ 만들어줘"</b> 라고 부탁해요. 예: <span style="background:var(--bg-200); padding:2px 8px; border-radius:6px;">"학생 이름 뽑기 프로그램 만들어줘"</span></li>
+        <li>키보드의 <b>Enter 키</b>를 한 번 눌러요.</li>
+        <li>Claude가 코드를 만들기 시작해요. <b>잠깐 기다려요</b> (10초~1분).</li>
+        <li>오른쪽 또는 가운데에 <b>실제로 작동하는 화면</b>이 나타나요. 직접 클릭해 볼 수 있어요. 🎉</li>
+        <li>이상하게 나오면 다시 채팅창에 <b>"○○ 부분을 △△로 바꿔줘"</b> 라고 추가로 말해요.</li>
+      </ol>
+    </div>
+
+    <h2 class="mt-6" style="font-size:20px;">⚠️ 자주 헷갈리는 것</h2>
+    <div style="display:grid; gap:12px; margin-top:12px;">
+      <div class="card">
+        <div style="font-weight:700; margin-bottom:6px;">Q. Cowork 탭은 뭐예요?</div>
+        <div style="font-size:14px; color:var(--text-300);">A. 안 써도 돼요. 그냥 무시하세요. 우리 연수에서는 <b>채팅</b>과 <b>코드</b>만 씁니다.</div>
+      </div>
+      <div class="card">
+        <div style="font-weight:700; margin-bottom:6px;">Q. 채팅 탭에서도 "만들어줘"라고 하면 만들어 주던데요?</div>
+        <div style="font-size:14px; color:var(--text-300);">A. 네, 만들어 주긴 해요. 하지만 <b>코드 탭</b>이 더 깔끔하게 보여주고, 만든 걸 <b>바로 실행</b>해 볼 수 있어요. 프로그램 만들 땐 코드 탭이 훨씬 편해요.</div>
+      </div>
+      <div class="card">
+        <div style="font-weight:700; margin-bottom:6px;">Q. 코드 탭에서 만든 걸 친구한테 보여주려면요?</div>
+        <div style="font-size:14px; color:var(--text-300);">A. 코드 탭 안에 <b>공유 버튼</b>이나 <b>다운로드 버튼</b>이 보여요. 그걸 누르면 링크나 파일이 나와요. 자세한 건 미션 4에서 배울 거예요.</div>
+      </div>
+      <div class="card">
+        <div style="font-weight:700; margin-bottom:6px;">Q. 잘못 클릭해서 다른 탭으로 넘어갔어요!</div>
+        <div style="font-size:14px; color:var(--text-300);">A. 괜찮아요. 다시 위쪽의 <b>"채팅"</b> 또는 <b>"코드"</b>를 클릭하면 돌아와요. 아무것도 망가지지 않아요. 😊</div>
+      </div>
+    </div>
+
+    <h2 class="mt-6" style="font-size:20px;">🗺️ 미션별 — 어떤 탭을 쓸까요?</h2>
+    <div class="card mt-3">
+      <table style="width:100%; border-collapse:collapse; font-size:14px;">
+        <tr style="background:var(--bg-100);">
+          <th style="padding:10px; text-align:left; border-bottom:1px solid var(--border);">미션</th>
+          <th style="padding:10px; text-align:left; border-bottom:1px solid var(--border);">쓸 탭</th>
+          <th style="padding:10px; text-align:left; border-bottom:1px solid var(--border);">왜요?</th>
+        </tr>
+        <tr>
+          <td style="padding:10px; border-bottom:1px solid var(--border);">미션 1 — 첫 대화</td>
+          <td style="padding:10px; border-bottom:1px solid var(--border);"><span style="color:#3b82f6; font-weight:700;">💬 채팅</span></td>
+          <td style="padding:10px; border-bottom:1px solid var(--border); color:var(--text-300);">그냥 글로 답을 받는 연습이에요</td>
+        </tr>
+        <tr>
+          <td style="padding:10px; border-bottom:1px solid var(--border);">미션 2 — 조건 붙여 요청하기</td>
+          <td style="padding:10px; border-bottom:1px solid var(--border);"><span style="color:#3b82f6; font-weight:700;">💬 채팅</span></td>
+          <td style="padding:10px; border-bottom:1px solid var(--border); color:var(--text-300);">아직은 글로 받는 연습이에요</td>
+        </tr>
+        <tr>
+          <td style="padding:10px; border-bottom:1px solid var(--border);">미션 3 — 엉뚱한 결과 대처</td>
+          <td style="padding:10px; border-bottom:1px solid var(--border);"><span style="color:#3b82f6; font-weight:700;">💬 채팅</span></td>
+          <td style="padding:10px; border-bottom:1px solid var(--border); color:var(--text-300);">고쳐 말하는 법을 배워요</td>
+        </tr>
+        <tr>
+          <td style="padding:10px;">미션 4 — 자유 제작</td>
+          <td style="padding:10px;"><span style="color:#a855f7; font-weight:700;">⌨️ 코드</span></td>
+          <td style="padding:10px; color:var(--text-300);">이제 진짜 작동하는 걸 만들 거예요!</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="card mt-6" style="background:var(--bg-100); text-align:center;">
+      <p style="margin:0; font-size:14px; line-height:1.8;">
+        🌱 <b>기억하세요</b><br>
+        <b>읽기만 하면 되는 일</b> → 채팅 탭 💬<br>
+        <b>클릭하고 입력하는 프로그램</b> → 코드 탭 ⌨️<br>
+        그게 전부예요!
+      </p>
+    </div>
+  `;
+}
+
+/* ============================================================
+   배치 2 — 인터랙티브 도구
+   ============================================================ */
+
+/* F1 — 프롬프트 빌더 */
+function renderToolBuilder(el) {
+  el.innerHTML = toolHeader('🏗️', '프롬프트 빌더', '4가지 요소를 채우면 프롬프트가 자동으로 완성돼요.') + `
+    <div class="card">
+      <div style="display:grid; gap:16px;">
+        <div>
+          <label style="display:block; font-weight:600; margin-bottom:6px;">① 역할 <span class="text-muted" style="font-weight:400;">(Claude를 누구로 만들까?)</span></label>
+          <input id="bldRole" type="text" placeholder="예: 고등학교 국어 선생님" oninput="updateBuilder()" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; background:var(--bg-000); color:var(--text-000);">
+        </div>
+        <div>
+          <label style="display:block; font-weight:600; margin-bottom:6px;">② 과제 <span class="text-muted" style="font-weight:400;">(무엇을 해달라고 할까?)</span></label>
+          <input id="bldTask" type="text" placeholder="예: 『운수 좋은 날』 독서 퀴즈 5문제 만들기" oninput="updateBuilder()" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; background:var(--bg-000); color:var(--text-000);">
+        </div>
+        <div>
+          <label style="display:block; font-weight:600; margin-bottom:6px;">③ 형식 <span class="text-muted" style="font-weight:400;">(결과를 어떤 모양으로?)</span></label>
+          <input id="bldForm" type="text" placeholder="예: 4지선다, 정답과 해설 포함" oninput="updateBuilder()" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; background:var(--bg-000); color:var(--text-000);">
+        </div>
+        <div>
+          <label style="display:block; font-weight:600; margin-bottom:6px;">④ 제약 <span class="text-muted" style="font-weight:400;">(조건, 금지사항)</span></label>
+          <input id="bldLimit" type="text" placeholder="예: 쉬운 말로, 200자 이내, 예시 1개 필수" oninput="updateBuilder()" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; background:var(--bg-000); color:var(--text-000);">
+        </div>
+      </div>
+    </div>
+    <div class="card mt-4">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <strong>✨ 완성된 프롬프트</strong>
+        <button class="btn btn-sm" onclick="copyBuilder()">📋 복사</button>
+      </div>
+      <pre id="bldOutput" style="white-space:pre-wrap; background:var(--bg-100); padding:16px; border-radius:8px; font-family:inherit; font-size:14px; line-height:1.7; min-height:80px; color:var(--text-300);">왼쪽 칸을 채워보세요...</pre>
+    </div>
+  `;
+  updateBuilder();
+}
+function updateBuilder() {
+  const role = document.getElementById('bldRole')?.value.trim();
+  const task = document.getElementById('bldTask')?.value.trim();
+  const form = document.getElementById('bldForm')?.value.trim();
+  const limit = document.getElementById('bldLimit')?.value.trim();
+  const out = document.getElementById('bldOutput');
+  if (!out) return;
+  if (!role && !task && !form && !limit) {
+    out.textContent = '왼쪽 칸을 채워보세요...';
+    out.style.color = 'var(--text-300)';
+    return;
+  }
+  let txt = '';
+  if (role) txt += `당신은 ${role}입니다.\n\n`;
+  if (task) txt += `다음을 해주세요: ${task}\n\n`;
+  if (form) txt += `[형식]\n${form}\n\n`;
+  if (limit) txt += `[조건]\n${limit}`;
+  out.textContent = txt.trim();
+  out.style.color = 'var(--text-000)';
+}
+function copyBuilder() {
+  const txt = document.getElementById('bldOutput').textContent;
+  navigator.clipboard.writeText(txt).then(() => toast('복사되었어요 ✓'));
+}
+
+/* B1 — 데일리 챌린지 */
+const CHALLENGES = [
+  { q: '오늘 점심 메뉴를 5개 추천받는 프롬프트를 작성하세요.', hint: '역할(영양사?)과 조건(예산, 시간)을 넣으면 좋아요.' },
+  { q: '학생 생활기록부 문장을 다듬는 프롬프트를 작성하세요.', hint: '원문을 주고, 톤·길이 조건을 명시해 보세요.' },
+  { q: '이메일 제목을 10개 뽑아달라는 프롬프트를 작성하세요.', hint: '대상 독자와 목적을 구체적으로.' },
+  { q: '회의록을 3줄 요약하는 프롬프트를 작성하세요.', hint: '형식(불릿? 문장?)을 지정하세요.' },
+  { q: '학생 질문에 대한 모범 답변을 만드는 프롬프트를 작성하세요.', hint: '학년과 난이도를 명시해보세요.' },
+  { q: '자기소개서 첨삭 프롬프트를 작성하세요.', hint: '역할을 "입학 사정관"으로 지정하면 관점이 달라져요.' },
+  { q: '수업 도입부 3분 아이스브레이킹 아이디어 프롬프트.', hint: '학년, 과목, 인원을 넣어보세요.' }
+];
+function renderToolChallenge(el) {
+  const day = Math.floor(Date.now() / 86400000);
+  const idx = day % CHALLENGES.length;
+  const c = CHALLENGES[idx];
+  const key = `challenge_${day}`;
+  const done = localStorage.getItem(key);
+  el.innerHTML = toolHeader('🏆', '데일리 챌린지', '매일 바뀌는 오늘의 프롬프트 과제예요.') + `
+    <div class="card" style="border-color: var(--accent-brand);">
+      <div style="font-size:12px; color:var(--accent-brand); font-weight:600; margin-bottom:8px;">📅 오늘의 챌린지</div>
+      <h2 style="margin-bottom:16px;">${c.q}</h2>
+      <div class="text-muted" style="font-size:13px; margin-bottom:16px;">💡 힌트: ${c.hint}</div>
+      <textarea id="chlAnswer" placeholder="여기에 프롬프트를 작성해 보세요..." style="width:100%; min-height:140px; padding:12px; border:1px solid var(--border); border-radius:8px; background:var(--bg-000); color:var(--text-000); font-family:inherit; resize:vertical;">${done || ''}</textarea>
+      <div style="display:flex; gap:8px; margin-top:12px;">
+        <button class="btn btn-primary" onclick="submitChallenge(${day})">${done ? '수정 저장' : '제출 ✓'}</button>
+        <button class="btn btn-sm" onclick="copyChallenge()">📋 복사</button>
+      </div>
+      ${done ? '<div style="margin-top:12px; color:var(--accent-brand); font-weight:600;">✅ 오늘의 챌린지 완료!</div>' : ''}
+    </div>
+    <div class="card mt-4">
+      <strong>💭 스스로 체크</strong>
+      <ul style="margin-top:8px; padding-left:20px; color:var(--text-300); font-size:14px; line-height:1.8;">
+        <li>역할을 지정했나요?</li>
+        <li>과제가 구체적인가요?</li>
+        <li>결과 형식을 명시했나요?</li>
+        <li>조건이나 제약을 넣었나요?</li>
+      </ul>
+    </div>
+  `;
+}
+function submitChallenge(day) {
+  const v = document.getElementById('chlAnswer').value.trim();
+  if (!v) return toast('프롬프트를 먼저 작성해주세요');
+  localStorage.setItem(`challenge_${day}`, v);
+  toast('저장되었어요 ✓');
+  renderToolChallenge(document.getElementById('toolContent'));
+}
+function copyChallenge() {
+  const v = document.getElementById('chlAnswer').value;
+  navigator.clipboard.writeText(v).then(() => toast('복사되었어요 ✓'));
+}
+
+/* ============================================================
+   개인화·공유 도구
+   ============================================================ */
+
+/* D1 — 프롬프트 카드 만들기 */
+function renderToolCard(el) {
+  el.innerHTML = toolHeader('🎴', '프롬프트 카드 만들기', '내가 만든 좋은 프롬프트를 카드로 만들어 공유해 보세요.') + `
+    <div class="card">
+      <div style="display:grid; gap:12px;">
+        <input id="cardTitle" type="text" placeholder="제목 (예: 독서 감상문 첨삭용)" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; background:var(--bg-000); color:var(--text-000);">
+        <textarea id="cardPrompt" placeholder="프롬프트 본문..." style="width:100%; min-height:140px; padding:10px; border:1px solid var(--border); border-radius:8px; background:var(--bg-000); color:var(--text-000); font-family:inherit;"></textarea>
+        <input id="cardTag" type="text" placeholder="태그 (예: 국어, 첨삭)" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; background:var(--bg-000); color:var(--text-000);">
+        <button class="btn btn-primary" onclick="previewCard()">카드 미리보기 →</button>
+      </div>
+    </div>
+    <div id="cardPreview" class="mt-4"></div>
+  `;
+}
+function previewCard() {
+  const t = document.getElementById('cardTitle').value.trim() || '제목 없음';
+  const p = document.getElementById('cardPrompt').value.trim();
+  const tag = document.getElementById('cardTag').value.trim();
+  if (!p) return toast('프롬프트를 작성해 주세요');
+  const author = state.userName || '익명';
+  const el = document.getElementById('cardPreview');
+  el.innerHTML = `
+    <div class="card" style="background:linear-gradient(135deg, var(--bg-100), var(--bg-000)); border:2px solid var(--accent-brand);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div style="font-size:12px; color:var(--accent-brand); font-weight:700;">📇 PROMPT CARD</div>
+        <div style="font-size:11px; color:var(--text-400);">by ${author}</div>
+      </div>
+      <h2 style="margin-bottom:12px;">${t}</h2>
+      ${tag ? `<div style="margin-bottom:12px;"><span style="padding:4px 10px; background:var(--accent-brand); color:white; border-radius:12px; font-size:11px; font-weight:600;">#${tag}</span></div>` : ''}
+      <pre style="white-space:pre-wrap; background:var(--bg-200); padding:14px; border-radius:8px; font-family:inherit; font-size:13px; line-height:1.6;">${p}</pre>
+      <div style="margin-top:12px; font-size:11px; color:var(--text-400); text-align:right;">— 바이브 코딩 자기주도 연수</div>
+    </div>
+    <div style="display:flex; gap:8px; margin-top:12px;">
+      <button class="btn btn-primary" onclick="copyCardText()">📋 카드 텍스트 복사</button>
+      <button class="btn btn-sm" onclick="saveCardToGallery()">💾 갤러리에 저장</button>
+    </div>
+  `;
+}
+function copyCardText() {
+  const t = document.getElementById('cardTitle').value.trim();
+  const p = document.getElementById('cardPrompt').value.trim();
+  const tag = document.getElementById('cardTag').value.trim();
+  const txt = `📇 ${t}\n${tag ? `#${tag}\n` : ''}\n${p}\n\n— by ${state.userName || '익명'}`;
+  navigator.clipboard.writeText(txt).then(() => toast('카드가 복사되었어요 ✓'));
+}
+function saveCardToGallery() {
+  const t = document.getElementById('cardTitle').value.trim() || '제목 없음';
+  const p = document.getElementById('cardPrompt').value.trim();
+  const tag = document.getElementById('cardTag').value.trim();
+  if (!p) return;
+  state.galleryItems = state.galleryItems || [];
+  state.galleryItems.unshift({ id: Date.now(), type: 'card', title: t, prompt: p, tag, date: new Date().toISOString().slice(0, 10) });
+  saveState();
+  toast('갤러리에 저장되었어요 ✓');
+}
+
+/* D2 — 결과물 갤러리 */
+function renderToolGallery(el) {
+  const items = state.galleryItems || [];
+  el.innerHTML = toolHeader('🖼️', '결과물 갤러리', '내가 만든 프롬프트와 결과물을 모아보세요.') + `
+    <div class="card">
+      <div style="display:grid; gap:10px;">
+        <input id="glTitle" type="text" placeholder="제목" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; background:var(--bg-000); color:var(--text-000);">
+        <input id="glLink" type="text" placeholder="링크 또는 설명 (선택)" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; background:var(--bg-000); color:var(--text-000);">
+        <textarea id="glNote" placeholder="메모..." style="width:100%; min-height:80px; padding:10px; border:1px solid var(--border); border-radius:8px; background:var(--bg-000); color:var(--text-000); font-family:inherit;"></textarea>
+        <button class="btn btn-primary" onclick="addGalleryItem()">+ 추가</button>
+      </div>
+    </div>
+    <h3 class="mt-6 mb-3">📦 저장된 항목 (${items.length})</h3>
+    <div style="display:grid; gap:12px;">
+      ${items.length === 0 ? '<div class="card text-muted" style="text-align:center;">아직 저장된 항목이 없어요.</div>' : items.map(it => `
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:start; gap:12px;">
+            <div style="flex:1;">
+              <div style="font-size:11px; color:var(--text-400); margin-bottom:4px;">${it.date} · ${it.type === 'card' ? '📇 카드' : '📎 링크'}</div>
+              <div style="font-weight:600; margin-bottom:6px;">${it.title}</div>
+              ${it.tag ? `<span style="padding:2px 8px; background:var(--bg-200); border-radius:10px; font-size:11px;">#${it.tag}</span>` : ''}
+              ${it.prompt ? `<pre style="white-space:pre-wrap; background:var(--bg-100); padding:10px; border-radius:6px; font-family:inherit; font-size:12px; margin-top:8px; line-height:1.5;">${it.prompt}</pre>` : ''}
+              ${it.link ? `<div style="margin-top:8px; font-size:13px; word-break:break-all;">🔗 ${it.link}</div>` : ''}
+              ${it.note ? `<div style="margin-top:8px; font-size:13px; color:var(--text-300);">${it.note}</div>` : ''}
+            </div>
+            <button class="btn btn-sm" onclick="removeGalleryItem(${it.id})">삭제</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+function addGalleryItem() {
+  const t = document.getElementById('glTitle').value.trim();
+  const l = document.getElementById('glLink').value.trim();
+  const n = document.getElementById('glNote').value.trim();
+  if (!t) return toast('제목을 입력해주세요');
+  state.galleryItems = state.galleryItems || [];
+  state.galleryItems.unshift({ id: Date.now(), type: 'link', title: t, link: l, note: n, date: new Date().toISOString().slice(0, 10) });
+  saveState();
+  renderToolGallery(document.getElementById('toolContent'));
+  toast('추가되었어요 ✓');
+}
+function removeGalleryItem(id) {
+  state.galleryItems = (state.galleryItems || []).filter(i => i.id !== id);
+  saveState();
+  renderToolGallery(document.getElementById('toolContent'));
+}
+
+/* E1 — 내 약점 리포트 */
+function renderToolWeakness(el) {
+  const scoresMap = state.scores || {};
+  const completedSet = new Set(state.completedMissions || []);
+  const missionEntries = Object.entries(scoresMap).filter(([k, v]) => v && v.scores);
+
+  // 카테고리별 평균 계산 (clarity/detail/context/practical 각 최대 25점)
+  const catSum = { clarity: 0, detail: 0, context: 0, practical: 0 };
+  missionEntries.forEach(([, v]) => {
+    Object.keys(catSum).forEach(k => { catSum[k] += v.scores[k] || 0; });
+  });
+  const catAvg = {};
+  const n = missionEntries.length || 1;
+  Object.keys(catSum).forEach(k => { catAvg[k] = Math.round(catSum[k] / n); });
+  const totalAvg = missionEntries.length
+    ? Math.round(missionEntries.reduce((a, [, v]) => a + (v.total || 0), 0) / missionEntries.length)
+    : 0;
+
+  const CAT_INFO = {
+    clarity:   { label: '명확성',   desc: '무엇을 만들지 분명히 말했는가',             tip: '"○○ 웹페이지를 만들어줘", "○○ 문서를 써줘"처럼 결과물 형태를 명시하세요.' },
+    detail:    { label: '구체성',   desc: '숫자·예시·수량 같은 구체적 정보가 있는가', tip: '"5개", "200자 이내", "초등 3학년 수준" 등 숫자와 예시를 넣어 보세요.' },
+    context:   { label: '역할·맥락', desc: 'Claude에게 역할과 상황을 줬는가',           tip: '"너는 20년 경력 국어 교사야" 같은 역할 부여로 시작해 보세요.' },
+    practical: { label: '제약 조건', desc: '형식·금지사항이 명확한가',                  tip: '"표로 출력", "이모지 사용 금지"처럼 원하는·원치 않는 형식을 지정하세요.' },
+  };
+
+  // 진단
+  const issues = [];
+  const strengths = [];
+  if (missionEntries.length === 0) {
+    issues.push({
+      icon: '🟡',
+      title: '아직 채점받은 프롬프트가 없어요',
+      desc: '미션에서 프롬프트를 작성하고 ⭐ 채점받기 버튼을 눌러야 약점 분석이 가능해요.',
+      link: 'hub',
+      linkLabel: '미션 허브로 가기',
+    });
+  } else {
+    // 약한 카테고리 찾기 (15점 미만 = 평균 60% 이하)
+    const weakCats = Object.entries(catAvg)
+      .filter(([, v]) => v < 15)
+      .sort((a, b) => a[1] - b[1]);
+    const strongCats = Object.entries(catAvg).filter(([, v]) => v >= 20);
+
+    weakCats.forEach(([k, v]) => {
+      const info = CAT_INFO[k];
+      issues.push({
+        icon: v < 10 ? '🔴' : '🟡',
+        title: `${info.label} — ${v}/25점 (${info.desc})`,
+        desc: info.tip,
+        link: 'builder',
+        linkLabel: '프롬프트 빌더로 연습',
+      });
+    });
+    strongCats.forEach(([k, v]) => {
+      strengths.push(`${CAT_INFO[k].label} ${v}/25`);
+    });
+  }
+
+  const missionsDone = completedSet.size;
+  if (missionsDone < 4) {
+    issues.push({
+      icon: '🟡',
+      title: `미션 ${missionsDone}/${getTotalMissions()} 완료`,
+      desc: `아직 ${getTotalMissions() - missionsDone}개 미션이 남아 있어요. 각 미션을 끝내면 실력이 고르게 올라가요.`,
+      link: 'hub',
+      linkLabel: '다음 미션 가기',
+    });
+  }
+
+  const tplViewed = state.tplViewed || 0;
+  if (tplViewed === 0 && missionsDone > 0) {
+    issues.push({
+      icon: '💡',
+      title: '아직 프롬프트 템플릿을 둘러보지 않았어요',
+      desc: '과목별로 바로 쓸 수 있는 예시가 많아요. 한 번씩 훑어보면 감이 빨리 잡혀요.',
+      link: 'subject',
+      linkLabel: '과목별 사례 보기',
+    });
+  }
+
+  if (issues.length === 0 && missionEntries.length > 0) {
+    issues.push({
+      icon: '🎉',
+      title: '훌륭해요! 약점이 보이지 않아요',
+      desc: '이 수준이면 실제 업무에 바로 쓸 수 있어요. 매일 데일리 챌린지로 감을 유지하세요.',
+      link: 'challenge',
+      linkLabel: '오늘의 챌린지',
+    });
+  }
+
+  // 레이더 차트 대용 막대
+  const barHtml = Object.entries(catAvg).map(([k, v]) => {
+    const pct = Math.round((v / 25) * 100);
+    const info = CAT_INFO[k];
+    const color = v >= 20 ? '#10b981' : v >= 15 ? '#f59e0b' : '#ef4444';
+    return `
+      <div style="margin-bottom:12px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:13px;">
+          <span><b>${info.label}</b> <span class="text-muted" style="font-size:11px;">— ${info.desc}</span></span>
+          <span style="font-weight:700; color:${color};">${v}/25</span>
+        </div>
+        <div style="height:10px; background:var(--bg-200); border-radius:5px; overflow:hidden;">
+          <div style="height:100%; width:${pct}%; background:${color}; transition:width 0.4s;"></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  el.innerHTML = toolHeader('📊', '내 약점 리포트', '미션 채점 결과로 분석한 약점과 다음 할 일이에요.') + `
+    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px;">
+      <div class="card" style="text-align:center; padding:18px;">
+        <div style="font-size:28px; font-weight:700; color:var(--accent-brand);">${missionsDone}/${getTotalMissions()}</div>
+        <div style="font-size:12px; color:var(--text-400); margin-top:4px;">완료 미션</div>
+      </div>
+      <div class="card" style="text-align:center; padding:18px;">
+        <div style="font-size:28px; font-weight:700; color:var(--accent-brand);">${missionEntries.length}</div>
+        <div style="font-size:12px; color:var(--text-400); margin-top:4px;">채점받은 프롬프트</div>
+      </div>
+      <div class="card" style="text-align:center; padding:18px;">
+        <div style="font-size:28px; font-weight:700; color:var(--accent-brand);">${totalAvg}/100</div>
+        <div style="font-size:12px; color:var(--text-400); margin-top:4px;">평균 점수</div>
+      </div>
+    </div>
+
+    ${missionEntries.length > 0 ? `
+      <h3 class="mt-6 mb-3">📈 카테고리별 실력</h3>
+      <div class="card">
+        ${barHtml}
+        <p class="text-muted" style="font-size:12px; margin-top:12px;">
+          🟢 20점 이상 = 잘함 &nbsp;·&nbsp; 🟡 15~19점 = 보통 &nbsp;·&nbsp; 🔴 14점 이하 = 더 연습 필요
+        </p>
+      </div>
+    ` : ''}
+
+    ${strengths.length > 0 ? `
+      <div class="card mt-4" style="background:rgba(16,185,129,0.08); border-left:3px solid #10b981;">
+        <div style="font-weight:600; margin-bottom:4px;">💪 잘하고 있어요</div>
+        <div style="font-size:13px;">${strengths.join(' · ')}</div>
+      </div>
+    ` : ''}
+
+    <h3 class="mt-6 mb-3">🎯 지금 해야 할 것</h3>
+    <div style="display:grid; gap:12px;">
+      ${issues.map(w => `
+        <div class="card">
+          <div style="font-weight:600; margin-bottom:6px;">${w.icon} ${w.title}</div>
+          <div class="text-muted" style="font-size:14px; margin-bottom:10px; line-height:1.6;">${w.desc}</div>
+          <button class="btn btn-sm btn-primary" onclick="navigate('${w.link === 'hub' ? 'hub' : 'tool'}'${w.link !== 'hub' ? `, '${w.link}'` : ''})">${w.linkLabel} →</button>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+/* E2 — 과목별 심화 사례 (과목별 8+ 예시) */
+const SUBJECT_EXAMPLES = {
+  '국어': {
+    intro: '국어는 "표현을 다듬고, 논리를 검토하는" 작업이 많아요. 텍스트 품질 검토가 Claude의 강점입니다.',
+    tips: [
+      '원문을 그대로 붙여넣고 "어색한 부분만 지적해줘"라고 하면 과도한 수정을 피할 수 있어요.',
+      '"○학년 수준의 어휘로" 같은 독자 수준을 명시하면 훨씬 실용적인 답이 나와요.',
+      '감상문·비평은 "근거를 본문에서만 찾아줘"라고 하면 Claude가 지어내는 걸 막을 수 있어요.',
+      '맞춤법·문법 검토 시 "이유도 함께"라고 추가하면 학생 지도에 바로 쓸 수 있어요.',
+    ],
+    items: [
+      { tab: 'chat', cat: '💬 채팅', title: '독서 감상문 첨삭',
+        prompt: '너는 고등학교 국어 교사야. 아래는 학생이 『운수 좋은 날』을 읽고 쓴 감상문이야.\n원문을 그대로 유지하되, 다음 세 가지만 해줘:\n1) 어색한 표현 3~5개를 지적하고 각각 대안 문장 2개 제시\n2) 논리가 약한 부분 표시\n3) 학생이 이해할 수 있는 쉬운 말로 설명\n원문 외 새로운 내용을 지어내지 마.\n\n[원문]\n(여기에 학생 감상문 붙여넣기)' },
+      { tab: 'chat', cat: '💬 채팅', title: '시·소설 지문 분석',
+        prompt: '너는 국어 교사야. 다음 시의 의미를 고등학교 1학년 수준으로 설명해줘.\n형식:\n1) 한 줄 요약\n2) 화자의 정서 3가지 (본문에서 근거 인용)\n3) 주요 표현 기법과 효과 (본문에서 예시 인용)\n4) 이 시를 공감하지 못할 수 있는 학생에게 할 말 1~2문장\n근거는 반드시 본문에서만 찾아.\n\n[시]\n(여기에 붙여넣기)' },
+      { tab: 'chat', cat: '💬 채팅', title: '맞춤법·띄어쓰기 검토',
+        prompt: '아래 글의 맞춤법·띄어쓰기·문법 오류를 잡아줘. 한 줄씩 "원문 → 수정 → 이유" 순으로 표로 정리해줘.\n학생에게 설명할 수 있게 "이유"는 쉬운 말로.\n\n[원문]\n(여기에 붙여넣기)' },
+      { tab: 'chat', cat: '💬 채팅', title: '세특 초안 작성',
+        prompt: '너는 고등학교 국어 세특 작성에 능숙한 교사야. 아래 학생 활동 기록을 바탕으로 500자 내외 세특 초안을 써줘.\n조건: "~함"체, 구체 사실 기반, 과장 금지, 교육부 가이드 준수.\n\n[학생 이름] ○○○\n[주요 활동] (간단히)\n[태도 키워드] (자기주도/협력/창의 등)' },
+      { tab: 'chat', cat: '💬 채팅', title: '논술형 평가 루브릭',
+        prompt: '너는 국어 평가 전문가야. "현대 사회에서 표현의 자유와 혐오 표현 규제는 어떻게 조화되어야 하는가"를 주제로 한 논술형 답안을 채점할 루브릭을 만들어줘.\n형식: 표 (평가 영역 | 상(9-10점) | 중(5-8점) | 하(1-4점) | 0점 기준)\n영역: 주장의 명확성, 근거의 타당성, 반론 수용, 표현력, 분량' },
+      { tab: 'code', cat: '⌨️ 코드', title: '어휘 암기 카드 웹페이지',
+        prompt: '중학생용 어휘 암기 웹페이지를 만들어줘.\n기능: 내가 단어-뜻 20쌍을 JSON으로 입력하면 카드 형태로 표시. 카드 클릭 시 뒤집힘. 다음/이전 버튼. 오늘 본 카드 수 표시.\n저장: 브라우저 localStorage\n제약: 순수 HTML/CSS/JS, 외부 라이브러리 없이' },
+      { tab: 'code', cat: '⌨️ 코드', title: '시·소설 독서 퀴즈 생성기',
+        prompt: '국어 독서 퀴즈 웹페이지를 만들어줘.\n기능: 텍스트 입력창에 지문을 붙여넣고 "퀴즈 만들기" 버튼을 누르면 4지선다 5문제와 정답/해설이 아래 나타남.\n(문제는 지문을 내가 직접 읽고 만드는 버전 — Claude가 만드는 게 아니라, 내가 입력한 지문·문제·정답을 학생용 퀴즈 화면으로 보여줌)' },
+      { tab: 'code', cat: '⌨️ 코드', title: '학생 발표 랜덤 호명',
+        prompt: '학생 이름 30명을 입력받아 "뽑기" 버튼을 누르면 한 명을 크게 보여주는 웹페이지를 만들어줘.\n기능: 중복 방지, 이미 뽑힌 학생 회색 처리, 초기화 버튼.\n디자인: 뽑힌 이름은 화면 중앙에 크게.' },
+    ]
+  },
+  '영어': {
+    intro: '영어는 "원어민 감각 검토"와 "맞춤 예문"이 Claude의 장점이에요. 번역은 이중 검증을 꼭 시켜 주세요.',
+    tips: [
+      '번역 요청 시 "번역 후 스스로 어색한 곳 점검해줘"라고 하면 품질이 확 올라가요.',
+      '문법 설명은 "한국 고등학생이 자주 헷갈리는 부분을 중심으로"라고 덧붙이면 실용적이에요.',
+      '원어민 표현은 "구어/문어/격식 3가지 버전"을 요청하면 풍부해져요.',
+      '학생 글 첨삭 시 CEFR 레벨(A2/B1/B2)을 명시하면 난이도 조절이 돼요.',
+    ],
+    items: [
+      { tab: 'chat', cat: '💬 채팅', title: '학생 영작문 첨삭',
+        prompt: "You are a high school English teacher in Korea. Below is a student's writing (CEFR B1 level target).\nDo the following in Korean:\n1) Point out 3-5 awkward phrases, each with 2 corrected alternatives\n2) Explain why each is awkward (grammar? collocation? register?)\n3) Preserve the student's original ideas\n4) End with one sentence of encouragement\nDo NOT rewrite the whole text.\n\n[Student writing]\n(paste here)" },
+      { tab: 'chat', cat: '💬 채팅', title: '한국어 → 자연스러운 영어',
+        prompt: '다음 한국어 문장을 영어로 번역해줘. 세 가지 버전으로:\n1) 격식체 (business email 수준)\n2) 캐주얼 구어체 (친구 사이)\n3) 학술 문어체 (논문·보고서)\n번역 후 각 버전의 차이를 한 줄씩 설명해줘. 번역이 어색한지 스스로 점검도.\n\n[한국어]\n(여기에 붙여넣기)' },
+      { tab: 'chat', cat: '💬 채팅', title: '문법 오류 해설 (한국 학생용)',
+        prompt: '고등학교 2학년 영어 문법 문제야. 학생이 "A"로 답했는데 정답은 "B"야.\n왜 틀렸는지 한국 고등학생이 자주 헷갈리는 관점에서 설명해줘.\n형식:\n1) 학생의 오답 근거 추측\n2) 정답의 문법 규칙\n3) 비슷한 실수를 안 하게 하는 암기 팁 1개\n\n[문제]\n(여기에)' },
+      { tab: 'chat', cat: '💬 채팅', title: '주제별 어휘 10개 + 예문',
+        prompt: '"환경 문제" 주제로 고등학교 2학년 수준의 영어 어휘 10개를 뽑아줘.\n형식: 표 (단어 | 발음 | 한글 뜻 | 예문 1개 | 유의어 2개)\n예문은 고등학생이 이해할 수 있는 수준으로.' },
+      { tab: 'chat', cat: '💬 채팅', title: '수능 빈칸 추론 문제 해설',
+        prompt: '수능 영어 빈칸 추론 문제야. 정답이 왜 답인지, 오답이 왜 오답인지 학생 관점에서 설명해줘.\n형식:\n1) 지문 요약 (한 줄)\n2) 주제·핵심 논리\n3) 정답 선택 과정 (근거 문장 인용)\n4) 오답 보기별 함정\n\n[지문과 보기]\n(여기에)' },
+      { tab: 'code', cat: '⌨️ 코드', title: '영단어 플래시카드 앱',
+        prompt: '영단어 암기 플래시카드 웹페이지를 만들어줘.\n기능: JSON으로 단어-뜻-예문 쌍 20개 입력 → 카드 하나씩 보여줌. 클릭하면 뒤집혀서 뜻·예문 표시. "알아요"/"다시" 버튼으로 복습 큐 관리.\n저장: localStorage에 내 진행 상태\n제약: HTML/CSS/JS만, 외부 라이브러리 없이' },
+      { tab: 'code', cat: '⌨️ 코드', title: '영어 듣기 받아쓰기 연습',
+        prompt: '영어 듣기 받아쓰기 웹페이지를 만들어줘.\n기능: 정답 문장을 입력 → 학생이 빈 칸에 타이핑 → 단어별로 정답/오답 색상 표시. 정답률 표시. 다음 문장 버튼.\n디자인: 학생이 집중할 수 있게 깔끔하게.' },
+      { tab: 'code', cat: '⌨️ 코드', title: '불규칙 동사 변화 퀴즈',
+        prompt: '영어 불규칙 동사 변화 퀴즈 웹페이지를 만들어줘.\n기능: 원형을 보여주고 과거형·과거분사를 입력받음. 맞으면 초록, 틀리면 정답 표시. 점수 누적.\n데이터: 내가 JSON으로 30개 동사 넣을 수 있게.' },
+    ]
+  },
+  '수학': {
+    intro: '수학은 "풀이 과정 설명"과 "문제 변형"이 강점이에요. 단, 계산 실수가 나올 수 있으니 결과는 꼭 검증하세요.',
+    tips: [
+      '"풀이 과정을 단계별로"라고 요청하면 학생용 해설로 바로 써요.',
+      '"초등 3학년이 이해할 수 있게"처럼 독자 레벨을 명시하면 설명 난이도가 맞춰져요.',
+      '문제 검증은 "같은 풀이를 두 가지 방법으로 해보고 결과 일치 확인"을 요청하세요.',
+      'Claude가 계산을 틀릴 수 있어요. 숫자 답은 직접 검산하세요.',
+    ],
+    items: [
+      { tab: 'chat', cat: '💬 채팅', title: '문제 풀이 단계별 해설',
+        prompt: '너는 수학 교사이자 친절한 튜터야. 아래 문제를 풀어주되:\n1) 풀이 과정을 중학교 3학년도 이해할 수 있는 단계로\n2) 각 단계마다 "왜 이 단계가 필요한지" 한 줄 설명\n3) 학생이 자주 하는 실수 2개\n4) 비슷한 유형 문제 1개 (정답 포함)\n풀이 후 다른 방법으로도 풀 수 있다면 간단히 언급.\n계산은 두 번 검산해.\n\n[문제]\n(여기에)' },
+      { tab: 'chat', cat: '💬 채팅', title: '개념 설명 (학년별 난이도)',
+        prompt: '"일차함수의 기울기"를 중학교 2학년이 이해할 수 있게 설명해줘.\n조건:\n1) 실생활 비유로 시작 (예: 계단, 언덕 등)\n2) 공식 유도를 단계별로\n3) 학생이 자주 오해하는 지점 1개\n4) 이해 확인용 질문 3개 (정답 포함)\n전문 용어는 처음 등장 시 괄호로 풀어 써.' },
+      { tab: 'chat', cat: '💬 채팅', title: '문제 난이도 변형',
+        prompt: '아래 수학 문제를 기준으로 난이도 3단계 문제를 만들어줘.\n1) 기본 (같은 유형, 숫자만 변경)\n2) 응용 (조건 하나 추가)\n3) 심화 (두 개념 통합)\n각 문제마다 정답과 핵심 풀이 아이디어 포함.\n\n[원본 문제]\n(여기에)' },
+      { tab: 'chat', cat: '💬 채팅', title: '오답 노트 자동 정리',
+        prompt: '학생이 틀린 문제와 학생의 풀이를 보여줄게. 다음을 해줘:\n1) 학생이 어느 단계에서 틀렸는지 짚어주기\n2) 틀린 원인을 개념 부족/계산 실수/문제 오독 중 하나로 분류\n3) 같은 실수를 안 하게 할 핵심 포인트 1개\n\n[문제]\n[학생 풀이]\n[정답]' },
+      { tab: 'code', cat: '⌨️ 코드', title: '일차함수 시각화 도구',
+        prompt: '중학교 2학년용 일차함수 y=ax+b 시각화 웹페이지를 만들어줘.\n기능: 슬라이더로 a, b를 바꾸면 실시간 그래프 변화. x절편·y절편 표시. 격자 표시.\n디자인: 왼쪽 큰 그래프, 오른쪽 슬라이더 2개와 현재 식 표시.\n제약: 순수 HTML/CSS/JS. Canvas 또는 SVG 사용.' },
+      { tab: 'code', cat: '⌨️ 코드', title: '무작위 연산 연습기',
+        prompt: '초등~중등 학생용 연산 연습 웹페이지를 만들어줘.\n기능: 난이도 선택 (덧셈/뺄셈/곱셈/나눗셈) → 10문제 자동 생성 → 답 입력 → 즉시 정오 표시 → 최종 점수.\n타이머 기능 옵션.\n디자인: 큰 숫자, 집중이 잘 되는 배치.' },
+      { tab: 'code', cat: '⌨️ 코드', title: '확률 시뮬레이터 (주사위)',
+        prompt: '확률 학습용 주사위 시뮬레이터 웹페이지를 만들어줘.\n기능: "100번 굴리기" 버튼을 누르면 주사위 1~6이 각각 몇 번 나왔는지 막대그래프로 표시. 이론 확률(1/6)과 실제 비율 비교.\n학생이 시행 횟수를 늘릴수록 이론 확률에 가까워지는 걸 체험할 수 있게.' },
+      { tab: 'code', cat: '⌨️ 코드', title: '그래프 그리기 연습',
+        prompt: '학생용 좌표평면 그래프 그리기 웹페이지를 만들어줘.\n기능: 좌표평면 위에 클릭하면 점 찍힘. 점 연결 선. 좌표값 자동 표시. 초기화 버튼.\n디자인: 큰 좌표평면, 격자, x·y축 레이블.' },
+    ]
+  },
+  '과학': {
+    intro: '과학은 "개념 시각화"와 "실험 설계"가 강점이에요. 사실 확인이 필요한 최신 정보는 교과서로 이중 확인하세요.',
+    tips: [
+      '"교과서 수준에서"라고 명시하면 과도하게 깊이 들어가는 걸 막을 수 있어요.',
+      '실험 절차는 "안전 주의사항을 먼저"라고 시작해 주세요.',
+      '"한국 교육과정 ○학년 성취기준에 맞춰"라고 하면 단원에 딱 맞춘 답이 나와요.',
+      '현상 설명은 "비유 3가지"를 요청하면 학생이 선호하는 걸 고를 수 있어요.',
+    ],
+    items: [
+      { tab: 'chat', cat: '💬 채팅', title: '개념 비유로 설명',
+        prompt: '중학교 1학년에게 "원자와 분자의 차이"를 설명하는 3가지 다른 비유를 만들어줘.\n형식:\n1) 각 비유의 핵심 아이디어\n2) 비유가 강조하는 점 / 한계\n3) 학생 질문 예상 2개와 답변\n교과서 수준에서.' },
+      { tab: 'chat', cat: '💬 채팅', title: '실험 보고서 첨삭',
+        prompt: '너는 과학 교사야. 학생의 실험 보고서를 다음 기준으로 첨삭해줘:\n1) 가설이 검증 가능한 형태인가\n2) 변인 통제가 적절한가\n3) 데이터 해석이 관찰 사실에만 기반했는가 (추측 아닌가)\n4) 결론이 데이터를 넘어서지 않는가\n각 항목에 대해 원문 인용 → 지적 → 대안 순으로.\n\n[학생 보고서]\n(여기에)' },
+      { tab: 'chat', cat: '💬 채팅', title: '안전한 실험 설계',
+        prompt: '고등학교 2학년 화학 시간에 "산-염기 중화반응"을 시각적으로 보여주는 10분 실험을 설계해줘.\n반드시 포함:\n1) 안전 주의사항 (최우선)\n2) 준비물 (학교 실험실 기본 물품)\n3) 절차 단계별\n4) 학생이 관찰할 포인트\n5) 예상 결과와 이론적 설명\n6) 만약 실패할 수 있는 경우와 대처\n위험한 시약은 쓰지 마.' },
+      { tab: 'chat', cat: '💬 채팅', title: '수행평가 과제 아이디어',
+        prompt: '중학교 3학년 "에너지의 종류와 전환" 단원 수행평가 아이디어 5가지를 만들어줘.\n각 아이디어마다:\n- 활동 개요\n- 준비물\n- 예상 소요 시간\n- 평가 기준 3가지\n- 학생 수준별 조정 방법\n교과 성취기준에 부합해야 함.' },
+      { tab: 'code', cat: '⌨️ 코드', title: '주기율표 학습 웹페이지',
+        prompt: '중학생용 주기율표 학습 웹페이지를 만들어줘.\n기능: 원소 클릭 시 원소 기호/이름/원자번호/주요 용도 표시. 족·주기 하이라이트. 검색창.\n데이터는 1~20번 원소만.\n디자인: 실제 주기율표 배치.' },
+      { tab: 'code', cat: '⌨️ 코드', title: '관찰 일지 기록 웹앱',
+        prompt: '학생이 식물이나 동물을 관찰한 일지를 기록하는 웹페이지를 만들어줘.\n기능: 날짜/관찰 대상/관찰 내용/사진 URL/느낀 점 입력 → 저장 → 과거 기록 목록.\n저장: localStorage.\n디자인: 학생이 쉽게 쓸 수 있게 큰 입력창.' },
+      { tab: 'code', cat: '⌨️ 코드', title: '진자 운동 시뮬레이션',
+        prompt: '고등학교 물리 학습용 단진자 시뮬레이션을 만들어줘.\n기능: 진자 길이 슬라이더, 초기 각도 슬라이더 → 실시간 진자 흔들림 애니메이션. 주기 표시.\n옆에 공식 T=2π√(L/g) 표시.\n제약: Canvas 또는 SVG, 순수 JS.' },
+      { tab: 'code', cat: '⌨️ 코드', title: '실험 데이터 그래프',
+        prompt: '학생이 실험에서 얻은 데이터를 입력하면 그래프로 그려주는 웹페이지를 만들어줘.\n기능: x, y 값 쌍 여러 개 입력 → 산점도 또는 선 그래프 선택 → 자동 표시. 축 레이블 수정 가능.\n제약: 외부 라이브러리 없이.' },
+    ]
+  },
+  '사회': {
+    intro: '사회는 "최신 자료 해석"과 "다관점 분석"이 강점이에요. 통계·연도 정보는 Claude가 틀릴 수 있으니 신뢰 출처로 확인하세요.',
+    tips: [
+      '"20○○년 기준"을 명시하고, "출처가 불확실한 통계는 제외"를 요청하세요.',
+      '역사 주제는 "다른 관점 2가지도 함께"라고 하면 균형 잡힌 답이 나와요.',
+      '시사 문제는 "중립적 관점에서"를 반드시 명시하세요.',
+      '지도·연표 시각화는 코드 탭에서 학생용 웹페이지로 만들면 효과적이에요.',
+    ],
+    items: [
+      { tab: 'chat', cat: '💬 채팅', title: '역사 사건 다관점 분석',
+        prompt: '"1894년 갑오개혁"을 다음 3가지 관점에서 중립적으로 분석해줘:\n1) 조선 왕실의 관점\n2) 일반 민중의 관점\n3) 외세(일본·청·러시아)의 관점\n각 관점마다 주요 주장과 근거를 간결히.\n마지막에 현대 역사학자들이 이 사건을 평가하는 주요 논점 2가지 추가.\n고등학생 수준의 용어로.' },
+      { tab: 'chat', cat: '💬 채팅', title: '시사 이슈 찬반 정리',
+        prompt: '"인공지능 생성 콘텐츠의 저작권" 이슈에 대해 고등학생이 토론할 수 있게 정리해줘.\n형식:\n1) 배경 설명 (3줄)\n2) 찬성 입장의 주요 논거 3개\n3) 반대 입장의 주요 논거 3개\n4) 양쪽이 동의하는 공통 우려 2개\n5) 학생에게 던질 수 있는 생각 질문 3개\n편향 없이 균형 있게.' },
+      { tab: 'chat', cat: '💬 채팅', title: '지리 개념 실생활 연결',
+        prompt: '"지형과 기후가 주거 형태에 미치는 영향"을 중학교 1학년이 흥미를 느낄 수 있게 설명해줘.\n조건:\n1) 한국 사례 2개 (예: 제주 돌집, 울릉도 우데기)\n2) 세계 사례 2개 (예: 몽골 게르, 이누이트 이글루)\n3) 각 사례마다 "왜 이런 형태가 나왔는지" 기후·지형 근거\n4) 학생이 자기 지역 건물을 관찰할 수 있는 미션 1개' },
+      { tab: 'chat', cat: '💬 채팅', title: '수행평가 서술형 채점 기준',
+        prompt: '중학교 사회 수행평가 서술형 문제 채점 기준을 만들어줘.\n문제: "다문화 사회에서 발생하는 갈등의 원인과 해결 방안을 제시하시오."\n\n형식: 표 (평가 요소 | 상 | 중 | 하 | 0점 기준 | 배점)\n평가 요소: 원인 분석의 다양성, 근거의 구체성, 해결 방안의 실현 가능성, 논리 전개' },
+      { tab: 'chat', cat: '💬 채팅', title: '역사 연표 자동 생성',
+        prompt: '"대한민국 임시정부 (1919-1945)"의 주요 사건 10개를 연표로 만들어줘.\n형식: 표 (연도 | 월 | 사건 | 의의 | 관련 인물)\n교과서 수준에서.\n확실하지 않은 날짜는 "○월경"으로 표기.' },
+      { tab: 'code', cat: '⌨️ 코드', title: '역사 퀴즈 웹페이지',
+        prompt: '학생용 한국사 퀴즈 웹페이지를 만들어줘.\n기능: 내가 JSON으로 문제-보기-정답을 20개 넣으면 랜덤 순서로 출제. 정답 시 초록, 오답 시 빨강. 최종 점수 표시.\n디자인: 시험지 느낌으로 깔끔하게.' },
+      { tab: 'code', cat: '⌨️ 코드', title: '지도 기반 탐구 학습',
+        prompt: '한국 지도 위에 역사 사건 위치를 표시하는 웹페이지를 만들어줘.\n기능: 지도 이미지 위에 내가 좌표로 마커 배치 → 클릭 시 해당 사건 설명 팝업.\n데이터: 내가 JSON으로 마커 5~10개 입력.\n제약: 지도는 내가 준비한 이미지 사용.' },
+      { tab: 'code', cat: '⌨️ 코드', title: '시대별 인구·경제 그래프',
+        prompt: '사회 시간에 쓸 시대별 데이터 비교 그래프 웹페이지를 만들어줘.\n기능: 내가 연도별 데이터(예: 1960~2020 인구)를 JSON으로 입력 → 선 그래프. 마우스 올리면 해당 연도 값 표시.\n용도: 학생이 시대 변화를 시각적으로 이해.' },
+    ]
+  },
+  '예체능': {
+    intro: '예체능은 "활동 아이디어"와 "수행평가 설계"가 강점이에요. 전문 기술은 AI 한계를 인정하고 교사 전문성과 결합하세요.',
+    tips: [
+      '"수업 시간 1차시(45분)"처럼 시간 제약을 명시하면 실현 가능한 답이 나와요.',
+      '"준비물은 학교 기본 물품으로"라고 하면 현실적인 제안이 나와요.',
+      '"인원 25명 기준"을 넣으면 모둠 활동 구성이 자연스럽게 나와요.',
+      '체육은 "안전 주의사항 먼저"를 반드시 명시하세요.',
+    ],
+    items: [
+      { tab: 'chat', cat: '💬 채팅', title: '수업 활동 아이디어',
+        prompt: '중학교 1학년 미술 수업 활동 아이디어 5가지를 만들어줘.\n주제: "색의 감정 표현"\n조건: 1차시(45분) 내 완료, 학교 기본 미술 준비물, 학생 25명.\n각 아이디어마다: 목표, 준비물, 단계별 진행, 완성 기준, 평가 포인트.' },
+      { tab: 'chat', cat: '💬 채팅', title: '체육 활동 안전 지침',
+        prompt: '초등학교 4학년 체육 "피구" 수업 안전 지침을 만들어줘.\n필수 포함:\n1) 수업 전 안전 점검 리스트\n2) 학생에게 사전 안내할 규칙 5가지\n3) 부상 위험 상황과 예방\n4) 실제 부상 발생 시 교사 대처 순서\n5) 학부모에게 안내할 주의사항 1문단' },
+      { tab: 'chat', cat: '💬 채팅', title: '음악 감상문 채점 기준',
+        prompt: '중학교 음악 수행평가 "클래식 감상문" 채점 기준을 만들어줘.\n작품: 베토벤 교향곡 5번\n형식: 표 (평가 영역 | 상(5점) | 중(3점) | 하(1점))\n영역: 음악 요소 분석, 감상 표현, 작곡 배경 이해, 글의 완성도' },
+      { tab: 'chat', cat: '💬 채팅', title: '미술 작품 해설 (학생용)',
+        prompt: '반 고흐 "별이 빛나는 밤"을 중학교 1학년이 이해할 수 있게 해설해줘.\n형식:\n1) 이 그림이 왜 유명한지 (한 줄)\n2) 관찰 포인트 3가지 (색, 붓터치, 구도)\n3) 화가의 감정 상태 (작품 배경)\n4) 학생에게 던질 질문 2개 ("너라면 여기에 뭘 그릴래?" 식)\n전문 용어는 괄호로 풀이.' },
+      { tab: 'chat', cat: '💬 채팅', title: '체육 종목별 기본기 체크리스트',
+        prompt: '고등학교 체육 "배드민턴" 기본기 평가 체크리스트를 만들어줘.\n항목: 그립, 스트로크, 풋워크, 서브, 리시브\n형식: 표 (항목 | 구체적 체크 포인트 3개 | 피드백 멘트 예시)\n학생이 스스로 점검할 수 있는 언어로.' },
+      { tab: 'code', cat: '⌨️ 코드', title: '색상 감정 매칭 게임',
+        prompt: '미술 수업용 색상-감정 매칭 웹페이지를 만들어줘.\n기능: 화면에 색상 10개 표시 → 학생이 드래그해서 감정 단어에 매칭. 완료 후 다른 학생들의 일반적 응답과 비교.\n디자인: 큰 색상 타일, 드래그 앤 드롭.' },
+      { tab: 'code', cat: '⌨️ 코드', title: '박자 연습 메트로놈',
+        prompt: '음악 시간용 메트로놈 웹페이지를 만들어줘.\n기능: BPM 슬라이더(40~200), 시작/정지 버튼, 박자 표시(2/4, 3/4, 4/4 선택). 박자마다 소리와 시각 표시.\n디자인: 큰 숫자 BPM 표시, 크게 깜빡이는 박자 원.' },
+      { tab: 'code', cat: '⌨️ 코드', title: '체육 기록 측정기',
+        prompt: '학생 체육 기록(예: 오래달리기, 윗몸일으키기) 측정 웹페이지를 만들어줘.\n기능: 시작/정지 타이머, 횟수 카운트, 학생별 기록 저장 및 목록 표시.\n디자인: 교실 뒤에서도 잘 보이게 큰 폰트.' },
+    ]
+  },
+  '정보': {
+    intro: '정보는 Claude의 가장 강력한 영역이에요. 개념 설명부터 실제 코드 작성까지 깊이 있게 활용할 수 있어요.',
+    tips: [
+      '학생용 예제는 "주석을 많이 달아줘"라고 요청하면 읽기 좋아요.',
+      '오류 해설 시 "초보자 관점에서"를 명시하면 학생에게 바로 쓸 수 있어요.',
+      '알고리즘 설명은 "시각화 가능한 형태로"라고 하면 단계별 설명이 나와요.',
+      '수행평가는 "채점 기준이 자동화 가능한 형태로"라고 하면 편해요.',
+    ],
+    items: [
+      { tab: 'chat', cat: '💬 채팅', title: '학생 코드 디버깅 도우미',
+        prompt: '너는 고등학교 정보 교사야. 아래는 학생이 쓴 파이썬 코드야. 오류가 나는데 학생은 이유를 몰라.\n다음 순서로 설명해줘:\n1) 어느 줄이 틀렸는지\n2) 왜 틀렸는지 (초보자 관점)\n3) 수정된 코드\n4) 같은 실수를 피하는 팁 1개\n코드 전체를 다시 쓰지 말고 핵심만.\n\n[학생 코드]\n(여기에)' },
+      { tab: 'chat', cat: '💬 채팅', title: '알고리즘 단계별 설명',
+        prompt: '"이진 탐색"을 고등학교 1학년이 처음 배울 때 이해할 수 있게 설명해줘.\n조건:\n1) 실생활 비유 (전화번호부, 사전 등)\n2) 단계별 예시 (배열 [1,3,5,7,9,11,13]에서 7 찾기)\n3) 각 단계를 표로\n4) 시간복잡도가 왜 O(log n)인지 직관적 설명\n5) 언제 쓰면 안 되는지 (조건)' },
+      { tab: 'chat', cat: '💬 채팅', title: '프로젝트 과제 아이디어',
+        prompt: '고등학교 정보 수업 학생 프로젝트 주제 10개를 만들어줘.\n조건: 한 학기(10주) 내 완성 가능, 파이썬/자바스크립트 중 선택, 학생이 실제로 쓸 수 있는 결과물.\n각 주제마다: 최종 결과물, 핵심 학습 개념, 예상 난이도, 확장 아이디어' },
+      { tab: 'chat', cat: '💬 채팅', title: '코드 리팩토링 교재용',
+        prompt: '다음 파이썬 코드를 학생에게 "더 좋은 코드 작성법"을 가르치는 예제로 활용할 수 있게 리팩토링해줘.\n형식:\n1) 원본 코드\n2) 문제점 3가지 (가독성/효율성/구조)\n3) 개선된 코드\n4) 변경 이유 단계별\n학생이 이해할 수 있는 수준의 개선만.\n\n[원본]\n(여기에)' },
+      { tab: 'chat', cat: '💬 채팅', title: '컴퓨터 과학 개념 퀴즈',
+        prompt: '고등학교 1학년용 "변수와 자료형" 개념 이해 확인 문제 10개를 만들어줘.\n형식: 4지선다 (정답 표시, 각 보기 해설 포함)\n난이도: 초급 5개, 중급 5개\n실생활 예시 활용.' },
+      { tab: 'code', cat: '⌨️ 코드', title: '학생용 코딩 문제 자동 채점기',
+        prompt: '학생 코딩 연습용 웹페이지를 만들어줘.\n기능: 문제 제시 → 학생이 JS 코드 입력 → "실행" 버튼 → 테스트 케이스 5개 자동 실행 → 통과/실패 표시.\n제약: 순수 HTML/JS, eval() 대신 Function() 사용, 안전하게.' },
+      { tab: 'code', cat: '⌨️ 코드', title: '알고리즘 시각화',
+        prompt: '버블 정렬 시각화 웹페이지를 만들어줘.\n기능: 숫자 배열 입력 → "시각화" 버튼 → 막대 그래프로 정렬 과정 애니메이션. 비교 중인 두 막대 강조. 속도 슬라이더.\n용도: 수업 시간 시연.' },
+      { tab: 'code', cat: '⌨️ 코드', title: '학생 출결 관리 웹앱',
+        prompt: '정보 교과 프로젝트 예시로 쓸 출결 관리 웹앱을 만들어줘.\n기능: 학생 이름 등록, 날짜별 출석/결석/지각 체크, 통계 (출석률), 데이터 JSON 내보내기.\n저장: localStorage.\n디자인: 학생이 따라 만들 수 있게 깔끔하게.' },
+    ]
+  },
+  '기타': {
+    intro: '과목에 상관없이 교사 업무 전반에 활용할 수 있는 사례들이에요.',
+    tips: [
+      '업무 문서는 "결론을 맨 앞으로"라고 하면 결재자가 빨리 읽어요.',
+      '학부모 소통은 "정중하고 객관적인 톤"을 명시하세요.',
+      '반복 업무는 한 번 템플릿을 잘 만들어 두면 계속 재활용할 수 있어요.',
+      '민감한 정보(학생 실명·개인정보)는 넣지 마세요.',
+    ],
+    items: [
+      { tab: 'chat', cat: '💬 채팅', title: '가정통신문 초안',
+        prompt: '학부모 가정통신문 초안을 작성해줘.\n주제: 여름방학 생활 지도\n조건:\n1) 정중한 존댓말\n2) 결론(핵심 안내 사항)을 맨 앞\n3) A4 반 페이지 분량\n4) 이모지·감탄사 사용 금지\n5) 연락처·제출 기한 포함 (플레이스홀더 사용)' },
+      { tab: 'chat', cat: '💬 채팅', title: '학부모 상담 답변',
+        prompt: '학부모로부터 다음과 같은 걱정을 들었어. 공감하면서도 객관적인 답변을 3문단으로 작성해줘.\n톤: 정중하고 따뜻하지만 감정에 치우치지 않게.\n구조: 1) 공감 표현 2) 학교 측 대응 안내 3) 함께할 수 있는 협력 방안\n\n[학부모 걱정 내용]\n(여기에)' },
+      { tab: 'chat', cat: '💬 채팅', title: '교무회의 발표 요약',
+        prompt: '다음 교무회의 안건을 3분 발표 분량(약 400자)으로 요약해줘.\n조건:\n1) 결론 → 근거 → 요청사항 순\n2) 숫자는 굵게\n3) 끝에 "질문받습니다" 문구\n\n[회의 자료]\n(여기에)' },
+      { tab: 'chat', cat: '💬 채팅', title: '업무 이메일 다듬기',
+        prompt: '아래 이메일 초안을 정중하고 명확한 공식 이메일로 다듬어줘.\n조건:\n1) 제목 추천 3개\n2) 본문 다듬기 (인사-용건-요청-맺음)\n3) 원문 의도는 유지\n4) 수정 이유 간단히\n\n[초안]\n(여기에)' },
+      { tab: 'chat', cat: '💬 채팅', title: '학급 운영 아이디어',
+        prompt: '중학교 2학년 담임이야. 학급 분위기가 침체돼 있어.\n다음 조건으로 학급 활성화 아이디어 5개를 추천해줘:\n1) 주 1회 이내 실천 가능\n2) 추가 예산 최소\n3) 학생 25명 참여 가능\n4) 강제성 없이 자발적 참여 유도\n각 아이디어마다 기대 효과와 실행 주의점.' },
+      { tab: 'code', cat: '⌨️ 코드', title: '랜덤 호명 뽑기',
+        prompt: '학급용 랜덤 호명 뽑기 웹페이지를 만들어줘.\n기능: 학생 이름 목록 입력 → "뽑기" 버튼 → 한 명 크게 표시 → 중복 방지.\n저장: localStorage에 명단 저장.\n디자인: 교실 뒤에서도 잘 보이게 큰 글자.' },
+      { tab: 'code', cat: '⌨️ 코드', title: '수업 타이머 (단계별)',
+        prompt: '수업 45분을 "도입(5분)-전개1(15분)-전개2(15분)-정리(10분)"으로 나눠 자동 진행되는 타이머 웹페이지를 만들어줘.\n기능: 각 단계 시간 설정, 자동 진행, 단계 종료 시 알림음, 현재 단계 크게 표시.\n디자인: 학생이 어느 단계인지 한눈에.' },
+      { tab: 'code', cat: '⌨️ 코드', title: '조 편성기',
+        prompt: '학급 학생을 랜덤으로 조를 짜주는 웹페이지를 만들어줘.\n기능: 학생 명단 입력 → 조원 수(3~6명) 선택 → "섞기" 버튼 → 조별로 카드 표시.\n고급: 같은 조가 되면 안 되는 학생 쌍 지정 가능.\n저장: 명단은 localStorage.' },
+    ]
+  },
+};
+
+let subjectState = { selected: null, tabFilter: 'all' };
+function renderToolSubject(el) {
+  const userSubj = state.subject || '기타';
+  const current = subjectState.selected || userSubj;
+  const data = SUBJECT_EXAMPLES[current] || SUBJECT_EXAMPLES['기타'];
+  const filtered = subjectState.tabFilter === 'all'
+    ? data.items
+    : data.items.filter(i => i.tab === subjectState.tabFilter);
+
+  const SUBJECTS = ['국어', '영어', '수학', '과학', '사회', '예체능', '정보', '기타'];
+
+  el.innerHTML = toolHeader('📚', '과목별 심화 사례', `과목을 선택하면 8개 이상의 바로 쓸 수 있는 프롬프트가 나와요.`) + `
+    <div class="card">
+      <div style="font-size:13px; color:var(--text-400); margin-bottom:8px;">📘 과목 선택</div>
+      <div style="display:flex; flex-wrap:wrap; gap:8px;">
+        ${SUBJECTS.map(s => `
+          <button class="btn btn-sm" style="${s === current ? 'background:var(--accent-brand); color:white; border-color:var(--accent-brand);' : ''}" onclick="pickSubjectExample('${s}')">${s}${s === userSubj ? ' ⭐' : ''}</button>
+        `).join('')}
+      </div>
+      <div class="text-muted" style="font-size:11px; margin-top:8px;">⭐ = 내 설문 과목</div>
+    </div>
+
+    <div class="card mt-4" style="background:var(--bg-100); border-left:3px solid var(--accent-brand);">
+      <div style="font-weight:700; font-size:15px; margin-bottom:6px;">📖 ${current} 선생님을 위한 가이드</div>
+      <div style="font-size:14px; line-height:1.7; color:var(--text-300);">${data.intro}</div>
+    </div>
+
+    <div class="card mt-4">
+      <div style="font-size:13px; font-weight:600; margin-bottom:8px;">🔍 용도별 필터</div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-sm" style="${subjectState.tabFilter === 'all' ? 'background:var(--accent-brand); color:white; border-color:var(--accent-brand);' : ''}" onclick="filterSubjectTab('all')">전체 (${data.items.length})</button>
+        <button class="btn btn-sm" style="${subjectState.tabFilter === 'chat' ? 'background:#3b82f6; color:white; border-color:#3b82f6;' : ''}" onclick="filterSubjectTab('chat')">💬 채팅 탭 (${data.items.filter(i => i.tab === 'chat').length})</button>
+        <button class="btn btn-sm" style="${subjectState.tabFilter === 'code' ? 'background:#a855f7; color:white; border-color:#a855f7;' : ''}" onclick="filterSubjectTab('code')">⌨️ 코드 탭 (${data.items.filter(i => i.tab === 'code').length})</button>
+      </div>
+    </div>
+
+    <h3 class="mt-6 mb-3">📝 바로 쓸 수 있는 프롬프트 (${filtered.length}개)</h3>
+    <div style="display:grid; gap:12px;">
+      ${filtered.map((t, i) => `
+        <div class="card" style="border-left:3px solid ${t.tab === 'chat' ? '#3b82f6' : '#a855f7'};">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div style="font-size:11px; font-weight:700; color:${t.tab === 'chat' ? '#3b82f6' : '#a855f7'};">${t.cat}</div>
+            <button class="btn btn-sm" onclick='copyPromptById("subj-${i}")'>📋 복사</button>
+          </div>
+          <div style="font-weight:600; margin-bottom:10px; font-size:15px;">${t.title}</div>
+          <pre id="subj-${i}" style="white-space:pre-wrap; background:var(--bg-100); padding:12px; border-radius:8px; font-family:inherit; font-size:13px; line-height:1.7; margin:0;">${escapeHtml(t.prompt)}</pre>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="card mt-6">
+      <div style="font-weight:700; margin-bottom:10px;">💡 ${current} 과목 꿀팁</div>
+      <ul style="margin:0; padding-left:20px; font-size:14px; line-height:1.9; color:var(--text-300);">
+        ${data.tips.map(t => `<li>${t}</li>`).join('')}
+      </ul>
+    </div>
+  `;
+  // 조회 기록 (약점 리포트에서 사용)
+  state.tplViewed = (state.tplViewed || 0) + 1;
+  saveState();
+}
+function pickSubjectExample(s) { subjectState.selected = s; subjectState.tabFilter = 'all'; renderToolSubject(document.getElementById('toolContent')); }
+function filterSubjectTab(t) { subjectState.tabFilter = t; renderToolSubject(document.getElementById('toolContent')); }
+function copyPromptById(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  navigator.clipboard.writeText(el.textContent).then(() => toast('복사되었어요 ✓'));
+}
+function copyText(t) { navigator.clipboard.writeText(t).then(() => toast('복사되었어요 ✓')); }
+
+/* E3 — 학습 시간 기록 */
+let studyTimer = { start: null, interval: null };
+function renderToolStudytime(el) {
+  const sessions = state.studySessions || [];
+  const today = new Date().toISOString().slice(0, 10);
+  const todayTotal = sessions.filter(s => s.date === today).reduce((a, s) => a + s.seconds, 0);
+  const allTotal = sessions.reduce((a, s) => a + s.seconds, 0);
+  const fmt = (sec) => {
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    return h > 0 ? `${h}시간 ${m}분` : m > 0 ? `${m}분 ${s}초` : `${s}초`;
+  };
+  el.innerHTML = toolHeader('⏱️', '학습 시간 기록', '공부한 시간을 기록하고 꾸준함을 확인해 보세요.') + `
+    <div class="card" style="text-align:center;">
+      <div style="font-size:12px; color:var(--text-400); margin-bottom:8px;">현재 세션</div>
+      <div id="timerDisplay" style="font-size:48px; font-weight:700; color:var(--accent-brand); font-variant-numeric: tabular-nums;">00:00</div>
+      <div style="display:flex; gap:8px; justify-content:center; margin-top:16px;">
+        <button id="timerStart" class="btn btn-primary" onclick="startTimer()">▶ 시작</button>
+        <button id="timerStop" class="btn" onclick="stopTimer()" disabled>■ 중지 및 저장</button>
+      </div>
+    </div>
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:16px;">
+      <div class="card" style="text-align:center;">
+        <div style="font-size:11px; color:var(--text-400);">오늘</div>
+        <div style="font-size:22px; font-weight:700; margin-top:4px;">${fmt(todayTotal)}</div>
+      </div>
+      <div class="card" style="text-align:center;">
+        <div style="font-size:11px; color:var(--text-400);">전체</div>
+        <div style="font-size:22px; font-weight:700; margin-top:4px;">${fmt(allTotal)}</div>
+      </div>
+    </div>
+    <h3 class="mt-6 mb-3">📅 최근 기록</h3>
+    <div class="card">
+      ${sessions.length === 0 ? '<div class="text-muted" style="text-align:center;">아직 기록이 없어요.</div>' : `
+        <div style="display:grid; gap:8px;">
+          ${sessions.slice(0, 10).map(s => `
+            <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); font-size:14px;">
+              <span>${s.date}</span>
+              <span style="font-weight:600;">${fmt(s.seconds)}</span>
+            </div>
+          `).join('')}
+        </div>
+      `}
+    </div>
+  `;
+  if (studyTimer.start) updateTimerDisplay();
+}
+function startTimer() {
+  studyTimer.start = Date.now();
+  document.getElementById('timerStart').disabled = true;
+  document.getElementById('timerStop').disabled = false;
+  studyTimer.interval = setInterval(updateTimerDisplay, 1000);
+}
+function updateTimerDisplay() {
+  if (!studyTimer.start) return;
+  const el = document.getElementById('timerDisplay');
+  if (!el) return;
+  const sec = Math.floor((Date.now() - studyTimer.start) / 1000);
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  el.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+function stopTimer() {
+  if (!studyTimer.start) return;
+  const sec = Math.floor((Date.now() - studyTimer.start) / 1000);
+  clearInterval(studyTimer.interval);
+  studyTimer = { start: null, interval: null };
+  if (sec < 5) { toast('너무 짧아요 (5초 이상)'); renderToolStudytime(document.getElementById('toolContent')); return; }
+  state.studySessions = state.studySessions || [];
+  state.studySessions.unshift({ date: new Date().toISOString().slice(0, 10), seconds: sec });
+  saveState();
+  toast(`${sec}초 기록되었어요 ✓`);
+  renderToolStudytime(document.getElementById('toolContent'));
+}
+
+/* INIT */
+function init() {
+  loadState();
+  initTheme();
+  if (!state.currentScreen) state.currentScreen = 'welcome';
+  navigate(state.currentScreen);
+  if (state.interest) renderSidebarMissions();
+}
+
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

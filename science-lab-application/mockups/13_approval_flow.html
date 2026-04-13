@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>과학실험실 승인 흐름 목업 (4단계)</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'맑은 고딕','Noto Sans KR',Arial,sans-serif; background:#e5e7eb; padding:20px; }
+  h1 { text-align:center; font-size:1.5rem; color:#1f2937; margin-bottom:8px; }
+  .subtitle { text-align:center; color:#6b7280; font-size:0.9rem; margin-bottom:32px; }
+  .stage { max-width:700px; margin:0 auto 48px; }
+  .stage-header { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+  .stage-num { width:36px; height:36px; border-radius:50%; background:#2563eb; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1rem; }
+  .stage-title { font-size:1.1rem; font-weight:700; color:#1f2937; }
+  .stage-desc { font-size:0.85rem; color:#6b7280; }
+
+  /* 이메일 목업 */
+  .email-frame { background:#fff; border-radius:12px; box-shadow:0 4px 16px rgba(0,0,0,.1); overflow:hidden; }
+  .email-toolbar { background:#f3f4f6; padding:10px 16px; border-bottom:1px solid #e5e7eb; font-size:0.8rem; color:#6b7280; display:flex; gap:8px; align-items:center; }
+  .email-toolbar .dot { width:10px; height:10px; border-radius:50%; }
+  .email-toolbar .dot-r { background:#ef4444; }
+  .email-toolbar .dot-y { background:#f59e0b; }
+  .email-toolbar .dot-g { background:#22c55e; }
+  .email-meta { padding:14px 20px; border-bottom:1px solid #f3f4f6; font-size:0.82rem; color:#6b7280; }
+  .email-meta b { color:#1f2937; }
+  .email-body { padding:24px 20px; }
+  .email-body h2 { color:#333; border-bottom:2px solid #4285F4; padding-bottom:8px; font-size:1.1rem; margin-bottom:14px; }
+  .email-body .line { padding:2px 0; color:#444; font-size:0.9rem; line-height:1.8; }
+  .email-body .bullet { padding:2px 0 2px 12px; color:#444; font-size:0.9rem; }
+  .email-btn { display:inline-block; padding:10px 24px; background:#4285F4; color:#fff; text-decoration:none; border-radius:6px; font-weight:bold; font-size:0.9rem; margin:18px 0; }
+  .email-footer { border-top:1px solid #eee; margin-top:24px; padding-top:8px; font-size:0.75rem; color:#999; }
+
+  /* 승인 화면 목업 */
+  .approval-frame { background:#f5f5f5; border-radius:12px; box-shadow:0 4px 16px rgba(0,0,0,.1); padding:20px; }
+  .approval-card { background:#fff; border-radius:10px; padding:24px; box-shadow:0 0 10px rgba(0,0,0,.1); max-width:100%; }
+  .approval-card h2 { text-align:center; margin-bottom:20px; font-size:1.15rem; }
+
+  .summary-card { background:#e8f4fd; border-radius:10px; padding:14px; margin-bottom:14px; }
+  .summary-item { display:flex; gap:8px; padding:3px 0; font-size:0.88rem; }
+  .summary-label { font-weight:600; color:#555; min-width:75px; }
+
+  .first-approval-card { background:#e8f5e9; border-radius:10px; padding:14px; margin-bottom:14px; border-left:4px solid #4caf50; }
+  .first-approval-card h3 { font-size:0.9rem; color:#1565c0; margin:0 0 10px; }
+
+  .accordion-toggle { background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; padding:10px 14px; width:100%; text-align:left; cursor:pointer; font-size:0.9rem; font-weight:600; margin-bottom:6px; display:flex; justify-content:space-between; }
+
+  .judgment-card { background:#fff; border:2px solid #4285F4; border-radius:10px; padding:16px; margin-top:14px; }
+  .judgment-card h3 { color:#4285F4; margin:0 0 14px; font-size:1rem; }
+  .radio-group { display:flex; gap:16px; margin:8px 0; font-size:0.88rem; }
+  .radio-group label { cursor:pointer; }
+
+  .chip { background:#e3f2fd; border:1px solid #90caf9; border-radius:16px; padding:4px 12px; cursor:pointer; font-size:0.78rem; color:#1565c0; display:inline-block; margin:2px; }
+
+  .save-btn { margin-top:16px; padding:12px; width:100%; background:#4285F4; color:#fff; border:none; font-size:0.95rem; border-radius:5px; cursor:pointer; font-weight:600; }
+  .save-btn:disabled { background:#aaa; cursor:default; }
+
+  /* 오버레이 목업 */
+  .overlay-demo { position:relative; width:100%; min-height:200px; background:rgba(255,255,255,0.92); border-radius:12px; display:flex; align-items:center; justify-content:center; margin-top:16px; border:2px dashed #d1d5db; }
+  .overlay-card-demo { background:#fff; border-radius:16px; padding:28px 40px; box-shadow:0 8px 32px rgba(0,0,0,.18); text-align:center; border:1px solid #e5e7eb; }
+  .spinner-demo { width:48px; height:48px; border:5px solid #e5e7eb; border-top-color:#4285F4; border-radius:50%; margin:0 auto 14px; animation:spin .9s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .icon-demo { width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:28px; font-weight:bold; color:#fff; margin:0 auto 12px; }
+  .icon-success { background:#15803d; }
+  .icon-warning { background:#b45309; }
+  .overlay-title { font-size:1.1rem; font-weight:700; color:#111827; margin-bottom:4px; }
+  .overlay-sub { font-size:0.88rem; color:#4b5563; }
+  .overlay-close-btn { margin-top:12px; padding:9px 22px; background:#4285F4; color:#fff; border:none; border-radius:8px; font-size:0.85rem; font-weight:600; cursor:pointer; }
+
+  .divider { border:none; border-top:2px dashed #d1d5db; margin:40px 0; }
+
+  .chem-table { width:100%; border-collapse:collapse; font-size:0.8rem; margin:8px 0; }
+  .chem-table th, .chem-table td { border:1px solid #ccc; padding:5px; text-align:center; }
+  .chem-table .chem-danger { background:#fef2f2; border-left:3px solid #dc2626; }
+
+  .badge-safe { background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:10px; font-size:0.72rem; font-weight:600; }
+  .badge-danger { background:#fee2e2; color:#dc2626; padding:2px 8px; border-radius:10px; font-size:0.72rem; font-weight:600; }
+
+  .elapsed { font-size:0.78rem; font-weight:600; margin-left:4px; }
+  .urgent-low { color:#047857; }
+  .urgent-mid { color:#b45309; }
+  .urgent-high { color:#b91c1c; }
+
+  @media (max-width:600px) {
+    body { padding:10px; }
+    .approval-card { padding:14px; }
+    .email-body { padding:16px 14px; }
+    .summary-item { flex-direction:column; gap:2px; }
+  }
+</style>
+</head>
+<body>
+
+<h1>과학실험실 승인 흐름 목업</h1>
+<p class="subtitle">학생 신청 → 지도교사 1차 승인 → 담당교사 최종 승인 전 과정</p>
+
+<!-- ============================================================ -->
+<!-- STAGE 1: 지도교사 1차 승인 요청 이메일 -->
+<!-- ============================================================ -->
+<div class="stage">
+  <div class="stage-header">
+    <div class="stage-num">1</div>
+    <div>
+      <div class="stage-title">지도교사에게 발송되는 1차 승인 요청 이메일</div>
+      <div class="stage-desc">학생이 신청서를 제출하면 지도교사에게 자동 발송됩니다</div>
+    </div>
+  </div>
+
+  <div class="email-frame">
+    <div class="email-toolbar">
+      <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
+      <span style="margin-left:12px;">Gmail</span>
+    </div>
+    <div class="email-meta">
+      <div><b>보낸사람:</b> cnsa.science@cnsa.hs.kr</div>
+      <div><b>받는사람:</b> kim.teacher@cnsa.hs.kr</div>
+      <div><b>제목:</b> [실험·실습실 1차 승인 요청] 홍길동 (20101)</div>
+    </div>
+    <div class="email-body">
+      <h2>실험·실습실 1차 승인 요청</h2>
+      <div class="line">학생이 과학 실험·실습실 사용을 신청했습니다. 확인 후 승인/반려 처리를 해주세요.</div>
+      <br>
+      <div class="bullet">• 대표자: 홍길동 (20101)</div>
+      <div class="bullet">• 실험실: 화학실험실</div>
+      <div class="bullet">• 날짜/시간: 2026-04-15 / ET,EP1</div>
+      <div class="bullet">• 실험 제목: 산-염기 적정 실험</div>
+      <div style="margin:18px 0;">
+        <a class="email-btn" href="#">1차 승인 처리하기</a>
+      </div>
+      <div class="email-footer">본 메일은 과학 실험·실습실 신청 시스템에서 자동 발송되었습니다.</div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ============================================================ -->
+<!-- STAGE 2: 1차 승인 화면 (approve.html) -->
+<!-- ============================================================ -->
+<div class="stage">
+  <div class="stage-header">
+    <div class="stage-num">2</div>
+    <div>
+      <div class="stage-title">지도교사 1차 승인 화면</div>
+      <div class="stage-desc">이메일의 "1차 승인 처리하기" 버튼을 누르면 이 화면이 열립니다</div>
+    </div>
+  </div>
+
+  <div class="approval-frame">
+    <div class="approval-card">
+      <h2>실험·실습실 신청 승인</h2>
+
+      <!-- 요약 카드 -->
+      <div class="summary-card">
+        <div class="summary-item"><span class="summary-label">대표자</span><span>홍길동 (20101)</span></div>
+        <div class="summary-item"><span class="summary-label">실험·실습실</span><span>화학실험실 / ET,EP1</span></div>
+        <div class="summary-item"><span class="summary-label">실험 날짜</span><span>2026-04-15 <span class="elapsed urgent-mid">(D-4)</span></span></div>
+        <div class="summary-item"><span class="summary-label">실험 제목</span><span>산-염기 적정 실험</span></div>
+      </div>
+
+      <!-- 아코디언: 상세 정보 -->
+      <div class="accordion-toggle">📋 상세 정보 보기 <span>▶</span></div>
+
+      <!-- 아코디언: 시약 목록 -->
+      <div class="accordion-toggle">🧪 시약 목록 <span class="badge-danger">🔴 임장 필요 1건</span> <span>▼</span></div>
+      <div style="padding:0 4px;">
+        <table class="chem-table">
+          <thead><tr><th>시약명</th><th>상태</th><th>농도</th><th>용량</th><th>MSDS</th><th>교사임장여부</th></tr></thead>
+          <tbody>
+            <tr><td>염산</td><td>액체</td><td>0.1M</td><td>50mL</td><td>확인함</td><td>불필요</td></tr>
+            <tr class="chem-danger"><td>황산</td><td>액체</td><td>1M</td><td>30mL</td><td>확인함</td><td>필요</td></tr>
+            <tr><td>페놀프탈레인</td><td>지시약</td><td>-</td><td>5mL</td><td>확인함</td><td>불필요</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 교사 판단 영역 -->
+      <div class="judgment-card">
+        <h3>교사 판단</h3>
+
+        <div style="font-weight:600;font-size:0.88rem;margin-bottom:6px;">1. 직접 실험실에 가셔서 지도해야 하나요?</div>
+        <div class="radio-group">
+          <label><input type="radio" name="g1" checked> Yes</label>
+          <label><input type="radio" name="g1" disabled> No</label>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;margin:8px 0;font-size:0.85rem;">
+          <span>임장 시작시간</span> <input type="time" value="13:30" style="padding:4px;border:1px solid #ccc;border-radius:4px;">
+          <span>종료시간</span> <input type="time" value="15:00" style="padding:4px;border:1px solid #ccc;border-radius:4px;">
+        </div>
+
+        <div style="font-weight:600;font-size:0.88rem;margin:12px 0 6px;">2. 도구/장비와 시약/재료가 적절한가요?</div>
+        <div class="radio-group">
+          <label><input type="radio" name="g2" checked> Yes</label>
+          <label><input type="radio" name="g2"> No</label>
+        </div>
+
+        <div style="font-weight:600;font-size:0.88rem;margin:12px 0 6px;">3. 실험과정, 뒷정리, 주의사항이 적절한가요?</div>
+        <div class="radio-group">
+          <label><input type="radio" name="g3" checked> Yes</label>
+          <label><input type="radio" name="g3"> No</label>
+        </div>
+
+        <div style="margin-top:14px;">
+          <div style="font-weight:600;font-size:0.88rem;margin-bottom:6px;">승인 / 반려</div>
+          <div class="radio-group">
+            <label><input type="radio" name="d1" checked> 승인</label>
+            <label><input type="radio" name="d1"> 반려</label>
+          </div>
+          <div style="margin-top:8px;">
+            <div style="font-size:0.85rem;font-weight:600;margin-bottom:4px;">승인 의견 (선택)</div>
+            <textarea rows="2" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;font-size:0.85rem;" placeholder="학생에게 전달할 의견이 있으면 입력하세요.">안전장구 꼭 착용할 것</textarea>
+          </div>
+        </div>
+
+        <button class="save-btn">저장하기</button>
+      </div>
+    </div>
+
+    <!-- 저장 중 오버레이 -->
+    <div class="overlay-demo">
+      <div class="overlay-card-demo">
+        <div class="spinner-demo"></div>
+        <div class="overlay-title">저장 중입니다</div>
+        <div class="overlay-sub">잠시만 기다려주세요…</div>
+      </div>
+    </div>
+
+    <!-- 저장 완료 오버레이 -->
+    <div class="overlay-demo" style="margin-top:12px;">
+      <div class="overlay-card-demo">
+        <div class="icon-demo icon-success">✓</div>
+        <div class="overlay-title">저장되었습니다</div>
+        <div class="overlay-sub">승인 처리가 완료되었습니다.</div>
+        <div style="font-size:0.75rem;color:#9ca3af;margin-top:6px;">2.5초 후 자동으로 닫힙니다</div>
+      </div>
+    </div>
+
+    <!-- 경고 오버레이 (메일 실패 시) -->
+    <div class="overlay-demo" style="margin-top:12px;">
+      <div class="overlay-card-demo">
+        <div class="icon-demo icon-warning">!</div>
+        <div class="overlay-title">저장되었습니다 · 수동 조치 필요</div>
+        <div class="overlay-sub">학생에게 1차 승인 메일 자동 발송 실패 →<br>학과 메일로 수동 처리 요청을 보냈습니다.<br><br>학과 사무실에서 확인 후 직접 연락해 주세요.</div>
+        <button class="overlay-close-btn">닫기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ============================================================ -->
+<!-- STAGE 3: 담당교사 최종 승인 요청 이메일 -->
+<!-- ============================================================ -->
+<div class="stage">
+  <div class="stage-header">
+    <div class="stage-num">3</div>
+    <div>
+      <div class="stage-title">담당교사에게 발송되는 최종 승인 요청 이메일</div>
+      <div class="stage-desc">지도교사가 1차 승인하면 해당 실험실 담당교사에게 자동 발송됩니다</div>
+    </div>
+  </div>
+
+  <div class="email-frame">
+    <div class="email-toolbar">
+      <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
+      <span style="margin-left:12px;">Gmail</span>
+    </div>
+    <div class="email-meta">
+      <div><b>보낸사람:</b> cnsa.science@cnsa.hs.kr</div>
+      <div><b>받는사람:</b> park.labteacher@cnsa.hs.kr</div>
+      <div><b>제목:</b> [실험실 최종 승인 요청] 20101 홍길동</div>
+    </div>
+    <div class="email-body">
+      <h2>실험실 최종 승인 요청</h2>
+      <div class="line">지도교사의 1차 승인이 완료된 신청입니다. 최종 승인/반려를 처리해주세요.</div>
+      <br>
+      <div class="bullet">• 대표자: 홍길동 (20101)</div>
+      <div class="bullet">• 실험실: 화학실험실</div>
+      <div class="bullet">• 날짜/시간: 2026-04-15 / ET,EP1</div>
+      <div class="bullet">• 실험 제목: 산-염기 적정 실험</div>
+      <div style="margin:18px 0;">
+        <a class="email-btn" href="#">최종 승인 처리하기</a>
+      </div>
+      <div class="email-footer">본 메일은 과학 실험·실습실 신청 시스템에서 자동 발송되었습니다.</div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ============================================================ -->
+<!-- STAGE 4: 최종 승인 화면 (finalApprove.html) -->
+<!-- ============================================================ -->
+<div class="stage">
+  <div class="stage-header">
+    <div class="stage-num">4</div>
+    <div>
+      <div class="stage-title">담당교사 최종 승인 화면</div>
+      <div class="stage-desc">이메일의 "최종 승인 처리하기" 버튼을 누르면 이 화면이 열립니다</div>
+    </div>
+  </div>
+
+  <div class="approval-frame">
+    <div class="approval-card">
+      <h2>실험·실습실 최종 승인</h2>
+
+      <!-- 요약 카드 -->
+      <div class="summary-card">
+        <div class="summary-item"><span class="summary-label">대표자</span><span>홍길동 (20101)</span></div>
+        <div class="summary-item"><span class="summary-label">실험·실습실</span><span>화학실험실 / ET,EP1</span></div>
+        <div class="summary-item"><span class="summary-label">실험 날짜</span><span>2026-04-15 <span class="elapsed urgent-mid">(D-4)</span></span></div>
+        <div class="summary-item"><span class="summary-label">실험 제목</span><span>산-염기 적정 실험</span></div>
+      </div>
+
+      <!-- 1차 승인 결과 -->
+      <div class="first-approval-card">
+        <h3>📋 1차 승인 결과</h3>
+        <div class="summary-item"><span class="summary-label">지도교사</span><span>김선생</span></div>
+        <div class="summary-item"><span class="summary-label">승인 결과</span><span>승인</span></div>
+        <div class="summary-item"><span class="summary-label">승인 시간</span><span>2026-04-11 14:23:10</span></div>
+        <div class="summary-item"><span class="summary-label">의견</span><span>안전장구 꼭 착용할 것</span></div>
+      </div>
+
+      <!-- 아코디언: 상세 정보 -->
+      <div class="accordion-toggle">📋 상세 정보 보기 <span>▶</span></div>
+
+      <!-- 아코디언: 시약 목록 -->
+      <div class="accordion-toggle">🧪 시약 목록 <span class="badge-danger">위험 1건</span> <span>▼</span></div>
+      <div style="padding:0 4px;">
+        <table class="chem-table">
+          <thead><tr><th>시약명</th><th>상태</th><th>농도</th><th>용량</th><th>MSDS</th><th>교사임장여부</th></tr></thead>
+          <tbody>
+            <tr><td>염산</td><td>액체</td><td>0.1M</td><td>50mL</td><td>확인함</td><td>불필요</td></tr>
+            <tr class="chem-danger"><td>황산</td><td>액체</td><td>1M</td><td>30mL</td><td>확인함</td><td>필요</td></tr>
+            <tr><td>페놀프탈레인</td><td>지시약</td><td>-</td><td>5mL</td><td>확인함</td><td>불필요</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 최종 판단 -->
+      <div class="judgment-card">
+        <h3>최종 판단</h3>
+        <div style="font-weight:600;font-size:0.88rem;margin-bottom:6px;">최종 승인 / 반려</div>
+        <div class="radio-group">
+          <label><input type="radio" name="fd" checked> 승인</label>
+          <label><input type="radio" name="fd"> 반려</label>
+        </div>
+        <div style="margin-top:10px;">
+          <div style="font-size:0.85rem;font-weight:600;margin-bottom:4px;">승인 의견 (선택)</div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">
+            <span class="chip">안전 규정 미준수</span>
+            <span class="chip">시약 사용 부적절</span>
+            <span class="chip">실험 계획 보완 필요</span>
+            <span class="chip">일정 충돌</span>
+          </div>
+          <textarea rows="2" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;font-size:0.85rem;" placeholder="학생에게 전달할 의견이 있으면 입력하세요."></textarea>
+        </div>
+        <button class="save-btn">저장하기</button>
+      </div>
+    </div>
+
+    <!-- 처리 완료 상태 -->
+    <div class="overlay-demo" style="margin-top:16px;">
+      <div class="overlay-card-demo">
+        <div class="icon-demo icon-success">✓</div>
+        <div class="overlay-title">저장되었습니다</div>
+        <div class="overlay-sub">최종 승인 처리가 완료되었습니다.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- 흐름도 -->
+<div class="stage" style="text-align:center;">
+  <div class="stage-header" style="justify-content:center;">
+    <div class="stage-title">전체 흐름 요약</div>
+  </div>
+  <div style="background:#fff;border-radius:12px;padding:24px;box-shadow:0 4px 16px rgba(0,0,0,.1);font-size:0.9rem;line-height:2.2;">
+    <div>📝 <b>학생 신청서 제출</b></div>
+    <div style="font-size:1.3rem;">↓</div>
+    <div>📧 지도교사에게 <b>1차 승인 요청 이메일</b> 자동 발송</div>
+    <div style="font-size:1.3rem;">↓</div>
+    <div>✅ 지도교사가 링크 클릭 → <b>1차 승인 화면</b>에서 승인/반려</div>
+    <div style="font-size:1.3rem;">↓</div>
+    <div>📧 담당교사에게 <b>최종 승인 요청 이메일</b> 자동 발송</div>
+    <div style="font-size:0.78rem;color:#6b7280;">(동시에 학생에게 "1차 승인됨" 안내 이메일 발송)</div>
+    <div style="font-size:1.3rem;">↓</div>
+    <div>✅ 담당교사가 링크 클릭 → <b>최종 승인 화면</b>에서 승인/반려</div>
+    <div style="font-size:1.3rem;">↓</div>
+    <div>📧 학생 + 지도교사에게 <b>최종 결과 이메일</b> 자동 발송</div>
+    <div style="font-size:1.3rem;">↓</div>
+    <div>🎉 <b>실험 확정!</b></div>
+  </div>
+</div>
+
+</body>
+</html>

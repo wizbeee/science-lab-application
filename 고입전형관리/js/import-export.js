@@ -298,6 +298,87 @@ const ImportExport = {
       reader.onerror = () => reject(new Error('파일 읽기 실패'));
       reader.readAsText(file);
     });
+  },
+
+  // ─── 암호화 백업 (AES-GCM, Web Crypto API) ───
+  async _deriveKey(password, salt) {
+    const enc = new TextEncoder();
+    const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+      keyMaterial,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['encrypt', 'decrypt']
+    );
+  },
+
+  async encryptBackup(password) {
+    const data = await DB.exportAll();
+    const json = JSON.stringify(data);
+    const enc = new TextEncoder();
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const key = await this._deriveKey(password, salt);
+    const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(json));
+    const result = new Uint8Array(salt.length + iv.length + encrypted.byteLength);
+    result.set(salt, 0);
+    result.set(iv, salt.length);
+    result.set(new Uint8Array(encrypted), salt.length + iv.length);
+    return result;
+  },
+
+  async decryptBackup(encryptedData, password) {
+    const data = new Uint8Array(encryptedData);
+    const salt = data.slice(0, 16);
+    const iv = data.slice(16, 28);
+    const ciphertext = data.slice(28);
+    const key = await this._deriveKey(password, salt);
+    const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
+    return JSON.parse(new TextDecoder().decode(decrypted));
+  },
+
+  async encryptAndDownload(password) {
+    const encrypted = await this.encryptBackup(password);
+    const blob = new Blob([encrypted], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'backup.enc';
+    a.click();
+    URL.revokeObjectURL(url);
+  },
+
+  async decryptAndRestore(file, password) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const data = await this.decryptBackup(e.target.result, password);
+          if (!data.applicants) throw new Error('복호화 실패');
+          await DB.importAll(data);
+          resolve({ applicants: (data.applicants || []).length });
+        } catch (err) {
+          if (err.name === 'OperationError') reject(new Error('비밀번호가 틀렸습니다.'));
+          else reject(err);
+        }
+      };
+      reader.onerror = () => reject(new Error('파일 읽기 실패'));
+      reader.readAsArrayBuffer(file);
+    });
+  },
+
+  async tryAutoRestore(password) {
+    try {
+      const resp = await fetch('data/backup.enc');
+      if (!resp.ok) return null;
+      const buffer = await resp.arrayBuffer();
+      if (buffer.byteLength < 30) return null;
+      const data = await this.decryptBackup(buffer, password);
+      if (!data.applicants) return null;
+      await DB.importAll(data);
+      return { applicants: (data.applicants || []).length };
+    } catch (e) { return null; }
   }
 };
 

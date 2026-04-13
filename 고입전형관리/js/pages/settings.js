@@ -51,6 +51,38 @@ const SettingsPage = {
           </div>
         </div>
 
+        <!-- Git 암호화 동기화 -->
+        <div class="bg-white rounded-xl border p-6 border-indigo-200">
+          <h3 class="text-lg font-semibold mb-2 flex items-center gap-2">
+            <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+            Git 암호화 동기화
+          </h3>
+          <p class="text-sm text-gray-500 mb-4">데이터를 AES-256 암호화하여 GitHub 레포에 저장합니다. 다른 컴퓨터에서 git pull 후 같은 비밀번호로 복원합니다.</p>
+          <div class="space-y-3">
+            <div class="flex gap-3 items-end">
+              <div class="flex-1 max-w-xs">
+                <label class="text-sm font-medium text-gray-700 block mb-1">암호화 비밀번호</label>
+                <input id="sync-password" type="password" class="w-full rounded-lg border-gray-300 text-sm px-3 py-2" placeholder="비밀번호 입력">
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <button id="btn-encrypt-save" class="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 text-sm">
+                암호화하여 저장 (backup.enc)
+              </button>
+              <div>
+                <input type="file" id="enc-restore-input" accept=".enc" class="hidden">
+                <button id="btn-encrypt-restore" class="px-4 py-2 border border-indigo-300 text-indigo-700 rounded-lg hover:bg-indigo-50 text-sm">
+                  암호화 파일 복원
+                </button>
+              </div>
+              <button id="btn-auto-restore" class="px-4 py-2 border border-green-300 text-green-700 rounded-lg hover:bg-green-50 text-sm">
+                Git에서 자동 복원
+              </button>
+            </div>
+            <p class="text-xs text-gray-400">저장: backup.enc 파일을 <code>고입전형관리/data/</code> 폴더에 넣고 git push. 복원: git pull 후 "Git에서 자동 복원" 클릭.</p>
+          </div>
+        </div>
+
         <!-- 데이터 관리 -->
         <div class="bg-white rounded-xl border p-6">
           <h3 class="text-lg font-semibold mb-4">데이터 관리</h3>
@@ -58,8 +90,8 @@ const SettingsPage = {
             <!-- 백업 -->
             <div class="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
               <div>
-                <p class="font-medium text-blue-800">전체 데이터 백업</p>
-                <p class="text-sm text-blue-600">모든 연도의 지원자, 성적, 설정 데이터를 JSON 파일로 저장합니다.</p>
+                <p class="font-medium text-blue-800">전체 데이터 백업 (평문 JSON)</p>
+                <p class="text-sm text-blue-600">로컬 백업용. GitHub에 올리지 마세요.</p>
               </div>
               <button id="btn-backup" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm whitespace-nowrap">백업 다운로드</button>
             </div>
@@ -118,6 +150,44 @@ const SettingsPage = {
     // 연도별 설정
     document.getElementById('btn-load-config').addEventListener('click', () => this.loadConfig());
     document.getElementById('btn-save-config').addEventListener('click', () => this.saveConfig());
+
+    // Git 암호화 동기화
+    document.getElementById('btn-encrypt-save')?.addEventListener('click', async () => {
+      const pw = document.getElementById('sync-password').value;
+      if (!pw) { Toast.warning('비밀번호를 입력해주세요.'); return; }
+      try {
+        await ImportExport.encryptAndDownload(pw);
+        Toast.success('암호화 백업 파일(backup.enc)을 다운로드했습니다. data/ 폴더에 넣고 git push 하세요.');
+      } catch (e) { Toast.error('암호화 실패: ' + e.message); }
+    });
+
+    document.getElementById('btn-encrypt-restore')?.addEventListener('click', () => {
+      const pw = document.getElementById('sync-password').value;
+      if (!pw) { Toast.warning('비밀번호를 입력해주세요.'); return; }
+      document.getElementById('enc-restore-input').click();
+    });
+    document.getElementById('enc-restore-input')?.addEventListener('change', async (e) => {
+      if (!e.target.files[0]) return;
+      const pw = document.getElementById('sync-password').value;
+      try {
+        const counts = await ImportExport.decryptAndRestore(e.target.files[0], pw);
+        Toast.success(`복원 완료: 지원자 ${counts.applicants}명`);
+        this.loadDBStats();
+      } catch (err) { Toast.error(err.message); }
+    });
+
+    document.getElementById('btn-auto-restore')?.addEventListener('click', async () => {
+      const pw = document.getElementById('sync-password').value;
+      if (!pw) { Toast.warning('비밀번호를 입력해주세요.'); return; }
+      Toast.info('data/backup.enc 파일 확인 중...');
+      const result = await ImportExport.tryAutoRestore(pw);
+      if (result) {
+        Toast.success(`자동 복원 완료: 지원자 ${result.applicants}명`);
+        this.loadDBStats();
+      } else {
+        Toast.warning('data/backup.enc 파일이 없거나 비밀번호가 틀립니다.');
+      }
+    });
 
     // 백업
     document.getElementById('btn-backup').addEventListener('click', async () => {

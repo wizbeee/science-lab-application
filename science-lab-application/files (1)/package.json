@@ -1,0 +1,67 @@
+{
+  "name": "smart-teacher-desktop",
+  "version": "1.0.0",
+  "description": "스마트 바탕화면 - 교사 & 직장인용 AI 대시보드",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "concurrently \"npm run dev:react\" \"wait-on http://localhost:3000 && npm run dev:electron\"",
+    "dev:react": "react-scripts start",
+    "dev:electron": "cross-env NODE_ENV=development electron .",
+    "build": "react-scripts build && npm run build:electron",
+    "build:electron": "electron-builder --win --mac",
+    "build:win": "react-scripts build && electron-builder --win",
+    "build:mac": "react-scripts build && electron-builder --mac"
+  },
+  "keywords": ["electron", "react", "teacher", "desktop", "dashboard"],
+  "author": "SmartDesktop",
+  "license": "MIT",
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-scripts": "5.0.1",
+    "electron-store": "^8.1.0",
+    "axios": "^1.6.0",
+    "date-fns": "^3.0.0",
+    "googleapis": "^128.0.0",
+    "@microsoft/microsoft-graph-client": "^3.0.7",
+    "@azure/msal-node": "^2.5.0"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1",
+    "concurrently": "^8.2.2",
+    "wait-on": "^7.2.0",
+    "cross-env": "^7.0.3",
+    "tailwindcss": "^3.4.0",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.33"
+  },
+  "homepage": "./",
+  "build": {
+    "appId": "com.smartdesktop.teacher",
+    "productName": "스마트 바탕화면",
+    "win": {
+      "target": ["nsis"],
+      "icon": "public/icon.ico"
+    },
+    "mac": {
+      "target": ["dmg"],
+      "icon": "public/icon.icns"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerLanguages": ["ko-KR"],
+      "language": "1042"
+    },
+    "files": ["build/**/*", "src/main/**/*", "node_modules/**/*"],
+    "extraFiles": ["public/icon.*"]
+  },
+  "eslintConfig": {
+    "extends": ["react-app"]
+  },
+  "browserslist": {
+    "production": [">0.2%", "not dead", "not op_mini all"],
+    "development": ["last 1 chrome version"]
+  }
+}

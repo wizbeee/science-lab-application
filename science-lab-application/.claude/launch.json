@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "smart-desktop-react",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:react"],
+      "port": 3000,
+      "cwd": "smart-desktop"
+    },
+    {
+      "name": "mockups-preview",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "mockups", "-l", "5500"],
+      "port": 5500
+    }
+  ]
+}

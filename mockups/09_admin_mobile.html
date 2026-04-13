@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>관리자 대시보드 - 모바일</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--primary:#4285F4;--primary-light:#e8f0fe;--success:#34a853;--success-light:#e6f4ea;
+    --danger:#ea4335;--danger-light:#fce8e6;--warning:#f59e0b;--warning-light:#fef3c7;
+    --info:#3b82f6;--info-light:#dbeafe;--bg:#f8f9fa;--card:#fff;--text:#1a1a2e;
+    --text-sec:#5f6368;--text-muted:#9ca3af;--border:#e5e7eb;--radius:12px}
+  body{font-family:'Pretendard','Apple SD Gothic Neo','Segoe UI',sans-serif;
+    background:var(--bg);color:var(--text);max-width:420px;margin:0 auto;min-height:100vh}
+
+  .top-bar{background:var(--card);padding:12px 16px;border-bottom:1px solid var(--border);
+    display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100}
+  .top-bar h1{font-size:16px;font-weight:700}
+  .top-bar .right{margin-left:auto;display:flex;gap:8px}
+  .icon-btn{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);
+    background:var(--card);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center}
+
+  /* Stats scroll */
+  .stats-scroll{display:flex;gap:8px;padding:12px 16px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .stat-card{min-width:110px;background:var(--card);border-radius:10px;padding:14px;
+    border:2px solid transparent;flex-shrink:0;text-align:center}
+  .stat-card.active{border-color:var(--primary)}
+  .stat-num{font-size:24px;font-weight:700}
+  .stat-label{font-size:11px;color:var(--text-sec);margin-top:2px}
+  .stat-card.pending .stat-num{color:var(--warning)}
+  .stat-card.approved .stat-num{color:var(--success)}
+  .stat-card.final .stat-num{color:var(--info)}
+  .stat-card.rejected .stat-num{color:var(--danger)}
+
+  /* Filter chips */
+  .filter-area{padding:0 16px 10px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .f-chip{padding:6px 12px;border-radius:16px;font-size:12px;font-weight:600;
+    background:var(--primary-light);color:var(--primary);display:flex;align-items:center;gap:4px}
+  .f-chip .x{cursor:pointer;opacity:0.6;font-size:12px}
+  .f-more{padding:6px 12px;border-radius:16px;font-size:12px;border:1px solid var(--border);
+    background:var(--card);color:var(--text-sec);cursor:pointer}
+
+  .result-bar{padding:4px 16px 8px;font-size:12px;color:var(--text-sec)}
+  .result-bar strong{color:var(--text)}
+
+  /* Cards list */
+  .card-list{padding:0 12px 80px}
+  .app-card{background:var(--card);border-radius:var(--radius);padding:14px;margin-bottom:8px;
+    border-left:4px solid transparent;cursor:pointer;transition:all 0.1s}
+  .app-card:active{transform:scale(0.99)}
+  .app-card.pending-b{border-left-color:var(--warning)}
+  .app-card.approved-b{border-left-color:var(--success)}
+  .app-card.final-b{border-left-color:var(--info)}
+  .app-card.rejected-b{border-left-color:var(--danger)}
+  .card-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+  .card-date{font-size:12px;color:var(--text-muted)}
+  .badge{padding:3px 8px;border-radius:5px;font-size:11px;font-weight:600}
+  .badge.pending{background:var(--warning-light);color:#92400e}
+  .badge.approved{background:var(--success-light);color:#065f46}
+  .badge.final{background:var(--info-light);color:#1e3a8a}
+  .badge.rejected{background:var(--danger-light);color:#991b1b}
+  .card-title{font-size:15px;font-weight:600;margin-bottom:4px}
+  .card-meta{font-size:12px;color:var(--text-sec);display:flex;gap:10px}
+  .card-actions{display:flex;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+  .card-btn{flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);
+    background:var(--card);font-size:12px;font-weight:600;cursor:pointer;text-align:center;
+    color:var(--text-sec)}
+  .card-btn.approve{border-color:var(--success);color:var(--success)}
+  .card-btn.reject{border-color:var(--danger);color:var(--danger)}
+
+  /* Bottom Nav */
+  .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+    width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);
+    display:flex;padding:6px 0;z-index:100}
+  .bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+    padding:6px 0;font-size:10px;color:var(--text-muted);cursor:pointer;text-decoration:none}
+  .bnav-item.active{color:var(--primary)}
+  .bnav-icon{font-size:18px}
+  .bnav-badge{position:relative}
+  .bnav-badge::after{content:'12';position:absolute;top:-6px;right:-10px;
+    background:var(--danger);color:white;font-size:9px;font-weight:700;
+    padding:1px 5px;border-radius:8px;min-width:16px;text-align:center}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <h1>🔬 과학실험실 관리</h1>
+  <div class="right">
+    <button class="icon-btn">🔍</button>
+    <button class="icon-btn">🌙</button>
+  </div>
+</div>
+
+<div class="stats-scroll">
+  <div class="stat-card"><div class="stat-num">142</div><div class="stat-label">전체</div></div>
+  <div class="stat-card pending active"><div class="stat-num">12</div><div class="stat-label">대기중</div></div>
+  <div class="stat-card approved"><div class="stat-num">48</div><div class="stat-label">1차 승인</div></div>
+  <div class="stat-card final"><div class="stat-num">74</div><div class="stat-label">최종승인</div></div>
+  <div class="stat-card rejected"><div class="stat-num">8</div><div class="stat-label">반려</div></div>
+</div>
+
+<div class="filter-area">
+  <span class="f-chip">📅 4월 <span class="x">✕</span></span>
+  <span class="f-chip">🏷 대기중 <span class="x">✕</span></span>
+  <span class="f-more">+ 필터</span>
+</div>
+
+<div class="result-bar">필터 적용: <strong>12</strong>건</div>
+
+<div class="card-list">
+  <div class="app-card pending-b">
+    <div class="card-row">
+      <span class="card-date">04/10 (금) · 6,7교시</span>
+      <span class="badge pending">대기중</span>
+    </div>
+    <div class="card-title">산-염기 적정 실험</div>
+    <div class="card-meta"><span>🧪 화학실험실</span><span>김민준 (10512)</span><span>박지영 T</span></div>
+    <div class="card-actions">
+      <button class="card-btn">상세보기</button>
+      <button class="card-btn approve">✓ 승인</button>
+      <button class="card-btn reject">✕ 반려</button>
+    </div>
+  </div>
+
+  <div class="app-card pending-b">
+    <div class="card-row">
+      <span class="card-date">04/10 (금) · 야자1</span>
+      <span class="badge pending">대기중</span>
+    </div>
+    <div class="card-title">현미경 관찰 실습</div>
+    <div class="card-meta"><span>🧬 생물실험실</span><span>이서연 (10823)</span><span>최영호 T</span></div>
+    <div class="card-actions">
+      <button class="card-btn">상세보기</button>
+      <button class="card-btn approve">✓ 승인</button>
+      <button class="card-btn reject">✕ 반려</button>
+    </div>
+  </div>
+
+  <div class="app-card approved-b">
+    <div class="card-row">
+      <span class="card-date">04/09 (목) · 5,6교시</span>
+      <span class="badge approved">1차 승인</span>
+    </div>
+    <div class="card-title">분광기 스펙트럼 분석</div>
+    <div class="card-meta"><span>🔬 첨단기기실험실</span><span>정우진 (11102)</span><span>김태현 T</span></div>
+  </div>
+
+  <div class="app-card final-b">
+    <div class="card-row">
+      <span class="card-date">04/09 (목) · 야자2</span>
+      <span class="badge final">최종승인</span>
+    </div>
+    <div class="card-title">에스터 합성 반응</div>
+    <div class="card-meta"><span>🧪 화학실험실</span><span>박하은 (10415)</span><span>이수진 T</span></div>
+  </div>
+
+  <div class="app-card rejected-b">
+    <div class="card-row">
+      <span class="card-date">04/08 (수) · 6교시</span>
+      <span class="badge rejected">반려</span>
+    </div>
+    <div class="card-title">Arduino 센서 프로젝트</div>
+    <div class="card-meta"><span>🔧 프로젝트실험실</span><span>최도현 (10901)</span><span>송민기 T</span></div>
+  </div>
+</div>
+
+<div class="bottom-nav">
+  <a class="bnav-item active"><span class="bnav-icon bnav-badge">📋</span>신청관리</a>
+  <a class="bnav-item"><span class="bnav-icon">🧪</span>시약</a>
+  <a class="bnav-item"><span class="bnav-icon">👨‍🎓</span>학생</a>
+  <a class="bnav-item"><span class="bnav-icon">📅</span>시간표</a>
+  <a class="bnav-item"><span class="bnav-icon">⚙️</span>설정</a>
+</div>
+
+</body>
+</html>

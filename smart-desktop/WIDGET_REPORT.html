@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>Smart Desktop - 전체 위젯 & 기능 리포트</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; background: #f8fafc; color: #1f2937; line-height: 1.6; }
+
+  .header { background: linear-gradient(135deg, #f43f5e, #e11d48); color: #fff; padding: 32px 40px; }
+  .header h1 { font-size: 28px; margin-bottom: 8px; }
+  .header p { font-size: 14px; opacity: 0.9; }
+  .header .stats { display: flex; gap: 24px; margin-top: 16px; }
+  .header .stat { background: rgba(255,255,255,0.15); border-radius: 12px; padding: 12px 20px; text-align: center; }
+  .header .stat .num { font-size: 32px; font-weight: 800; }
+  .header .stat .label { font-size: 11px; opacity: 0.8; }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+  .section { margin-bottom: 32px; }
+  .section-title { font-size: 18px; font-weight: 700; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #f43f5e; display: flex; align-items: center; gap: 8px; }
+  .section-title .badge { background: #f43f5e; color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+
+  .card { background: #fff; border-radius: 12px; padding: 16px; border: 1px solid #e5e7eb; transition: all 0.2s; position: relative; overflow: hidden; }
+  .card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); transform: translateY(-1px); }
+  .card .num { position: absolute; top: 8px; right: 12px; font-size: 11px; color: #9ca3af; font-weight: 600; }
+  .card .icon { font-size: 24px; margin-bottom: 8px; }
+  .card .title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .card .desc { font-size: 11px; color: #6b7280; line-height: 1.5; }
+  .card .tag { display: inline-block; font-size: 9px; padding: 2px 6px; border-radius: 4px; margin-top: 6px; font-weight: 600; }
+
+  .card.new { border-left: 3px solid #3b82f6; }
+  .card.enhanced { border-left: 3px solid #10b981; }
+  .card.system { border-left: 3px solid #f59e0b; }
+
+  .tag-new { background: #dbeafe; color: #1e40af; }
+  .tag-enhanced { background: #dcfce7; color: #15803d; }
+  .tag-system { background: #fef3c7; color: #92400e; }
+  .tag-cat { background: #f3f4f6; color: #374151; }
+
+  /* 프레임 테마 섹션 */
+  .theme-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .theme-card { background: #fff; border-radius: 14px; padding: 16px; border: 1px solid #e5e7eb; text-align: center; }
+  .theme-card .preview { border: 1px solid #d1d5db; margin-bottom: 10px; padding: 12px 10px; display: flex; flex-direction: column; gap: 4px; }
+  .theme-card .name { font-size: 14px; font-weight: 700; }
+  .theme-card .info { font-size: 10px; color: #9ca3af; }
+
+  /* 색상 팔레트 섹션 */
+  .color-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .color-card { border-radius: 12px; padding: 12px; text-align: center; border: 2px solid transparent; }
+  .color-card .swatch { height: 40px; border-radius: 8px; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; }
+  .color-card .name { font-size: 12px; font-weight: 600; }
+  .color-card .hex { font-size: 9px; color: #9ca3af; }
+
+  .footer { text-align: center; padding: 24px; color: #9ca3af; font-size: 11px; border-top: 1px solid #e5e7eb; margin-top: 40px; }
+
+  /* 그리드 목업 */
+  .mockup-container { position: relative; width: 100%; aspect-ratio: 16/9; background: #fff1f2; border-radius: 12px; border: 2px solid #fecdd3; overflow: hidden; margin-bottom: 16px; }
+  .mockup-widget { position: absolute; background: rgba(255,255,255,0.9); border: 1px solid #fecdd3; border-radius: 8px; padding: 6px 8px; font-size: 9px; overflow: hidden; display: flex; flex-direction: column; }
+  .mockup-widget .mw-title { font-size: 9px; font-weight: 700; color: #f43f5e; white-space: nowrap; margin-bottom: 2px; }
+  .mockup-widget .mw-bar { height: 3px; border-radius: 2px; background: #fecdd3; margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<!-- ═══ 헤더 ═══ -->
+<div class="header">
+  <h1>Smart Desktop v2.5.0 — 전체 위젯 & 기능 리포트</h1>
+  <p>교사 & 직장인 맞춤 스마트 대시보드 · Electron + React 18 + Tailwind</p>
+  <div class="stats">
+    <div class="stat"><div class="num">64</div><div class="label">전체 위젯</div></div>
+    <div class="stat"><div class="num">33</div><div class="label">신규 추가</div></div>
+    <div class="stat"><div class="num">8</div><div class="label">프레임 테마</div></div>
+    <div class="stat"><div class="num">20</div><div class="label">색상 팔레트</div></div>
+    <div class="stat"><div class="num">7</div><div class="label">카테고리</div></div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ═══ 기본 ON 위젯 그리드 목업 ═══ -->
+<div class="section">
+  <div class="section-title">📐 기본 ON 위젯 배치 (17개) <span class="badge">24×16 Grid</span></div>
+  <div class="mockup-container">
+    <!-- 좌측 열 -->
+    <div class="mockup-widget" style="left:0%; top:0%; width:16.5%; height:56%;">
+      <div class="mw-title">📋 시간표</div><div class="mw-bar" style="width:80%"></div><div class="mw-bar" style="width:60%"></div><div class="mw-bar" style="width:70%"></div>
+    </div>
+    <div class="mockup-widget" style="left:0%; top:56.5%; width:16.5%; height:18.5%;">
+      <div class="mw-title">📅 D-Day</div><div class="mw-bar" style="width:50%"></div>
+    </div>
+    <div class="mockup-widget" style="left:0%; top:75.5%; width:16.5%; height:24%;">
+      <div class="mw-title">⭐ 바로가기</div><div class="mw-bar" style="width:40%"></div>
+    </div>
+    <!-- 중앙 -->
+    <div class="mockup-widget" style="left:17%; top:0%; width:37%; height:56%; background:rgba(255,241,242,0.5);">
+      <div class="mw-title">📆 캘린더 (자연어입력 + 날씨오버레이 + 드래그이동)</div>
+      <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:1px; margin-top:4px; flex:1;">
+        <script>for(let i=0;i<35;i++){document.write('<div style="background:#fef2f2;border-radius:2px;font-size:6px;text-align:center;padding:1px">'+(i<3?'':i-2)+'</div>')}</script>
+      </div>
+    </div>
+    <div class="mockup-widget" style="left:17%; top:56.5%; width:20.5%; height:43%;">
+      <div class="mw-title">📧 받은 메일</div><div class="mw-bar" style="width:90%"></div><div class="mw-bar" style="width:70%"></div>
+    </div>
+    <div class="mockup-widget" style="left:38%; top:56.5%; width:16%; height:43%;">
+      <div class="mw-title">📊 수업 진도표</div><div class="mw-bar" style="width:65%;background:#f43f5e"></div><div class="mw-bar" style="width:40%;background:#f43f5e"></div>
+    </div>
+    <!-- 중앙우 -->
+    <div class="mockup-widget" style="left:54.5%; top:0%; width:12%; height:50%;">
+      <div class="mw-title">✅ 할 일</div><div class="mw-bar" style="width:80%"></div><div class="mw-bar" style="width:60%"></div>
+    </div>
+    <div class="mockup-widget" style="left:67%; top:0%; width:12%; height:50%;">
+      <div class="mw-title">📝 메모 (MD+위키+태그)</div><div class="mw-bar" style="width:90%"></div><div class="mw-bar" style="width:50%"></div>
+    </div>
+    <div class="mockup-widget" style="left:54.5%; top:50.5%; width:24.5%; height:25%;">
+      <div class="mw-title">🤖 AI 채팅</div><div class="mw-bar" style="width:70%"></div>
+    </div>
+    <div class="mockup-widget" style="left:54.5%; top:76%; width:24.5%; height:23.5%;">
+      <div class="mw-title">⏱ 스톱워치</div>
+      <div style="font-size:16px;font-weight:700;text-align:center;color:#f43f5e;margin-top:4px">00:00</div>
+    </div>
+    <!-- 우측 -->
+    <div class="mockup-widget" style="left:79.5%; top:0%; width:20%; height:18.5%; background:rgba(219,234,254,0.3);">
+      <div class="mw-title">🌤 날씨</div><div style="font-size:7px;color:#6b7280">18° 구름 조금</div>
+    </div>
+    <div class="mockup-widget" style="left:79.5%; top:19%; width:20%; height:24.5%;">
+      <div class="mw-title">🍽 급식</div><div class="mw-bar" style="width:60%"></div>
+    </div>
+    <div class="mockup-widget" style="left:79.5%; top:44%; width:12%; height:18.5%;">
+      <div class="mw-title">🎲 랜덤 뽑기</div>
+    </div>
+    <div class="mockup-widget" style="left:92%; top:44%; width:7.5%; height:18.5%;">
+      <div class="mw-title">🎵</div>
+    </div>
+    <div class="mockup-widget" style="left:79.5%; top:63%; width:20%; height:24.5%;">
+      <div class="mw-title">🔢 계산기</div>
+    </div>
+    <div class="mockup-widget" style="left:79.5%; top:88%; width:12%; height:11.5%;">
+      <div class="mw-title">📚 자료</div>
+    </div>
+    <div class="mockup-widget" style="left:92%; top:88%; width:7.5%; height:11.5%;">
+      <div class="mw-title">💬</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 프레임 테마 8종 ═══ -->
+<div class="section">
+  <div class="section-title">🎨 프레임 테마 8종 (틀 디자인) <span class="badge">NEW</span></div>
+  <div class="theme-grid">
+    <div class="theme-card">
+      <div class="preview" style="border-radius:10px; box-shadow:0 1px 6px rgba(0,0,0,0.05);">
+        <div style="height:4px;border-radius:2px;background:#f43f5e;width:60%"></div>
+        <div style="height:4px;border-radius:2px;background:#e5e7eb;width:80%"></div>
+      </div>
+      <div class="name">기본</div>
+      <div class="info">borderRadius: 10px · 가벼운 그림자 · 1px solid</div>
+    </div>
+    <div class="theme-card">
+      <div class="preview" style="border-radius:14px; box-shadow:0 4px 16px rgba(0,0,0,0.08); background:rgba(255,255,255,0.6); backdrop-filter:blur(4px); border:1.5px solid #d1d5db;">
+        <div style="height:4px;border-radius:3px;background:#f43f5e;width:60%"></div>
+        <div style="height:4px;border-radius:3px;background:#e5e7eb;width:80%"></div>
+      </div>
+      <div class="name">글래스모피즘</div>
+      <div class="info">blur(12px) · 반투명 · borderRadius: 14px</div>
+    </div>
+    <div class="theme-card">
+      <div class="preview" style="border-radius:3px; box-shadow:4px 4px 0 rgba(0,0,0,0.85); border:2.5px solid #1f2937;">
+        <div style="height:4px;border-radius:1px;background:#f43f5e;width:60%"></div>
+        <div style="height:4px;border-radius:1px;background:#e5e7eb;width:80%"></div>
+      </div>
+      <div class="name">네오브루탈</div>
+      <div class="info">하드 쉐도우 · 직각 · border: 2.5px solid</div>
+    </div>
+    <div class="theme-card">
+      <div class="preview" style="border-radius:18px; box-shadow:0 2px 12px rgba(0,0,0,0.04); border:none;">
+        <div style="height:4px;border-radius:4px;background:#f43f5e;width:60%"></div>
+        <div style="height:4px;border-radius:4px;background:#e5e7eb;width:80%"></div>
+      </div>
+      <div class="name">소프트</div>
+      <div class="info">borderRadius: 18px · 테두리 없음 · 매우 약한 그림자</div>
+    </div>
+    <div class="theme-card">
+      <div class="preview" style="border-radius:6px; box-shadow:none; border:none; background:#f9fafb;">
+        <div style="height:4px;border-radius:2px;background:#f43f5e;width:60%"></div>
+        <div style="height:4px;border-radius:2px;background:#e5e7eb;width:80%"></div>
+      </div>
+      <div class="name">플랫</div>
+      <div class="info">그림자/테두리 없음 · 완전 플랫</div>
+    </div>
+    <div class="theme-card">
+      <div class="preview" style="border-radius:4px; box-shadow:0 1px 3px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.5); border:3px double #d1d5db;">
+        <div style="height:4px;border-radius:1px;background:#f43f5e;width:60%"></div>
+        <div style="height:4px;border-radius:1px;background:#e5e7eb;width:80%"></div>
+      </div>
+      <div class="name">클래식</div>
+      <div class="info">이중 테두리(double) · inset 그림자</div>
+    </div>
+    <div class="theme-card">
+      <div class="preview" style="border-radius:16px; box-shadow:0 8px 32px rgba(0,0,0,0.12); background:rgba(255,255,255,0.5); backdrop-filter:blur(4px);">
+        <div style="height:4px;border-radius:3px;background:#f43f5e;width:60%"></div>
+        <div style="height:4px;border-radius:3px;background:#e5e7eb;width:80%"></div>
+      </div>
+      <div class="name">다크 글래스</div>
+      <div class="info">blur(20px) saturate(1.8) · 강한 반투명</div>
+    </div>
+    <div class="theme-card">
+      <div class="preview" style="border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.06); border:none;">
+        <div style="height:4px;border-radius:2px;background:#f43f5e;width:60%"></div>
+        <div style="height:4px;border-radius:2px;background:#e5e7eb;width:80%"></div>
+      </div>
+      <div class="name">카드</div>
+      <div class="info">높이감 있는 강한 그림자 · 테두리 없음</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 색상 팔레트 20종 ═══ -->
+<div class="section">
+  <div class="section-title">🎨 색상 팔레트 20종 <span class="badge">8 기존 + 12 NEW</span></div>
+  <div class="color-grid">
+    <div class="color-card" style="background:#fff1f2"><div class="swatch" style="background:#f43f5e;color:#fff;border-radius:8px;font-size:18px">🌹</div><div class="name">로즈</div><div class="hex">#f43f5e</div></div>
+    <div class="color-card" style="background:#f5f3ff"><div class="swatch" style="background:#7c3aed;color:#fff;border-radius:8px;font-size:18px">💜</div><div class="name">바이올렛</div><div class="hex">#7c3aed</div></div>
+    <div class="color-card" style="background:#f0f9ff"><div class="swatch" style="background:#0284c7;color:#fff;border-radius:8px;font-size:18px">🌊</div><div class="name">오션</div><div class="hex">#0284c7</div></div>
+    <div class="color-card" style="background:#ecfdf5"><div class="swatch" style="background:#059669;color:#fff;border-radius:8px;font-size:18px">💎</div><div class="name">에메랄드</div><div class="hex">#059669</div></div>
+    <div class="color-card" style="background:#fffbeb"><div class="swatch" style="background:#d97706;color:#fff;border-radius:8px;font-size:18px">🍯</div><div class="name">앰버</div><div class="hex">#d97706</div></div>
+    <div class="color-card" style="background:#f8fafc"><div class="swatch" style="background:#475569;color:#fff;border-radius:8px;font-size:18px">🪨</div><div class="name">슬레이트</div><div class="hex">#475569</div></div>
+    <div class="color-card" style="background:#0f172a"><div class="swatch" style="background:#6366f1;color:#fff;border-radius:8px;font-size:18px">🌙</div><div class="name" style="color:#e2e8f0">미드나잇</div><div class="hex">#6366f1</div></div>
+    <div class="color-card" style="background:#18181b"><div class="swatch" style="background:#38bdf8;color:#fff;border-radius:8px;font-size:18px">⚡</div><div class="name" style="color:#f4f4f5">차콜</div><div class="hex">#38bdf8</div></div>
+    <!-- 신규 12개 -->
+    <div class="color-card" style="background:#fdf2f8;border:2px solid #3b82f6"><div class="swatch" style="background:#e8729a;color:#fff;border-radius:8px;font-size:18px">🌸</div><div class="name">벚꽃 <small style="color:#3b82f6">NEW</small></div><div class="hex">#e8729a</div></div>
+    <div class="color-card" style="background:#f5f3ff;border:2px solid #3b82f6"><div class="swatch" style="background:#a78bfa;color:#fff;border-radius:8px;font-size:18px">💐</div><div class="name">라벤더 <small style="color:#3b82f6">NEW</small></div><div class="hex">#a78bfa</div></div>
+    <div class="color-card" style="background:#f0fdfa;border:2px solid #3b82f6"><div class="swatch" style="background:#2dd4bf;color:#fff;border-radius:8px;font-size:18px">🍃</div><div class="name">민트 <small style="color:#3b82f6">NEW</small></div><div class="hex">#2dd4bf</div></div>
+    <div class="color-card" style="background:#fff7ed;border:2px solid #3b82f6"><div class="swatch" style="background:#f97066;color:#fff;border-radius:8px;font-size:18px">🪸</div><div class="name">코럴 <small style="color:#3b82f6">NEW</small></div><div class="hex">#f97066</div></div>
+    <div class="color-card" style="background:#fafaf9;border:2px solid #3b82f6"><div class="swatch" style="background:#78716c;color:#fff;border-radius:8px;font-size:18px">🏛</div><div class="name">스톤 <small style="color:#3b82f6">NEW</small></div><div class="hex">#78716c</div></div>
+    <div class="color-card" style="background:#eef2ff;border:2px solid #3b82f6"><div class="swatch" style="background:#4f46e5;color:#fff;border-radius:8px;font-size:18px">🔷</div><div class="name">인디고 <small style="color:#3b82f6">NEW</small></div><div class="hex">#4f46e5</div></div>
+    <div class="color-card" style="background:#fefcf3;border:2px solid #3b82f6"><div class="swatch" style="background:#92400e;color:#fff;border-radius:8px;font-size:18px">☕</div><div class="name">카페모카 <small style="color:#3b82f6">NEW</small></div><div class="hex">#92400e</div></div>
+    <div class="color-card" style="background:#0c1222;border:2px solid #3b82f6"><div class="swatch" style="background:#34d399;color:#fff;border-radius:8px;font-size:18px">🌌</div><div class="name" style="color:#e2e8f0">오로라 <small style="color:#3b82f6">NEW</small></div><div class="hex">#34d399</div></div>
+    <div class="color-card" style="background:#1c1210;border:2px solid #3b82f6"><div class="swatch" style="background:#fb923c;color:#fff;border-radius:8px;font-size:18px">🌅</div><div class="name" style="color:#fde8d8">선셋 <small style="color:#3b82f6">NEW</small></div><div class="hex">#fb923c</div></div>
+    <div class="color-card" style="background:#110f1a;border:2px solid #3b82f6"><div class="swatch" style="background:#c084fc;color:#fff;border-radius:8px;font-size:18px">🍇</div><div class="name" style="color:#e8e0f0">그레이프 <small style="color:#3b82f6">NEW</small></div><div class="hex">#c084fc</div></div>
+    <div class="color-card" style="background:#0a1628;border:2px solid #3b82f6"><div class="swatch" style="background:#22d3ee;color:#fff;border-radius:8px;font-size:18px">🐠</div><div class="name" style="color:#e0f2fe">딥씨 <small style="color:#3b82f6">NEW</small></div><div class="hex">#22d3ee</div></div>
+    <div class="color-card" style="background:#0a1a0f;border:2px solid #3b82f6"><div class="swatch" style="background:#4ade80;color:#fff;border-radius:8px;font-size:18px">🌲</div><div class="name" style="color:#dcfce7">포레스트 <small style="color:#3b82f6">NEW</small></div><div class="hex">#4ade80</div></div>
+  </div>
+</div>
+
+<!-- ═══ 캘린더 강화 기능 ═══ -->
+<div class="section">
+  <div class="section-title">📅 캘린더 강화 기능 <span class="badge">6개</span></div>
+  <div class="grid">
+    <div class="card enhanced"><span class="num">#1</span><div class="icon">✨</div><div class="title">자연어 일정 입력</div><div class="desc">"내일 3시 학부모 상담" → 자동 파싱<br>날짜, 시간, 제목을 실시간 미리보기<br>오늘/내일/모레/요일/날짜 인식</div><span class="tag tag-enhanced">CalendarWidget 강화</span></div>
+    <div class="card enhanced"><span class="num">#2</span><div class="icon">🌤</div><div class="title">날씨 예보 캘린더 오버레이</div><div class="desc">캘린더 날짜 옆에 날씨 이모지 표시<br>5일 예보 자동 로드 (30분 갱신)<br>마우스오버로 상세 정보</div><span class="tag tag-enhanced">CalendarWidget 강화</span></div>
+    <div class="card new"><span class="num">#3</span><div class="icon">📊</div><div class="title">타임라인 뷰</div><div class="desc">오늘 일정을 가로 타임라인으로 시각화<br>수업 시간대 배경 + 현재 시각 표시선<br>이벤트 바 렌더링</div><span class="tag tag-new">신규 위젯</span></div>
+    <div class="card new"><span class="num">#5</span><div class="icon">📋</div><div class="title">이벤트 템플릿</div><div class="desc">교직원 회의, 학부모 상담 등 기본 4종<br>커스텀 템플릿 추가 가능<br>원클릭으로 오늘 일정에 등록</div><span class="tag tag-new">신규 위젯</span></div>
+    <div class="card enhanced"><span class="num">#6</span><div class="icon">🖱</div><div class="title">드래그 일정 이동</div><div class="desc">캘린더 일정을 드래그하여 다른 날로 이동<br>드롭 대상 날짜 하이라이트<br>자동 날짜 업데이트</div><span class="tag tag-enhanced">CalendarWidget 강화</span></div>
+    <div class="card new"><span class="num">#20</span><div class="icon">⏳</div><div class="title">카운트다운 대시보드</div><div class="desc">D-Day 시각적 강화 버전<br>프로그레스 바 + 이모지 표시<br>최대 4개 카운트다운 동시 표시</div><span class="tag tag-new">신규 위젯</span></div>
+  </div>
+</div>
+
+<!-- ═══ 메모 강화 기능 ═══ -->
+<div class="section">
+  <div class="section-title">📝 메모/노트 강화 <span class="badge">3개</span></div>
+  <div class="grid">
+    <div class="card enhanced"><span class="num">#7</span><div class="icon">🔗</div><div class="title">위키링크 [[]]</div><div class="desc">메모에 [[다른 메모 제목]] 입력 → 링크 생성<br>클릭하면 해당 메모로 이동<br>미리보기 모드에서 하이라이트</div><span class="tag tag-enhanced">MemoWidget 강화</span></div>
+    <div class="card enhanced"><span class="num">#10</span><div class="icon">📄</div><div class="title">마크다운 에디터</div><div class="desc"># 제목, **굵게**, *기울임*, `코드`<br>- 목록, ~~취소선~~, 체크박스<br>편집/미리보기 전환</div><span class="tag tag-enhanced">MemoWidget 강화</span></div>
+    <div class="card enhanced"><span class="num">#11</span><div class="icon">🏷</div><div class="title">스마트 태그 분류</div><div class="desc">메모에 #수업 #행정 태그 추가<br>태그별 필터링 기능<br>태그 클릭으로 빠른 필터</div><span class="tag tag-enhanced">MemoWidget 강화</span></div>
+  </div>
+</div>
+
+<!-- ═══ 생산성/습관 위젯 ═══ -->
+<div class="section">
+  <div class="section-title">🎯 생산성 & 습관 <span class="badge">7개</span></div>
+  <div class="grid">
+    <div class="card new"><span class="num">#9</span><div class="icon">📓</div><div class="title">일일 저널</div><div class="desc">매일 자동 생성되는 날짜별 기록 페이지<br>날짜 탐색 (이전/다음)<br>기록 일수 통계</div><span class="tag tag-new">신규 위젯</span></div>
+    <div class="card new"><span class="num">#12</span><div class="icon">📌</div><div class="title">스티커 노트</div><div class="desc">포스트잇 스타일 메모 (6색)<br>2열 그리드 배치<br>클릭 편집, 삭제 가능</div><span class="tag tag-new">신규 위젯</span></div>
+    <div class="card new"><span class="num">#13</span><div class="icon">🔥</div><div class="title">습관 트래커</div><div class="desc">일일 습관 체크 + 7일 히스토리<br>연속 달성(Streak) 🔥 표시<br>요일별 시각화</div><span class="tag tag-new">신규 위젯</span></div>
+    <div class="card new"><span class="num">#14</span><div class="icon">🎯</div><div class="title">일일 미니 챌린지</div><div class="desc">매일 랜덤 미션 1개 (16종)<br>완료 버튼 + 연속 달성 표시<br>"동료에게 칭찬 1회" 등</div><span class="tag tag-new">신규 위젯</span></div>
+    <div class="card new"><span class="num">#15</span><div class="icon">📋</div><div class="title">칸반 보드</div><div class="desc">할 일 → 진행 중 → 완료 3컬럼<br>드래그앤드롭 이동<br>항목 추가/삭제</div><span class="tag tag-new">신규 위젯</span></div>
+    <div class="card new"><span class="num">#41</span><div class="icon">🔥</div><div class="title">연속기록 카운터</div><div class="desc">여러 연속기록 동시 관리<br>클릭 토글로 오늘 체크<br>7일⭐ 30일👑 마일스톤</div><span class="tag tag-new">신규 위젯</span></div>
+    <div class="card new"><span class="num">#42</span><div class="icon">🎮</div><div class="title">업적 배지 & XP</div><div class="desc">할일/메모 기반 XP 자동 계산<br>레벨 시스템 (브론즈~다이아)<br>6개 배지 해금</div><span class="tag tag-new">신규 위젯</span></div>
+  </div>
+</div>
+
+<!-- ═══ 교사 특화 ═══ -->
+<div class="section">
+  <div class="section-title">🎓 교사 특화 <span class="badge">4개</span></div>
+  <div class="grid">
+    <div class="card new"><span class="num">#28</span><div class="icon">📋</div><div class="title">학급 출석 체커</div><div class="desc">학생 명단 등록 (쉼표 구분)<br>출석/지각/결석 버튼<br>날짜별 자동 저장</div><span class="tag tag-new">신규 위젯</span></div>
+    <div class="card new"><span class="num">#30</span><div class="icon">🎙</div><div class="title">소음 측정기</div><div class="desc">마이크 실시간 소음 레벨 측정<br>초록/노랑/빨강 시각적 게이지<br>피크 값 표시</div><span class="tag tag-new">신규 위젯</span></div>
+    <div class="card new"><span class="num">#36</span><div class="icon">🔄</div><div class="title">모둠 활동 순환 타이머</div><div class="desc">모둠 수 & 시간 설정<br>자동 순환 알림<br>현재 모둠 하이라이트</div><span class="tag tag-new">신규 위젯</span></div>
+    <div class="card new"><span class="num">#37</span><div class="icon">🏆</div><div class="title">팀 점수판</div><div class="desc">4모둠 기본, 색상 구분<br>+1/-1 버튼 + 프로그레스 바<br>초기화 기능</div><span class="tag tag-new">신규 위젯</span></div>
+  </div>
+</div>
+
+<!-- ═══ 건강 & 생활 ═══ -->
+<div class="section">
+  <div class="section-title">💚 건강 & 생활 <span class="badge">5개</span></div>
+  <div class="grid">
+    <div class="card new"><span class="num">#44</span><div class="icon">👁</div><div class="title">20-20-20 눈 휴식 알림</div><div class="desc">20분마다 20초간 먼 곳 보기<br>전체화면 휴식 모드<br>일일 휴식 횟수 표시</div><span class="tag tag-new">신규 위젯</span></div>
+    <div class="card new"><span class="num">#45</span><div class="icon">🧘</div><div class="title">스트레칭 가이드</div><div class="desc">6가지 동작 (목/어깨/손목/허리/눈/호흡)<br>각 30초 자동 진행<br>일러스트 이모지 가이드</div><span class="tag tag-new">신규 위젯</span></div>
+    <div class="card new"><span class="num">#47</span><div class="icon">💧</div><div class="title">수분 섭취 리마인더</div><div class="desc">일일 목표 8잔<br>+/- 버튼으로 기록<br>프로그레스 바 달성률</div><span class="tag tag-new">신규 위젯</span></div>
+    <div class="card new"><span class="num">#46</span><div class="icon">📱</div><div class="title">스크린타임 트래커</div><div class="desc">앱 사용 시간 자동 측정<br>7일 막대 그래프<br>시간/분 표시</div><span class="tag tag-new">신규 위젯</span></div>
+    <div class="card new"><span class="num">#16</span><div class="icon">📍</div><div class="title">위치 기반 리마인더</div><div class="desc">현재 위치 기반 알림 등록<br>Geolocation API 활용<br>장소 도착 시 자동 알림</div><span class="tag tag-new">신규 위젯</span></div>
+  </div>
+</div>
+
+<!-- ═══ 정보 & 도구 ═══ -->
+<div class="section">
+  <div class="section-title">🔧 정보 & 도구 <span class="badge">11개</span></div>
+  <div class="grid">
+    <div class="card new"><span class="num">#4/48</span><div class="icon">🌍</div><div class="title">세계 시계 (듀얼 타임존)</div><div class="desc">10개 주요 도시 중 2개 선택<br>실시간 시각 표시<br>편집 모드로 도시 변경</div><span class="tag tag-new">신규 위젯</span></div>
+    <div class="card new"><span class="num">#49</span><div class="icon">💱</div><div class="title">환율 변환기</div><div class="desc">원화 → USD/JPY/EUR/CNY<br>실시간 환율 API<br>입력 금액 변환</div><span class="tag tag-new">신규 위젯</span></div>
+    <div class="card new"><span class="num">#22</span><div class="icon">🚀</div><div class="title">앱 런처</div><div class="desc">한글/PPT/엑셀 등 기본 8개<br>웹 앱 바로가기<br>4열 그리드 아이콘</div><span class="tag tag-new">신규 위젯</span></div>
+    <div class="card new"><span class="num">#23/39</span><div class="icon">📰</div><div class="title">뉴스/RSS 피드</div><div class="desc">RSS URL 입력으로 뉴스 수집<br>교육부 기본 피드<br>클릭으로 원문 열기</div><span class="tag tag-new">신규 위젯</span></div>
+    <div class="card new"><span class="num">#17</span><div class="icon">🎤</div><div class="title">음성 → 할일 변환</div><div class="desc">Web Speech API 활용<br>한국어 음성 인식<br>말하면 자동 할일 등록</div><span class="tag tag-new">신규 위젯</span></div>
+    <div class="card new"><span class="num">#40</span><div class="icon">📄</div><div class="title">AI 문서 요약</div><div class="desc">텍스트 붙여넣기 → AI 3줄 요약<br>Gemini/Claude/GPT 지원<br>수업 자료 빠른 파악</div><span class="tag tag-new">신규 위젯</span></div>
+    <div class="card new"><span class="num">#8</span><div class="icon">🕸</div><div class="title">그래프 뷰</div><div class="desc">메모 간 [[링크]] 관계 시각화<br>Canvas 기반 네트워크 그래프<br>노드 + 엣지 렌더링</div><span class="tag tag-new">신규 위젯</span></div>
+    <div class="card new"><span class="num">#21</span><div class="icon">🖼</div><div class="title">사진 프레임</div><div class="desc">이미지 파일 업로드<br>10초 자동 슬라이드쇼<br>인디케이터 도트 네비게이션</div><span class="tag tag-new">신규 위젯</span></div>
+    <div class="card new"><span class="num">#34</span><div class="icon">🔍</div><div class="title">텍스트 추출 (OCR)</div><div class="desc">클립보드에서 텍스트 가져오기<br>Electron에서 화면 캡처 지원<br>복사 버튼</div><span class="tag tag-new">신규 위젯</span></div>
+    <div class="card new"><span class="num">#18</span><div class="icon">💻</div><div class="title">시스템 모니터</div><div class="desc">CPU / RAM / 디스크 사용률<br>프로그레스 바 시각화<br>5초 갱신, 80% 이상 빨간색</div><span class="tag tag-new">신규 위젯</span></div>
+    <div class="card new"><span class="num">#50</span><div class="icon">📬</div><div class="title">이메일 미리보기</div><div class="desc">Gmail 읽지 않은 수 배지<br>연동 상태 표시<br>원클릭 Gmail 열기</div><span class="tag tag-new">신규 위젯</span></div>
+  </div>
+</div>
+
+<!-- ═══ 시스템/UX 기능 ═══ -->
+<div class="section">
+  <div class="section-title">⚡ 시스템 & UX 기능 <span class="badge">4개</span></div>
+  <div class="grid">
+    <div class="card system"><span class="num">#25</span><div class="icon">⌨️</div><div class="title">커맨드 팔레트 (Ctrl+K)</div><div class="desc">Ctrl+K로 글로벌 커맨드 팔레트 호출<br>설정, 사이트, 위젯 토글 등 검색<br>Enter로 즉시 실행</div><span class="tag tag-system">UX 기능</span></div>
+    <div class="card system"><div class="icon">🎨</div><div class="title">프레임 테마 시스템</div><div class="desc">8종 프레임 테마 (틀 디자인)<br>위젯 카드 + 상단바 + 하단독 + 버튼 일괄 적용<br>색상 팔레트와 독립적으로 조합</div><span class="tag tag-system">시스템</span></div>
+    <div class="card new"><span class="num">#31</span><div class="icon">🌐</div><div class="title">네트워크 속도 모니터</div><div class="desc">다운로드 속도 Mbps 표시<br>히스토리 막대 그래프<br>10초 갱신</div><span class="tag tag-new">신규 위젯</span></div>
+    <div class="card new"><span class="num">#32</span><div class="icon">💾</div><div class="title">저장소 분석기</div><div class="desc">브라우저 Storage API 활용<br>앱 데이터 크기 표시<br>도넛 차트 시각화</div><span class="tag tag-new">신규 위젯</span></div>
+  </div>
+</div>
+
+</div>
+
+<div class="footer">
+  Smart Desktop v2.5.0 · 전체 위젯 64개 · 프레임 테마 8종 · 색상 팔레트 20종<br>
+  Generated on <script>document.write(new Date().toLocaleDateString('ko'))</script>
+</div>
+
+</body>
+</html>

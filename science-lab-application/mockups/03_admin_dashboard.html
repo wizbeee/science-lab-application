@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>관리자 대시보드 리디자인</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --primary: #4285F4;
+    --primary-light: #e8f0fe;
+    --success: #34a853;
+    --success-light: #e6f4ea;
+    --danger: #ea4335;
+    --danger-light: #fce8e6;
+    --warning: #f59e0b;
+    --warning-light: #fef3c7;
+    --info: #3b82f6;
+    --info-light: #dbeafe;
+    --bg: #f8f9fa;
+    --bg-secondary: #ffffff;
+    --text: #1a1a2e;
+    --text-sec: #5f6368;
+    --text-muted: #9ca3af;
+    --border: #e5e7eb;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+    --radius: 12px;
+  }
+
+  [data-theme="dark"] {
+    --bg: #0f172a;
+    --bg-secondary: #1e293b;
+    --text: #f1f5f9;
+    --text-sec: #94a3b8;
+    --text-muted: #64748b;
+    --border: #334155;
+    --primary-light: #1e3a5f;
+    --success-light: #14532d;
+    --danger-light: #451a1a;
+    --warning-light: #451a03;
+    --info-light: #1e3a5f;
+  }
+
+  body {
+    font-family: 'Pretendard','Apple SD Gothic Neo','Segoe UI',sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* Nav Bar */
+  .nav-bar {
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    height: 56px;
+    gap: 8px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .nav-logo {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--primary);
+    margin-right: 24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .nav-link {
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--text-sec);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.15s;
+    cursor: pointer;
+  }
+  .nav-link:hover { background: var(--primary-light); color: var(--primary); }
+  .nav-link.active { background: var(--primary-light); color: var(--primary); font-weight: 600; }
+  .nav-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .theme-btn {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-secondary);
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Main Content */
+  .main { padding: 24px; max-width: 1400px; margin: 0 auto; }
+
+  /* Stat Cards */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .stat-card {
+    background: var(--bg-secondary);
+    border-radius: var(--radius);
+    padding: 18px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+    box-shadow: var(--shadow-sm);
+  }
+  .stat-card:hover { box-shadow: var(--shadow-md); }
+  .stat-card.active { border-color: var(--primary); }
+  .stat-number { font-size: 28px; font-weight: 700; }
+  .stat-label { font-size: 13px; color: var(--text-sec); margin-top: 2px; }
+  .stat-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+  .stat-card.pending .stat-number { color: var(--warning); }
+  .stat-card.approved .stat-number { color: var(--success); }
+  .stat-card.final .stat-number { color: var(--info); }
+  .stat-card.rejected .stat-number { color: var(--danger); }
+
+  /* Filter Bar */
+  .filter-bar {
+    background: var(--bg-secondary);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-sm);
+  }
+  .filter-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .filter-chips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    background: var(--primary-light);
+    color: var(--primary);
+    font-weight: 500;
+  }
+  .chip .close {
+    cursor: pointer;
+    opacity: 0.6;
+    font-size: 14px;
+    margin-left: 2px;
+  }
+  .chip .close:hover { opacity: 1; }
+  .quick-chips { display: flex; gap: 6px; }
+  .quick-chip {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    border: 1px solid var(--border);
+    background: var(--bg-secondary);
+    color: var(--text-sec);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .quick-chip:hover { border-color: var(--primary); color: var(--primary); }
+  .quick-chip.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+  .filter-toggle {
+    margin-left: auto;
+    font-size: 13px;
+    color: var(--primary);
+    cursor: pointer;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .filter-expand {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 12px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+  .filter-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-sec);
+    margin-bottom: 4px;
+  }
+  .filter-group input, .filter-group select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+  }
+  .filter-group input:focus, .filter-group select:focus {
+    border-color: var(--primary);
+  }
+
+  /* Result Count + Table */
+  .table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .result-count {
+    font-size: 14px;
+    color: var(--text-sec);
+  }
+  .result-count strong { color: var(--text); }
+  .table-actions { display: flex; gap: 8px; }
+  .tbl-btn {
+    padding: 7px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-secondary);
+    color: var(--text-sec);
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .tbl-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+  /* Table */
+  .table-wrap {
+    background: var(--bg-secondary);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  thead { background: var(--bg); }
+  th {
+    padding: 12px 14px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-sec);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+  th:hover { color: var(--primary); }
+  .sort-arrow { font-size: 10px; margin-left: 2px; }
+  td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+  tr:hover { background: rgba(66,133,244,0.04); }
+  tr:last-child td { border-bottom: none; }
+
+  .td-checkbox { width: 40px; }
+  .td-checkbox input { width: 16px; height: 16px; accent-color: var(--primary); }
+
+  /* Status Badge */
+  .badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+  }
+  .badge.pending { background: var(--warning-light); color: #92400e; }
+  .badge.approved { background: var(--success-light); color: #065f46; }
+  .badge.final { background: var(--info-light); color: #1e3a8a; }
+  .badge.rejected { background: var(--danger-light); color: #991b1b; }
+
+  /* Edit indicator */
+  .edited-cell {
+    border-left: 3px solid var(--warning);
+    padding-left: 11px;
+  }
+
+  /* Bottom edit bar */
+  .edit-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--bg-secondary);
+    border-top: 2px solid var(--warning);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 100;
+    box-shadow: 0 -4px 12px rgba(0,0,0,0.1);
+  }
+  .edit-bar-text { font-size: 14px; font-weight: 600; color: var(--warning); }
+  .edit-bar-actions { display: flex; gap: 8px; }
+  .btn-save {
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: none;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-cancel { background: #f1f3f5; color: var(--text-sec); }
+  .btn-confirm { background: var(--primary); color: white; }
+
+  /* Pagination */
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 16px;
+  }
+  .page-btn {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-secondary);
+    color: var(--text-sec);
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .page-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+  .page-btn:hover:not(.active) { border-color: var(--primary); color: var(--primary); }
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="nav-bar">
+  <span class="nav-logo">🔬 과학실험실</span>
+  <a class="nav-link active">📋 신청 관리</a>
+  <a class="nav-link">🧪 시약 목록</a>
+  <a class="nav-link">👨‍🎓 학생 목록</a>
+  <a class="nav-link">📅 임장 시간표</a>
+  <div class="nav-right">
+    <button class="theme-btn" title="다크모드 전환">🌙</button>
+  </div>
+</nav>
+
+<div class="main">
+  <!-- Stat Cards -->
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-number">142</div>
+      <div class="stat-label">전체 신청</div>
+      <div class="stat-sub">이번 달 기준</div>
+    </div>
+    <div class="stat-card pending active">
+      <div class="stat-number">12</div>
+      <div class="stat-label">대기중</div>
+      <div class="stat-sub">승인 필요</div>
+    </div>
+    <div class="stat-card approved">
+      <div class="stat-number">48</div>
+      <div class="stat-label">1차 승인</div>
+      <div class="stat-sub">최종 대기</div>
+    </div>
+    <div class="stat-card final">
+      <div class="stat-number">74</div>
+      <div class="stat-label">최종 승인</div>
+      <div class="stat-sub">완료</div>
+    </div>
+    <div class="stat-card rejected">
+      <div class="stat-number">8</div>
+      <div class="stat-label">반려</div>
+      <div class="stat-sub">사유 확인</div>
+    </div>
+  </div>
+
+  <!-- Filter Bar (Collapsed) -->
+  <div class="filter-bar">
+    <div class="filter-row">
+      <div class="filter-chips">
+        <span class="chip">📅 2026년 4월 <span class="close">✕</span></span>
+        <span class="chip">🏷 대기중 <span class="close">✕</span></span>
+      </div>
+      <div class="quick-chips">
+        <span class="quick-chip active">이번 달</span>
+        <span class="quick-chip">이번 주</span>
+        <span class="quick-chip">오늘</span>
+      </div>
+      <span class="filter-toggle">⚙️ 상세 필터</span>
+    </div>
+
+    <!-- Expanded filter (shown) -->
+    <div class="filter-expand">
+      <div class="filter-group">
+        <label>시작일</label>
+        <input type="date" value="2026-04-01">
+      </div>
+      <div class="filter-group">
+        <label>종료일</label>
+        <input type="date" value="2026-04-30">
+      </div>
+      <div class="filter-group">
+        <label>실험실</label>
+        <select>
+          <option>전체 실험실</option>
+          <option>화학실험실</option>
+          <option>생물실험실</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>검색</label>
+        <input type="text" placeholder="학생이름, 실험제목...">
+      </div>
+    </div>
+  </div>
+
+  <!-- Table Header -->
+  <div class="table-header">
+    <span class="result-count">총 <strong>142</strong>건 중 필터 적용: <strong>12</strong>건</span>
+    <div class="table-actions">
+      <button class="tbl-btn">📥 CSV</button>
+      <button class="tbl-btn">🖨️ 인쇄</button>
+      <button class="tbl-btn" style="border-color:var(--primary);color:var(--primary);">✏️ 편집 모드</button>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="td-checkbox"><input type="checkbox"></th>
+          <th>날짜 <span class="sort-arrow">▼</span></th>
+          <th>실험실</th>
+          <th>시간</th>
+          <th>신청자</th>
+          <th>실험 제목</th>
+          <th>상태</th>
+          <th>지도교사</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="td-checkbox"><input type="checkbox"></td>
+          <td>04/10 (금)</td>
+          <td>화학실험실</td>
+          <td>6,7교시</td>
+          <td>김민준 (10512)</td>
+          <td class="edited-cell">산-염기 적정 실험</td>
+          <td><span class="badge pending">대기중</span></td>
+          <td>박지영 T</td>
+        </tr>
+        <tr>
+          <td class="td-checkbox"><input type="checkbox"></td>
+          <td>04/10 (금)</td>
+          <td>생물실험실</td>
+          <td>야자1</td>
+          <td>이서연 (10823)</td>
+          <td>현미경 관찰 실습</td>
+          <td><span class="badge pending">대기중</span></td>
+          <td>최영호 T</td>
+        </tr>
+        <tr>
+          <td class="td-checkbox"><input type="checkbox" checked></td>
+          <td>04/09 (목)</td>
+          <td>첨단기기실험실</td>
+          <td>5,6교시</td>
+          <td>정우진 (11102)</td>
+          <td>분광기 스펙트럼 분석</td>
+          <td><span class="badge approved">1차 승인</span></td>
+          <td>김태현 T</td>
+        </tr>
+        <tr>
+          <td class="td-checkbox"><input type="checkbox"></td>
+          <td>04/09 (목)</td>
+          <td>화학실험실</td>
+          <td>야자2</td>
+          <td>박하은 (10415)</td>
+          <td>에스터 합성 반응</td>
+          <td><span class="badge final">최종승인</span></td>
+          <td>이수진 T</td>
+        </tr>
+        <tr>
+          <td class="td-checkbox"><input type="checkbox"></td>
+          <td>04/08 (수)</td>
+          <td>프로젝트실험실</td>
+          <td>6교시</td>
+          <td>최도현 (10901)</td>
+          <td>Arduino 센서 프로젝트</td>
+          <td><span class="badge rejected">반려</span></td>
+          <td>송민기 T</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="pagination">
+      <button class="page-btn">‹</button>
+      <button class="page-btn active">1</button>
+      <button class="page-btn">2</button>
+      <button class="page-btn">3</button>
+      <button class="page-btn">›</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Bar (shown when editing) -->
+<div class="edit-bar">
+  <span class="edit-bar-text">⚠️ 1건 변경됨 (Ctrl+S로 저장)</span>
+  <div class="edit-bar-actions">
+    <button class="btn-save btn-cancel">취소</button>
+    <button class="btn-save btn-confirm">💾 저장</button>
+  </div>
+</div>
+
+</body>
+</html>

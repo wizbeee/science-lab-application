@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>관리자 로그인</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  :root {
+    --primary:#4285F4; --primary-light:#e8f0fe;
+    --bg:#f8f9fa; --card:#ffffff; --text:#1a1a2e; --text-sec:#5f6368;
+    --text-muted:#9ca3af; --border:#e5e7eb; --danger:#ea4335;
+    --radius:14px; --shadow:0 4px 24px rgba(0,0,0,0.08);
+  }
+  [data-theme="dark"] {
+    --bg:#0f172a; --card:#1e293b; --text:#f1f5f9; --text-sec:#94a3b8;
+    --text-muted:#64748b; --border:#334155; --primary-light:#1e3a5f;
+  }
+  body {
+    font-family:'Pretendard','Apple SD Gothic Neo','Segoe UI',sans-serif;
+    background:var(--bg); color:var(--text);
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    padding:24px;
+  }
+  .login-card {
+    background:var(--card); border-radius:var(--radius);
+    box-shadow:var(--shadow); width:100%; max-width:420px; padding:36px 32px;
+    position:relative;
+  }
+  .theme-toggle {
+    position:absolute; top:16px; right:16px;
+    width:36px; height:36px; border-radius:8px; border:1px solid var(--border);
+    background:var(--card); cursor:pointer; font-size:16px;
+  }
+  .logo { text-align:center; margin-bottom:28px; }
+  .logo .icon {
+    width:56px; height:56px; background:var(--primary); border-radius:14px;
+    display:inline-flex; align-items:center; justify-content:center; font-size:28px;
+    margin-bottom:12px;
+  }
+  .logo h1 { font-size:22px; font-weight:700; }
+  .logo p { font-size:13px; color:var(--text-sec); margin-top:4px; }
+
+  /* Tabs */
+  .tabs {
+    display:flex; background:var(--bg); border-radius:10px; padding:3px; margin-bottom:24px;
+  }
+  .tab {
+    flex:1; padding:10px; border:none; border-radius:8px;
+    font-size:14px; font-weight:600; cursor:pointer;
+    background:transparent; color:var(--text-sec); transition:all 0.15s;
+  }
+  .tab.active {
+    background:var(--card); color:var(--primary);
+    box-shadow:0 1px 4px rgba(0,0,0,0.06);
+  }
+
+  .field { margin-bottom:18px; }
+  .field label {
+    display:block; font-size:13px; font-weight:600; margin-bottom:5px;
+  }
+  .field input {
+    width:100%; padding:12px 14px; border:1.5px solid var(--border);
+    border-radius:10px; font-size:15px; background:var(--card); color:var(--text);
+    outline:none; transition:border-color 0.15s;
+  }
+  .field input:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(66,133,244,0.12); }
+
+  .remember {
+    display:flex; align-items:center; gap:8px; margin-bottom:20px;
+    font-size:13px; color:var(--text-sec);
+  }
+  .remember input { width:16px; height:16px; accent-color:var(--primary); }
+
+  .login-btn {
+    width:100%; padding:14px; border:none; border-radius:10px;
+    background:var(--primary); color:white; font-size:15px; font-weight:700;
+    cursor:pointer; transition:all 0.12s;
+  }
+  .login-btn:hover { background:#3574d4; }
+  .login-btn:active { transform:scale(0.99); }
+
+  .divider {
+    display:flex; align-items:center; gap:12px; margin:20px 0;
+    color:var(--text-muted); font-size:12px;
+  }
+  .divider::before, .divider::after {
+    content:''; flex:1; height:1px; background:var(--border);
+  }
+
+  .conn-test {
+    text-align:center; font-size:13px; color:var(--text-muted); cursor:pointer;
+  }
+  .conn-test:hover { color:var(--primary); }
+
+  .footer {
+    text-align:center; margin-top:20px; font-size:12px; color:var(--text-muted);
+  }
+</style>
+</head>
+<body>
+
+<div class="login-card">
+  <button class="theme-toggle">🌙</button>
+
+  <div class="logo">
+    <div class="icon">🔬</div>
+    <h1>과학실험실 관리</h1>
+    <p>관리자 프로그램에 로그인하세요</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active">교사 아이디</button>
+    <button class="tab">비밀번호</button>
+  </div>
+
+  <div class="field">
+    <label>교사 아이디</label>
+    <input type="text" placeholder="교사 아이디를 입력하세요" value="parkjy">
+  </div>
+
+  <label class="remember">
+    <input type="checkbox" checked> 로그인 정보 기억하기
+  </label>
+
+  <button class="login-btn">로그인</button>
+
+  <div class="divider">또는</div>
+  <div class="conn-test">🔌 서버 연결 테스트</div>
+
+  <div class="footer">충남과학고등학교 과학실험실 관리 시스템</div>
+</div>
+
+</body>
+</html>

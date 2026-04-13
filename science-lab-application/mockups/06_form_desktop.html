@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>신청서 데스크톱 - 사이드바 네비게이션</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --primary: #4285F4;
+    --primary-light: #e8f0fe;
+    --success: #34a853;
+    --success-light: #e6f4ea;
+    --danger: #ea4335;
+    --danger-light: #fce8e6;
+    --warning: #f59e0b;
+    --warning-light: #fef3c7;
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --text: #1a1a2e;
+    --text-sec: #5f6368;
+    --text-muted: #9ca3af;
+    --border: #e5e7eb;
+    --radius: 12px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  }
+  body {
+    font-family: 'Pretendard','Apple SD Gothic Neo','Segoe UI',sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* Top Header */
+  .top-header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 52px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    z-index: 200;
+    gap: 16px;
+  }
+  .top-header .logo {
+    font-size: 15px; font-weight: 700; color: var(--primary);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .top-header .floor-chip {
+    background: var(--primary-light); color: var(--primary);
+    padding: 4px 12px; border-radius: 14px; font-size: 13px; font-weight: 600;
+  }
+  .top-header .auto-save {
+    margin-left: auto;
+    font-size: 12px; color: var(--success);
+    display: flex; align-items: center; gap: 4px;
+  }
+  .top-header .shortcuts-hint {
+    font-size: 11px; color: var(--text-muted);
+    background: var(--bg); padding: 4px 10px; border-radius: 6px;
+  }
+  .top-header .shortcuts-hint kbd {
+    background: var(--card); border: 1px solid var(--border);
+    padding: 1px 5px; border-radius: 3px; font-size: 11px; font-family: inherit;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    position: fixed;
+    top: 52px; left: 0; bottom: 0;
+    width: 220px;
+    background: var(--card);
+    border-right: 1px solid var(--border);
+    padding: 16px 0;
+    overflow-y: auto;
+    z-index: 100;
+  }
+  .sidebar-title {
+    font-size: 11px; font-weight: 600; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.5px;
+    padding: 0 16px; margin-bottom: 8px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px;
+    font-size: 14px; color: var(--text-sec);
+    cursor: pointer; transition: all 0.12s;
+    border-left: 3px solid transparent;
+    text-decoration: none;
+  }
+  .nav-item:hover { background: var(--bg); }
+  .nav-item.active {
+    background: var(--primary-light);
+    color: var(--primary);
+    border-left-color: var(--primary);
+    font-weight: 600;
+  }
+  .nav-item.completed {
+    color: var(--success);
+  }
+  .nav-icon {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+    border: 2px solid var(--border);
+    background: var(--card);
+    flex-shrink: 0;
+  }
+  .nav-item.completed .nav-icon {
+    background: var(--success); border-color: var(--success); color: white;
+  }
+  .nav-item.active .nav-icon {
+    background: var(--primary); border-color: var(--primary); color: white;
+  }
+
+  .sidebar-divider {
+    height: 1px; background: var(--border); margin: 12px 16px;
+  }
+
+  /* Quick Actions */
+  .quick-actions {
+    padding: 0 12px;
+  }
+  .quick-btn {
+    display: flex; align-items: center; gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--text-sec);
+    font-size: 13px;
+    cursor: pointer;
+    margin-bottom: 6px;
+    transition: all 0.12s;
+  }
+  .quick-btn:hover { border-color: var(--primary); color: var(--primary); }
+  .quick-btn kbd {
+    margin-left: auto;
+    font-size: 10px; color: var(--text-muted);
+    background: var(--bg); padding: 2px 6px; border-radius: 4px;
+    font-family: inherit;
+  }
+
+  /* Main Content */
+  .main {
+    margin-left: 220px;
+    margin-top: 52px;
+    flex: 1;
+    padding: 32px 40px;
+    max-width: 900px;
+  }
+
+  /* Section */
+  .section {
+    margin-bottom: 36px;
+    scroll-margin-top: 72px;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--border);
+  }
+  .section-header h2 {
+    font-size: 18px; font-weight: 700;
+  }
+  .section-header .badge {
+    font-size: 11px; padding: 3px 8px; border-radius: 6px;
+    font-weight: 600;
+  }
+  .section-header .badge.done { background: var(--success-light); color: #065f46; }
+  .section-header .badge.current { background: var(--primary-light); color: var(--primary); }
+
+  /* Form Grid */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  .form-grid .full { grid-column: 1 / -1; }
+
+  .field label {
+    display: block; font-size: 13px; font-weight: 600;
+    margin-bottom: 5px; color: var(--text);
+  }
+  .field label .req { color: var(--danger); }
+  .field input, .field select, .field textarea {
+    width: 100%; padding: 10px 14px;
+    border: 1.5px solid var(--border); border-radius: 8px;
+    font-size: 14px; background: var(--card); color: var(--text);
+    outline: none; transition: border-color 0.15s;
+    font-family: inherit;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(66,133,244,0.12);
+  }
+  .field .hint { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+
+  .field textarea { resize: vertical; min-height: 100px; line-height: 1.6; }
+
+  /* Time Checkboxes - horizontal */
+  .time-grid {
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+  .time-chip {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 14px; border-radius: 8px;
+    border: 1.5px solid var(--border);
+    font-size: 14px; cursor: pointer;
+    transition: all 0.12s;
+    background: var(--card);
+  }
+  .time-chip:hover { border-color: var(--primary); }
+  .time-chip.selected {
+    background: var(--primary-light);
+    border-color: var(--primary);
+    color: var(--primary); font-weight: 600;
+  }
+  .time-chip.disabled {
+    opacity: 0.35; pointer-events: none;
+  }
+  .time-chip input { width: 16px; height: 16px; accent-color: var(--primary); }
+
+  /* Chemical Table */
+  .chem-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .chem-toolbar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+  .chem-toolbar input {
+    flex: 1; padding: 8px 12px;
+    border: 1.5px solid var(--border); border-radius: 8px;
+    font-size: 13px; outline: none; background: var(--card);
+  }
+  .chem-toolbar input:focus { border-color: var(--primary); }
+  .chem-toolbar button {
+    padding: 8px 14px; border-radius: 8px;
+    border: none; font-size: 13px; font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-search { background: var(--primary); color: white; }
+  .btn-add { background: #f1f3f5; color: var(--text-sec); border: 1px solid var(--border) !important; }
+
+  .chem-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .chem-table th {
+    padding: 10px 12px; text-align: left;
+    background: var(--bg); font-weight: 600; color: var(--text-sec);
+    font-size: 12px; border-bottom: 1px solid var(--border);
+  }
+  .chem-table td {
+    padding: 8px 12px; border-bottom: 1px solid var(--border);
+  }
+  .chem-table tr:hover { background: rgba(66,133,244,0.03); }
+  .chem-table input, .chem-table select {
+    padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px;
+    font-size: 13px; width: 100%; background: var(--card);
+  }
+  .validate-badge {
+    padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600;
+  }
+  .validate-badge.ok { background: var(--success-light); color: #065f46; }
+  .validate-badge.pending { background: var(--warning-light); color: #92400e; }
+  .del-btn {
+    width: 28px; height: 28px; border-radius: 6px;
+    border: 1px solid var(--border); background: var(--card);
+    color: var(--danger); cursor: pointer; font-size: 14px;
+  }
+  .del-btn:hover { background: var(--danger-light); }
+
+  .chem-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; background: var(--bg);
+    border-top: 1px solid var(--border);
+  }
+  .chem-footer .validate-all {
+    padding: 8px 16px; border-radius: 8px;
+    border: none; background: var(--primary); color: white;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+
+  /* Bottom Submit Bar */
+  .submit-bar {
+    position: fixed;
+    bottom: 0; left: 220px; right: 0;
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    padding: 12px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 100;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+  }
+  .submit-bar .progress-text {
+    font-size: 13px; color: var(--text-sec);
+  }
+  .submit-bar .progress-text strong { color: var(--primary); }
+  .progress-mini {
+    width: 120px; height: 6px;
+    background: var(--border); border-radius: 3px;
+    overflow: hidden; display: inline-block; vertical-align: middle;
+    margin-left: 8px;
+  }
+  .progress-mini .fill {
+    height: 100%; background: var(--primary); border-radius: 3px;
+    transition: width 0.3s;
+  }
+  .submit-actions { display: flex; gap: 8px; }
+  .submit-actions button {
+    padding: 10px 24px; border-radius: 10px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    border: none; transition: all 0.12s;
+  }
+  .btn-draft { background: #f1f3f5; color: var(--text-sec); }
+  .btn-draft:hover { background: #e5e7eb; }
+  .btn-submit { background: var(--primary); color: white; }
+  .btn-submit:hover { background: #3574d4; }
+  .btn-submit:active { transform: scale(0.98); }
+</style>
+</head>
+<body>
+
+<!-- Top Header -->
+<div class="top-header">
+  <span class="logo">🔬 과학실험실 사용 신청</span>
+  <span class="floor-chip">🧪 S동 1층 · 화학·생물</span>
+  <span class="auto-save">✅ 자동 저장됨 (14:32)</span>
+  <span class="shortcuts-hint"><kbd>Ctrl</kbd>+<kbd>S</kbd> 임시저장 · <kbd>Ctrl</kbd>+<kbd>Enter</kbd> 제출</span>
+</div>
+
+<!-- Sidebar -->
+<nav class="sidebar">
+  <div class="sidebar-title">신청 단계</div>
+
+  <a class="nav-item completed" href="#sec-basic">
+    <span class="nav-icon">✓</span> 기본 정보
+  </a>
+  <a class="nav-item completed" href="#sec-schedule">
+    <span class="nav-icon">✓</span> 일정 선택
+  </a>
+  <a class="nav-item active" href="#sec-experiment">
+    <span class="nav-icon">3</span> 실험 내용
+  </a>
+  <a class="nav-item" href="#sec-chemicals">
+    <span class="nav-icon">4</span> 시약 관리
+  </a>
+  <a class="nav-item" href="#sec-safety">
+    <span class="nav-icon">5</span> 안전·교사
+  </a>
+  <a class="nav-item" href="#sec-review">
+    <span class="nav-icon">6</span> 확인·제출
+  </a>
+
+  <div class="sidebar-divider"></div>
+
+  <div class="sidebar-title">빠른 실행</div>
+  <div class="quick-actions">
+    <button class="quick-btn">💾 임시저장 <kbd>Ctrl+S</kbd></button>
+    <button class="quick-btn">📂 불러오기 <kbd>Ctrl+O</kbd></button>
+    <button class="quick-btn">📋 이전 신청 복사 <kbd>Ctrl+D</kbd></button>
+  </div>
+</nav>
+
+<!-- Main Content -->
+<div class="main">
+
+  <!-- Section 1: Basic Info (completed) -->
+  <div class="section" id="sec-basic">
+    <div class="section-header">
+      <h2>👤 기본 정보</h2>
+      <span class="badge done">✓ 완료</span>
+    </div>
+    <div class="form-grid">
+      <div class="field">
+        <label>대표 학번 <span class="req">*</span></label>
+        <input type="text" value="10512" style="background:#f1f3f5;">
+      </div>
+      <div class="field">
+        <label>대표 이름 <span class="req">*</span></label>
+        <input type="text" value="김민준" style="background:#f1f3f5;">
+      </div>
+      <div class="field full">
+        <label>팀원 (학번-이름, 쉼표 구분)</label>
+        <input type="text" value="10823-이서연, 11102-정우진">
+        <div class="hint">총 참여인원: 3명</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: Schedule (completed) -->
+  <div class="section" id="sec-schedule">
+    <div class="section-header">
+      <h2>📅 일정 선택</h2>
+      <span class="badge done">✓ 완료</span>
+    </div>
+    <div class="form-grid">
+      <div class="field">
+        <label>실험 날짜 <span class="req">*</span></label>
+        <input type="date" value="2026-04-10">
+        <div class="hint">📅 금요일 · 사용 가능</div>
+      </div>
+      <div class="field">
+        <label>실험실 <span class="req">*</span></label>
+        <select>
+          <option selected>화학실험실</option>
+          <option>생물실험실</option>
+          <option>첨단기기실험실</option>
+        </select>
+      </div>
+      <div class="field full">
+        <label>사용 시간 <span class="req">*</span></label>
+        <div class="time-grid">
+          <label class="time-chip"><input type="checkbox"> 5교시</label>
+          <label class="time-chip selected"><input type="checkbox" checked> 6교시</label>
+          <label class="time-chip selected"><input type="checkbox" checked> 7교시</label>
+          <label class="time-chip"><input type="checkbox"> 야자1</label>
+          <label class="time-chip"><input type="checkbox"> 야자2</label>
+        </div>
+      </div>
+      <div class="field">
+        <label>실험 목적 <span class="req">*</span></label>
+        <select><option selected>교과 실험</option></select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: Experiment (current) -->
+  <div class="section" id="sec-experiment">
+    <div class="section-header">
+      <h2>🧪 실험 내용</h2>
+      <span class="badge current">작성 중</span>
+    </div>
+    <div class="form-grid">
+      <div class="field full">
+        <label>실험 제목 <span class="req">*</span></label>
+        <input type="text" value="산-염기 적정 실험" placeholder="실험 제목을 입력하세요">
+      </div>
+      <div class="field full">
+        <label>실험 과정 <span class="req">*</span></label>
+        <textarea placeholder="실험 과정을 단계별로 작성하세요">1. 0.1M NaOH 표준용액 조제
+2. 식초 시료 정량 채취 (10mL)
+3. 페놀프탈레인 지시약 2~3방울 첨가
+4. 뷰렛으로 NaOH 용액 적정
+5. 종말점 도달 시 소비된 NaOH 부피 기록</textarea>
+      </div>
+      <div class="field full">
+        <label>사용 기자재</label>
+        <input type="text" value="뷰렛, 삼각플라스크, 피펫, 스탠드" placeholder="사용할 기자재를 나열하세요">
+      </div>
+      <div class="field full">
+        <label>뒷정리 및 주의사항 <span class="req">*</span></label>
+        <textarea placeholder="실험 후 정리 및 안전 주의사항" style="min-height:70px;">폐시약은 지정 용기에 분리 폐기. 기구 세척 후 건조대에 정리. 장갑·고글 착용 필수.</textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: Chemicals -->
+  <div class="section" id="sec-chemicals">
+    <div class="section-header">
+      <h2>⚗️ 시약 관리</h2>
+    </div>
+    <div class="chem-card">
+      <div class="chem-toolbar">
+        <input type="text" placeholder="시약명 또는 화학식으로 검색... (예: NaOH, 수산화나트륨)">
+        <button class="btn-search">🔍 검색</button>
+        <button class="btn-add">+ 직접 추가</button>
+      </div>
+      <table class="chem-table">
+        <thead>
+          <tr>
+            <th style="width:22%">시약명</th>
+            <th style="width:10%">상태</th>
+            <th style="width:10%">농도</th>
+            <th style="width:12%">사용량</th>
+            <th style="width:15%">폐기 분류</th>
+            <th style="width:10%">MSDS</th>
+            <th style="width:10%">검증</th>
+            <th style="width:5%"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>NaOH</strong><br><span style="font-size:11px;color:var(--text-muted)">수산화나트륨</span></td>
+            <td>고체</td>
+            <td style="color:var(--text-muted)">—</td>
+            <td><input value="4g" style="width:80px"></td>
+            <td><select><option selected>알칼리 폐액</option></select></td>
+            <td><input value="확인함" style="width:70px;font-size:12px"></td>
+            <td><span class="validate-badge ok">✓ 확인</span></td>
+            <td><button class="del-btn">✕</button></td>
+          </tr>
+          <tr>
+            <td><strong>CH₃COOH</strong><br><span style="font-size:11px;color:var(--text-muted)">아세트산</span></td>
+            <td>액체</td>
+            <td><input value="0.1M" style="width:70px"></td>
+            <td><input value="50mL" style="width:80px"></td>
+            <td><select><option selected>산 폐액</option></select></td>
+            <td><input value="확인함" style="width:70px;font-size:12px"></td>
+            <td><span class="validate-badge ok">✓ 확인</span></td>
+            <td><button class="del-btn">✕</button></td>
+          </tr>
+          <tr>
+            <td><strong>페놀프탈레인</strong><br><span style="font-size:11px;color:var(--text-muted)">지시약</span></td>
+            <td>액체</td>
+            <td><input value="1%" style="width:70px"></td>
+            <td><input value="5mL" style="width:80px"></td>
+            <td><select><option selected>유기 폐액</option></select></td>
+            <td><input value="" placeholder="메모" style="width:70px;font-size:12px"></td>
+            <td><span class="validate-badge pending">미검증</span></td>
+            <td><button class="del-btn">✕</button></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="chem-footer">
+        <span style="font-size:13px;color:var(--text-sec);">시약 3종 · 검증 완료 2/3</span>
+        <button class="validate-all">전체 검증 실행</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Spacer for fixed submit bar -->
+  <div style="height: 80px;"></div>
+</div>
+
+<!-- Bottom Submit Bar -->
+<div class="submit-bar">
+  <div class="progress-text">
+    <strong>4</strong>/6 섹션 완료
+    <div class="progress-mini"><div class="fill" style="width:66%"></div></div>
+  </div>
+  <div class="submit-actions">
+    <button class="btn-draft">💾 임시저장</button>
+    <button class="btn-submit">📤 신청서 제출</button>
+  </div>
+</div>
+
+</body>
+</html>

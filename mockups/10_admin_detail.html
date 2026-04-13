@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>관리자 - 신청 상세 모달</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--primary:#4285F4;--primary-light:#e8f0fe;--success:#34a853;--success-light:#e6f4ea;
+    --danger:#ea4335;--danger-light:#fce8e6;--warning:#f59e0b;--warning-light:#fef3c7;
+    --info:#3b82f6;--info-light:#dbeafe;--bg:#f8f9fa;--card:#fff;--text:#1a1a2e;
+    --text-sec:#5f6368;--text-muted:#9ca3af;--border:#e5e7eb;--radius:12px}
+  body{font-family:'Pretendard','Apple SD Gothic Neo','Segoe UI',sans-serif;
+    background:rgba(0,0,0,0.4);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+
+  .modal{background:var(--card);border-radius:16px;width:100%;max-width:860px;max-height:90vh;
+    display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.2)}
+
+  .modal-header{padding:18px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0}
+  .modal-header h2{font-size:18px;font-weight:700;flex:1}
+  .header-badge{padding:5px 12px;border-radius:8px;font-size:13px;font-weight:600}
+  .header-badge.pending{background:var(--warning-light);color:#92400e}
+  .close-btn{width:36px;height:36px;border-radius:8px;border:1px solid var(--border);
+    background:var(--card);cursor:pointer;font-size:16px}
+
+  .modal-body{overflow-y:auto;flex:1}
+
+  /* Two column layout */
+  .detail-split{display:grid;grid-template-columns:1fr 1fr;gap:0}
+  .detail-left{padding:20px 24px;border-right:1px solid var(--border)}
+  .detail-right{padding:20px 24px}
+
+  .section-title{font-size:14px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px;
+    color:var(--text);padding-bottom:8px;border-bottom:1px solid var(--border)}
+
+  .info-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+  .info-item label{display:block;font-size:11px;color:var(--text-muted);margin-bottom:1px}
+  .info-item .val{font-size:14px;font-weight:500}
+  .info-full{grid-column:1/-1}
+
+  .process-box{background:var(--bg);padding:10px 12px;border-radius:8px;font-size:13px;line-height:1.7;white-space:pre-wrap;margin-bottom:12px}
+
+  /* Chemical table */
+  .chem-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px}
+  .chem-tbl th{padding:8px;text-align:left;background:var(--bg);font-weight:600;color:var(--text-sec);
+    border-bottom:1px solid var(--border);font-size:11px}
+  .chem-tbl td{padding:7px 8px;border-bottom:1px solid var(--border)}
+  .guidance-tag{padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600}
+  .guidance-tag.req{background:var(--danger-light);color:#991b1b}
+  .guidance-tag.no{background:#f1f3f5;color:var(--text-muted)}
+
+  /* Quick Reject chips */
+  .reject-section{margin-top:12px}
+  .reject-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .reject-chip{padding:6px 12px;border-radius:16px;font-size:12px;border:1px solid var(--border);
+    background:var(--card);cursor:pointer;transition:all 0.12s;color:var(--text-sec)}
+  .reject-chip:hover{border-color:var(--danger);color:var(--danger);background:var(--danger-light)}
+  .reject-chip.selected{border-color:var(--danger);color:var(--danger);background:var(--danger-light)}
+
+  /* Timeline */
+  .timeline{margin-bottom:12px}
+  .tl-item{display:flex;gap:10px;padding-bottom:14px;position:relative}
+  .tl-item:not(:last-child)::before{content:'';position:absolute;left:11px;top:26px;bottom:0;width:2px;background:var(--border)}
+  .tl-dot{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:11px;flex-shrink:0;border:2px solid var(--border);background:var(--card)}
+  .tl-item.done .tl-dot{background:var(--success);border-color:var(--success);color:white}
+  .tl-item.done::before{background:var(--success)}
+  .tl-item.current .tl-dot{background:var(--primary);border-color:var(--primary);color:white;
+    box-shadow:0 0 0 3px rgba(66,133,244,0.15)}
+  .tl-content{flex:1}
+  .tl-title{font-size:13px;font-weight:600}
+  .tl-desc{font-size:12px;color:var(--text-sec);margin-top:2px}
+
+  /* Action area */
+  .action-area{padding:0 24px;margin-top:4px}
+  .comment-box{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;
+    font-size:13px;min-height:60px;resize:vertical;font-family:inherit;outline:none;background:var(--bg)}
+  .comment-box:focus{border-color:var(--primary)}
+  .comment-label{font-size:12px;font-weight:600;margin-bottom:4px;display:block;color:var(--text-sec)}
+
+  .modal-footer{padding:14px 24px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
+  .footer-btn{padding:10px 22px;border-radius:10px;border:none;font-size:14px;font-weight:600;cursor:pointer}
+  .btn-print{background:#f1f3f5;color:var(--text-sec)}
+  .btn-reject{background:var(--danger-light);color:var(--danger);border:1.5px solid var(--danger)}
+  .btn-approve{background:var(--success);color:white}
+</style>
+</head>
+<body>
+
+<div class="modal">
+  <div class="modal-header">
+    <h2>📋 신청 상세</h2>
+    <span class="header-badge pending">⏳ 대기중</span>
+    <button class="close-btn">✕</button>
+  </div>
+
+  <div class="modal-body">
+    <div class="detail-split">
+      <!-- Left: Application Info -->
+      <div class="detail-left">
+        <div class="section-title">👤 신청 정보</div>
+        <div class="info-row">
+          <div class="info-item"><label>신청자</label><div class="val">김민준 (10512)</div></div>
+          <div class="info-item"><label>인원</label><div class="val">3명</div></div>
+          <div class="info-item info-full"><label>팀원</label><div class="val">이서연 (10823), 정우진 (11102)</div></div>
+        </div>
+
+        <div class="section-title">📅 일정</div>
+        <div class="info-row">
+          <div class="info-item"><label>날짜</label><div class="val">2026-04-10 (금)</div></div>
+          <div class="info-item"><label>실험실</label><div class="val">화학실험실</div></div>
+          <div class="info-item"><label>시간</label><div class="val">6교시, 7교시</div></div>
+          <div class="info-item"><label>목적</label><div class="val">교과 실험</div></div>
+        </div>
+
+        <div class="section-title">🧪 실험</div>
+        <div class="info-row">
+          <div class="info-item info-full"><label>실험 제목</label><div class="val" style="font-size:15px;font-weight:700">산-염기 적정 실험</div></div>
+        </div>
+        <div class="process-box">1. 0.1M NaOH 표준용액 조제
+2. 식초 시료 정량 채취 (10mL)
+3. 페놀프탈레인 지시약 2~3방울 첨가
+4. 뷰렛으로 NaOH 용액 적정
+5. 종말점 도달 시 소비된 NaOH 부피 기록</div>
+
+        <div class="section-title">⚗️ 시약</div>
+        <table class="chem-tbl">
+          <thead><tr><th>시약</th><th>상태</th><th>농도</th><th>사용량</th><th>폐기분류</th><th>지도</th></tr></thead>
+          <tbody>
+            <tr><td><strong>NaOH</strong></td><td>고체</td><td>—</td><td>4g</td><td>알칼리</td><td><span class="guidance-tag req">필요</span></td></tr>
+            <tr><td><strong>CH₃COOH</strong></td><td>액체</td><td>0.1M</td><td>50mL</td><td>산</td><td><span class="guidance-tag no">불필요</span></td></tr>
+            <tr><td><strong>페놀프탈레인</strong></td><td>액체</td><td>1%</td><td>5mL</td><td>유기</td><td><span class="guidance-tag no">불필요</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Right: Actions & History -->
+      <div class="detail-right">
+        <div class="section-title">📜 처리 이력</div>
+        <div class="timeline">
+          <div class="tl-item done">
+            <div class="tl-dot">✓</div>
+            <div class="tl-content">
+              <div class="tl-title">신청서 접수</div>
+              <div class="tl-desc">김민준 · 04/07 14:32</div>
+            </div>
+          </div>
+          <div class="tl-item current">
+            <div class="tl-dot">2</div>
+            <div class="tl-content">
+              <div class="tl-title">1차 승인 대기중</div>
+              <div class="tl-desc">박지영 T 승인 필요</div>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot">3</div>
+            <div class="tl-content">
+              <div class="tl-title">최종 승인</div>
+              <div class="tl-desc">과학부장교사</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title">⚡ 빠른 반려 사유</div>
+        <div class="reject-chips">
+          <span class="reject-chip">실험 계획 미흡</span>
+          <span class="reject-chip">안전 장비 누락</span>
+          <span class="reject-chip">시약 검증 실패</span>
+          <span class="reject-chip">일정 중복</span>
+          <span class="reject-chip">폐기물 처리 부적절</span>
+          <span class="reject-chip selected">기자재 부족</span>
+        </div>
+
+        <div style="margin-top:12px">
+          <label class="comment-label">승인 의견 / 반려 사유</label>
+          <textarea class="comment-box" placeholder="의견을 입력하세요...">해당 날짜에 분광기가 점검 중입니다. 다음 주로 일정 변경 후 재신청 바랍니다.</textarea>
+        </div>
+
+        <div class="section-title" style="margin-top:16px">📊 신청자 이력</div>
+        <div class="info-row">
+          <div class="info-item"><label>총 신청</label><div class="val">12건</div></div>
+          <div class="info-item"><label>경고</label><div class="val" style="color:var(--danger)">0회</div></div>
+          <div class="info-item"><label>최근 신청</label><div class="val">03/28</div></div>
+          <div class="info-item"><label>승인률</label><div class="val" style="color:var(--success)">91%</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-footer">
+    <button class="footer-btn btn-print">🖨️ 인쇄</button>
+    <button class="footer-btn btn-reject">✕ 반려</button>
+    <button class="footer-btn btn-approve">✓ 승인</button>
+  </div>
+</div>
+
+</body>
+</html>

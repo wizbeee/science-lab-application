@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>Smart Desktop - 기본 ON 위젯 그리드 목업</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Malgun Gothic', sans-serif; background: #fff1f2; padding: 0; }
+
+  h1 { text-align: center; padding: 16px; font-size: 18px; color: #1f2937; background: #fff; border-bottom: 1px solid #fecdd3; }
+  .subtitle { text-align: center; font-size: 12px; color: #9ca3af; padding: 4px; background: #fff; border-bottom: 1px solid #fecdd3; }
+
+  .grid-container {
+    position: relative;
+    width: 1200px;
+    height: 675px;
+    margin: 20px auto;
+    background: #fff1f2;
+    border: 2px solid #fecdd3;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  /* 24x16 grid lines */
+  .grid-lines {
+    position: absolute; inset: 0;
+    display: grid;
+    grid-template-columns: repeat(24, 1fr);
+    grid-template-rows: repeat(16, 1fr);
+    gap: 1px;
+    opacity: 0.15;
+    pointer-events: none;
+  }
+  .grid-lines div { border: 0.5px solid #f43f5e; }
+
+  .widget {
+    position: absolute;
+    border-radius: 10px;
+    border: 1.5px solid #fecdd3;
+    background: rgba(255,255,255,0.95);
+    padding: 8px 10px;
+    font-size: 11px;
+    color: #1f2937;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .widget .title {
+    font-size: 11px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: #f43f5e;
+    white-space: nowrap;
+  }
+  .widget .desc {
+    font-size: 9px;
+    color: #9ca3af;
+    line-height: 1.4;
+  }
+  .widget .grid-info {
+    position: absolute;
+    bottom: 2px;
+    right: 4px;
+    font-size: 8px;
+    color: #d1d5db;
+  }
+
+  /* Legend */
+  .legend {
+    width: 1200px;
+    margin: 0 auto 20px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    padding: 12px;
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid #fecdd3;
+  }
+  .legend h3 { grid-column: 1 / -1; font-size: 14px; color: #1f2937; margin-bottom: 4px; }
+  .legend-item {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; color: #374151;
+  }
+  .legend-dot {
+    width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0;
+  }
+  .legend-item.off { opacity: 0.4; text-decoration: line-through; }
+
+  .section-title {
+    width: 1200px;
+    margin: 20px auto 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #f43f5e;
+    padding-left: 4px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Smart Desktop v2.4.0 - 위젯 그리드 레이아웃 목업</h1>
+<div class="subtitle">24열 x 16행 그리드 | 기본 ON 위젯 17개 표시</div>
+
+<!-- ══ 기본 ON 위젯 그리드 ══ -->
+<div class="section-title">현재 기본 ON 위젯 배치 (17개)</div>
+<div class="grid-container">
+  <!-- Grid lines -->
+  <div class="grid-lines">
+    <script>for(let i=0;i<384;i++) document.write('<div></div>');</script>
+  </div>
+
+  <!-- 좌측 열 (col 0-3) -->
+  <div class="widget" style="left:0%; top:0%; width:16.67%; height:56.25%; border-left-color:#f43f5e; border-left-width:3px;">
+    <div class="title">📋 시간표</div>
+    <div class="desc">주간 시간표<br>1~7교시<br>과목별 색상<br>진도 메모</div>
+    <div class="grid-info">col 0-3, row 0-8</div>
+  </div>
+
+  <div class="widget" style="left:0%; top:56.25%; width:16.67%; height:18.75%;">
+    <div class="title">📅 D-Day</div>
+    <div class="desc">D-Day + 할일 기한<br>날짜순 정렬</div>
+    <div class="grid-info">col 0-3, row 9-11</div>
+  </div>
+
+  <div class="widget" style="left:0%; top:75%; width:16.67%; height:25%;">
+    <div class="title">⭐ 바로가기</div>
+    <div class="desc">즐겨찾기 링크<br>자주 쓰는 사이트</div>
+    <div class="grid-info">col 0-3, row 12-15</div>
+  </div>
+
+  <!-- 중앙 캘린더 영역 (col 4-12) -->
+  <div class="widget" style="left:16.67%; top:0%; width:37.5%; height:56.25%; background:rgba(255,241,242,0.5);">
+    <div class="title">📆 캘린더</div>
+    <div class="desc">월간 캘린더 뷰<br>이벤트 추가/삭제<br>더블클릭 일정 등록<br>색상 코딩<br>Google Calendar 연동</div>
+    <div class="grid-info">col 4-12, row 0-8</div>
+  </div>
+
+  <div class="widget" style="left:16.67%; top:56.25%; width:20.83%; height:43.75%;">
+    <div class="title">📧 받은 메일</div>
+    <div class="desc">Gmail 연동<br>읽지 않은 메일<br>빠른 답장</div>
+    <div class="grid-info">col 4-8, row 9-15</div>
+  </div>
+
+  <div class="widget" style="left:37.5%; top:56.25%; width:16.67%; height:43.75%;">
+    <div class="title">📊 수업 진도표</div>
+    <div class="desc">과목별 진도율<br>프로그레스 바<br>진도 메모</div>
+    <div class="grid-info">col 9-12, row 9-15</div>
+  </div>
+
+  <!-- 중앙우 (col 13-18) -->
+  <div class="widget" style="left:54.17%; top:0%; width:12.5%; height:50%;">
+    <div class="title">✅ 할 일</div>
+    <div class="desc">할일 관리<br>기한 설정<br>완료 체크</div>
+    <div class="grid-info">col 13-15, row 0-7</div>
+  </div>
+
+  <div class="widget" style="left:66.67%; top:0%; width:12.5%; height:50%;">
+    <div class="title">📝 메모</div>
+    <div class="desc">간단 메모<br>자동 저장</div>
+    <div class="grid-info">col 16-18, row 0-7</div>
+  </div>
+
+  <div class="widget" style="left:54.17%; top:50%; width:25%; height:25%;">
+    <div class="title">🤖 AI 채팅</div>
+    <div class="desc">다중 AI (Gemini/Claude/GPT/Groq)<br>질문-답변 대화</div>
+    <div class="grid-info">col 13-18, row 8-11</div>
+  </div>
+
+  <div class="widget" style="left:54.17%; top:75%; width:25%; height:25%;">
+    <div class="title">⏱ 스톱워치</div>
+    <div class="desc">스톱워치 + 타이머<br>분 단위 설정</div>
+    <div class="grid-info">col 13-18, row 12-15</div>
+  </div>
+
+  <!-- 우측 열 (col 19-23) -->
+  <div class="widget" style="left:79.17%; top:0%; width:20.83%; height:18.75%; background:rgba(219,234,254,0.3);">
+    <div class="title">🌤 날씨</div>
+    <div class="desc">현재 날씨, 미세먼지<br>체감온도, 풍속</div>
+    <div class="grid-info">col 19-23, row 0-2</div>
+  </div>
+
+  <div class="widget" style="left:79.17%; top:18.75%; width:20.83%; height:25%;">
+    <div class="title">🍽 급식</div>
+    <div class="desc">조식/중식/석식<br>NEIS API 연동</div>
+    <div class="grid-info">col 19-23, row 3-6</div>
+  </div>
+
+  <div class="widget" style="left:79.17%; top:43.75%; width:12.5%; height:18.75%;">
+    <div class="title">🎲 랜덤 뽑기</div>
+    <div class="desc">학생 랜덤 선정<br>룰렛 애니메이션</div>
+    <div class="grid-info">col 19-21, row 7-9</div>
+  </div>
+
+  <div class="widget" style="left:91.67%; top:43.75%; width:8.33%; height:18.75%;">
+    <div class="title">🎵 음악</div>
+    <div class="desc">YouTube<br>Music</div>
+    <div class="grid-info">col 22-23, row 7-9</div>
+  </div>
+
+  <div class="widget" style="left:79.17%; top:62.5%; width:20.83%; height:25%;">
+    <div class="title">🔢 계산기</div>
+    <div class="desc">기본 사칙연산<br>계산기</div>
+    <div class="grid-info">col 19-23, row 10-13</div>
+  </div>
+
+  <div class="widget" style="left:79.17%; top:87.5%; width:12.5%; height:12.5%;">
+    <div class="title">📚 수업 자료</div>
+    <div class="desc">교육 링크</div>
+    <div class="grid-info">col 19-21, row 14-15</div>
+  </div>
+
+  <div class="widget" style="left:91.67%; top:87.5%; width:8.33%; height:12.5%;">
+    <div class="title">💬 명언</div>
+    <div class="desc">오늘의 명언</div>
+    <div class="grid-info">col 22-23, row 14-15</div>
+  </div>
+</div>
+
+<!-- ══ 기본 ON 위젯 목록 ══ -->
+<div class="legend">
+  <h3>📌 기본 ON 위젯 (17개)</h3>
+  <div class="legend-item"><div class="legend-dot" style="background:#f43f5e"></div>📋 시간표 (timetable)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>📅 D-Day (dday)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div>⭐ 바로가기 (quicklinks)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>📆 캘린더 (calendar)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>📧 받은 메일 (mail)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>📊 수업 진도표 (progress)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#06b6d4"></div>✅ 할 일 (todos)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#d946ef"></div>📝 메모 (memo)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#6366f1"></div>🤖 AI 채팅 (aichat)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#14b8a6"></div>⏱ 스톱워치 (stopwatch)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#0ea5e9"></div>🌤 날씨 (weather)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#f97316"></div>🍽 급식 (meal)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#ec4899"></div>🎲 랜덤 뽑기 (randompick)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#a855f7"></div>🎵 음악 (music)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#84cc16"></div>🔢 계산기 (calc)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#22d3ee"></div>📚 수업 자료 (teachinglinks)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#fbbf24"></div>💬 명언 (quote)</div>
+</div>
+
+<div class="legend">
+  <h3>⬜ 기본 OFF 위젯 (기존 15개 + 새로 추가될 위젯들)</h3>
+  <div class="legend-item off"><div class="legend-dot" style="background:#d1d5db"></div>🕐 시계 (clock)</div>
+  <div class="legend-item off"><div class="legend-dot" style="background:#d1d5db"></div>📚 현재 교시 (currentPeriod)</div>
+  <div class="legend-item off"><div class="legend-dot" style="background:#d1d5db"></div>📢 전광판 (noticeboard)</div>
+  <div class="legend-item off"><div class="legend-dot" style="background:#d1d5db"></div>🔒 시스템 (system)</div>
+  <div class="legend-item off"><div class="legend-dot" style="background:#d1d5db"></div>🎯 집중 (focus)</div>
+  <div class="legend-item off"><div class="legend-dot" style="background:#d1d5db"></div>📂 최근 문서 (recentfiles)</div>
+  <div class="legend-item off"><div class="legend-dot" style="background:#d1d5db"></div>🗓 주간 일정 (weekschedule)</div>
+  <div class="legend-item off"><div class="legend-dot" style="background:#d1d5db"></div>📋 NEIS 공문 (neisalert)</div>
+  <div class="legend-item off"><div class="legend-dot" style="background:#d1d5db"></div>📝 고사 일정 (exam)</div>
+  <div class="legend-item off"><div class="legend-dot" style="background:#d1d5db"></div>📁 파일 탐색 (fileexplorer)</div>
+  <div class="legend-item off"><div class="legend-dot" style="background:#d1d5db"></div>💬 자주 쓰는 문구 (quickphrases)</div>
+  <div class="legend-item off"><div class="legend-dot" style="background:#d1d5db"></div>⏱ 수업 타이머 (lessontimer)</div>
+  <div class="legend-item off"><div class="legend-dot" style="background:#d1d5db"></div>📊 성적 계산 (grading)</div>
+</div>
+
+<div class="legend" style="border-color: #3b82f6;">
+  <h3 style="color: #3b82f6;">🆕 새로 추가될 위젯 (50개 기능)</h3>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#1 자연어 일정 입력</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#2 날씨 예보 캘린더 오버레이</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#3 타임라인 뷰</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#4 듀얼 타임존</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#5 이벤트 템플릿</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#6 드래그 일정 이동</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#7 위키링크 (메모간 연결)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#8 그래프 뷰</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#9 일일 저널</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#10 마크다운 에디터</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#11 스마트 태그 분류</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#12 핀 메모 / 스티커 노트</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#13 습관 트래커</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#14 일일 미니 챌린지</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#15 칸반 보드</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#16 위치 기반 리마인더</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#17 음성→할일 변환</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>#18 시스템 모니터 (강화)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>#20 카운트다운 대시보드</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#21 사진 프레임</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#22 앱 런처</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#23 뉴스/RSS 피드</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>#24 위젯 테마 세트 (설정)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>#25 커맨드 팔레트 (UX)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>#26 위젯 스냅 그리드 (강화)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>#27 배경 블러/투명도 (테마)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#28 학급 출석 체커</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#30 소음 측정기</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#31 네트워크 속도 모니터</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#32 스토리지 분석기</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#34 OCR 텍스트 추출</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>#35 윈도우 레이아웃 프리셋 (설정)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#36 모둠 활동 순환 타이머</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#37 팀 점수판</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#40 AI 문서 요약</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#41 연속기록 카운터</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#42 업적 배지 & XP</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#44 눈 휴식 알림</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#45 스트레칭 가이드</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#46 스크린타임 트래커</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#47 수분 섭취 리마인더</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#48 세계 시계</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#49 실시간 환율 변환기</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>#50 이메일 미리보기</div>
+</div>
+
+<div style="text-align:center; padding: 20px; color: #9ca3af; font-size: 11px;">
+  🔵 = 새 위젯 | 🟢 = 기존 위젯 강화 | 🟡 = 설정/UX 개선 (위젯이 아닌 시스템 기능)
+</div>
+
+</body>
+</html>

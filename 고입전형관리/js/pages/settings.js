@@ -1,0 +1,301 @@
+// settings.js - 설정 (연도, 모집인원, 배점, 백업/복원)
+const SettingsPage = {
+  async render(container) {
+    const years = await DB.getYears();
+    const configs = await DB.getAllYearlyConfigs();
+    const configMap = new Map(configs.map(c => [c.연도, c]));
+
+    container.innerHTML = `
+      <div class="space-y-6">
+        <h2 class="text-2xl font-bold text-gray-900">설정</h2>
+
+        <!-- 연도별 설정 -->
+        <div class="bg-white rounded-xl border p-6">
+          <h3 class="text-lg font-semibold mb-4">연도별 전형 설정</h3>
+          <div class="flex gap-3 mb-4">
+            <input id="config-year" type="number" value="${Utils.getCurrentYear()}" class="rounded-lg border-gray-300 text-sm px-3 py-2 w-32" placeholder="연도">
+            <button id="btn-load-config" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm">불러오기/생성</button>
+          </div>
+          <div id="config-form" class="hidden space-y-4">
+            <h4 class="text-sm font-semibold text-gray-600 border-b pb-2">정원 구조</h4>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <label class="text-sm font-medium text-gray-700 block mb-1">정원내</label>
+                <input id="config-정원내" type="number" class="w-full rounded-lg border-gray-300 text-sm px-3 py-2" placeholder="360" value="360">
+              </div>
+              <div>
+                <label class="text-sm font-medium text-gray-700 block mb-1">정원외 합계</label>
+                <input id="config-정원외합계" type="number" class="w-full rounded-lg border-gray-300 text-sm px-3 py-2" placeholder="2" value="2">
+              </div>
+              <div>
+                <label class="text-sm font-medium text-gray-700 block mb-1">특례 한도</label>
+                <input id="config-특례" type="number" class="w-full rounded-lg border-gray-300 text-sm px-3 py-2" placeholder="10" value="10">
+              </div>
+              <div>
+                <label class="text-sm font-medium text-gray-700 block mb-1">국가유공자 한도</label>
+                <input id="config-국가유공자" type="number" class="w-full rounded-lg border-gray-300 text-sm px-3 py-2" placeholder="10" value="10">
+              </div>
+            </div>
+            <p class="text-xs text-gray-400">총 모집인원 = 정원내 + 정원외 합계. 특례/국가유공자는 정원외 모집 시 해당 전형의 한도입니다.</p>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div>
+                <label class="text-sm font-medium text-gray-700 block mb-1">총 모집인원 (레거시)</label>
+                <input id="config-slots" type="number" class="w-full rounded-lg border-gray-300 text-sm px-3 py-2" placeholder="자동계산">
+              </div>
+            </div>
+            <div>
+              <label class="text-sm font-medium text-gray-700 block mb-1">메모</label>
+              <textarea id="config-memo" rows="2" class="w-full rounded-lg border-gray-300 text-sm px-3 py-2" placeholder="연도별 특이사항 메모"></textarea>
+            </div>
+            <button id="btn-save-config" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm">설정 저장</button>
+          </div>
+        </div>
+
+        <!-- Git 암호화 동기화 -->
+        <div class="bg-white rounded-xl border p-6 border-indigo-200">
+          <h3 class="text-lg font-semibold mb-2 flex items-center gap-2">
+            <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+            Git 암호화 동기화
+          </h3>
+          <p class="text-sm text-gray-500 mb-4">데이터를 AES-256 암호화하여 GitHub 레포에 저장합니다. 다른 컴퓨터에서 git pull 후 같은 비밀번호로 복원합니다.</p>
+          <div class="space-y-3">
+            <div class="flex gap-3 items-end">
+              <div class="flex-1 max-w-xs">
+                <label class="text-sm font-medium text-gray-700 block mb-1">암호화 비밀번호</label>
+                <input id="sync-password" type="password" class="w-full rounded-lg border-gray-300 text-sm px-3 py-2" placeholder="비밀번호 입력">
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <button id="btn-encrypt-save" class="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 text-sm">
+                암호화하여 저장 (backup.enc)
+              </button>
+              <div>
+                <input type="file" id="enc-restore-input" accept=".enc" class="hidden">
+                <button id="btn-encrypt-restore" class="px-4 py-2 border border-indigo-300 text-indigo-700 rounded-lg hover:bg-indigo-50 text-sm">
+                  암호화 파일 복원
+                </button>
+              </div>
+              <button id="btn-auto-restore" class="px-4 py-2 border border-green-300 text-green-700 rounded-lg hover:bg-green-50 text-sm">
+                Git에서 자동 복원
+              </button>
+            </div>
+            <p class="text-xs text-gray-400">저장: backup.enc 파일을 <code>고입전형관리/data/</code> 폴더에 넣고 git push. 복원: git pull 후 "Git에서 자동 복원" 클릭.</p>
+          </div>
+        </div>
+
+        <!-- 데이터 관리 -->
+        <div class="bg-white rounded-xl border p-6">
+          <h3 class="text-lg font-semibold mb-4">데이터 관리</h3>
+          <div class="space-y-4">
+            <!-- 백업 -->
+            <div class="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+              <div>
+                <p class="font-medium text-blue-800">전체 데이터 백업 (평문 JSON)</p>
+                <p class="text-sm text-blue-600">로컬 백업용. GitHub에 올리지 마세요.</p>
+              </div>
+              <button id="btn-backup" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm whitespace-nowrap">백업 다운로드</button>
+            </div>
+
+            <!-- 복원 -->
+            <div class="flex items-center justify-between p-4 bg-green-50 rounded-lg">
+              <div>
+                <p class="font-medium text-green-800">백업 데이터 복원</p>
+                <p class="text-sm text-green-600">이전에 백업한 JSON 파일에서 데이터를 복원합니다.</p>
+              </div>
+              <div>
+                <input type="file" id="restore-input" accept=".json" class="hidden">
+                <button id="btn-restore" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm whitespace-nowrap">복원하기</button>
+              </div>
+            </div>
+
+            <!-- 연도별 삭제 -->
+            <div class="flex items-center justify-between p-4 bg-red-50 rounded-lg">
+              <div>
+                <p class="font-medium text-red-800">연도별 데이터 삭제</p>
+                <p class="text-sm text-red-600">특정 연도의 데이터만 삭제합니다.</p>
+              </div>
+              <div class="flex gap-2">
+                <select id="delete-year" class="rounded-lg border-gray-300 text-sm px-3 py-2">
+                  <option value="">연도 선택</option>
+                  ${years.map(y => `<option value="${y}">${y}년</option>`).join('')}
+                </select>
+                <button id="btn-delete-year" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm whitespace-nowrap">삭제</button>
+              </div>
+            </div>
+
+            <!-- 전체 초기화 -->
+            <div class="flex items-center justify-between p-4 bg-gray-100 rounded-lg">
+              <div>
+                <p class="font-medium text-gray-800">전체 데이터 초기화</p>
+                <p class="text-sm text-gray-600">모든 데이터를 삭제하고 초기 상태로 되돌립니다.</p>
+              </div>
+              <button id="btn-clear-all" class="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 text-sm whitespace-nowrap">전체 초기화</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- DB 현황 -->
+        <div class="bg-white rounded-xl border p-6">
+          <h3 class="text-lg font-semibold mb-4">데이터 현황</h3>
+          <div id="db-stats" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+        </div>
+      </div>
+    `;
+
+    this.bindEvents();
+    this.loadDBStats();
+  },
+
+  bindEvents() {
+    // 연도별 설정
+    document.getElementById('btn-load-config').addEventListener('click', () => this.loadConfig());
+    document.getElementById('btn-save-config').addEventListener('click', () => this.saveConfig());
+
+    // Git 암호화 동기화
+    document.getElementById('btn-encrypt-save')?.addEventListener('click', async () => {
+      const pw = document.getElementById('sync-password').value;
+      if (!pw) { Toast.warning('비밀번호를 입력해주세요.'); return; }
+      try {
+        await ImportExport.encryptAndDownload(pw);
+        Toast.success('암호화 백업 파일(backup.enc)을 다운로드했습니다. data/ 폴더에 넣고 git push 하세요.');
+      } catch (e) { Toast.error('암호화 실패: ' + e.message); }
+    });
+
+    document.getElementById('btn-encrypt-restore')?.addEventListener('click', () => {
+      const pw = document.getElementById('sync-password').value;
+      if (!pw) { Toast.warning('비밀번호를 입력해주세요.'); return; }
+      document.getElementById('enc-restore-input').click();
+    });
+    document.getElementById('enc-restore-input')?.addEventListener('change', async (e) => {
+      if (!e.target.files[0]) return;
+      const pw = document.getElementById('sync-password').value;
+      try {
+        const counts = await ImportExport.decryptAndRestore(e.target.files[0], pw);
+        Toast.success(`복원 완료: 지원자 ${counts.applicants}명`);
+        this.loadDBStats();
+      } catch (err) { Toast.error(err.message); }
+    });
+
+    document.getElementById('btn-auto-restore')?.addEventListener('click', async () => {
+      const pw = document.getElementById('sync-password').value;
+      if (!pw) { Toast.warning('비밀번호를 입력해주세요.'); return; }
+      Toast.info('data/backup.enc 파일 확인 중...');
+      const result = await ImportExport.tryAutoRestore(pw);
+      if (result) {
+        Toast.success(`자동 복원 완료: 지원자 ${result.applicants}명`);
+        this.loadDBStats();
+      } else {
+        Toast.warning('data/backup.enc 파일이 없거나 비밀번호가 틀립니다.');
+      }
+    });
+
+    // 백업
+    document.getElementById('btn-backup').addEventListener('click', async () => {
+      await ImportExport.backupToJSON();
+      Toast.success('백업 파일을 다운로드했습니다.');
+    });
+
+    // 복원
+    document.getElementById('btn-restore').addEventListener('click', () => {
+      document.getElementById('restore-input').click();
+    });
+    document.getElementById('restore-input').addEventListener('change', async (e) => {
+      if (!e.target.files[0]) return;
+      const ok = await Modal.confirm('백업 데이터를 복원하시겠습니까? 기존 데이터에 병합됩니다.');
+      if (!ok) return;
+      try {
+        const counts = await ImportExport.restoreFromJSON(e.target.files[0]);
+        Toast.success(`복원 완료: 지원자 ${counts.applicants}명`);
+        this.loadDBStats();
+      } catch (err) {
+        Toast.error(`복원 실패: ${err.message}`);
+      }
+    });
+
+    // 연도별 삭제
+    document.getElementById('btn-delete-year').addEventListener('click', async () => {
+      const year = document.getElementById('delete-year').value;
+      if (!year) { Toast.warning('연도를 선택해주세요.'); return; }
+      const ok = await Modal.confirm(`${year}년도 데이터를 모두 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`);
+      if (!ok) return;
+      await DB.clearYear(Number(year));
+      Toast.success(`${year}년도 데이터가 삭제되었습니다.`);
+      this.loadDBStats();
+    });
+
+    // 전체 초기화
+    document.getElementById('btn-clear-all').addEventListener('click', async () => {
+      const ok = await Modal.confirm('정말로 모든 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다!\n\n먼저 백업을 권장합니다.');
+      if (!ok) return;
+      const ok2 = await Modal.confirm('마지막 확인: 모든 지원자, 성적, 설정 데이터가 영구 삭제됩니다.');
+      if (!ok2) return;
+      await DB.clearAll();
+      Toast.success('모든 데이터가 초기화되었습니다.');
+      this.loadDBStats();
+    });
+  },
+
+  async loadConfig() {
+    const year = Number(document.getElementById('config-year').value);
+    if (!year) { Toast.warning('연도를 입력해주세요.'); return; }
+
+    const config = await DB.getYearlyConfig(year) || { 연도: year, 모집인원: null, 메모: '', 정원내: 360, 정원외합계: 2, 특례: 10, 국가유공자: 10 };
+    document.getElementById('config-정원내').value = config.정원내 || 360;
+    document.getElementById('config-정원외합계').value = config.정원외합계 || 2;
+    document.getElementById('config-특례').value = config.특례 || 10;
+    document.getElementById('config-국가유공자').value = config.국가유공자 || 10;
+    document.getElementById('config-slots').value = config.모집인원 || '';
+    document.getElementById('config-memo').value = config.메모 || '';
+    document.getElementById('config-form').classList.remove('hidden');
+  },
+
+  async saveConfig() {
+    const year = Number(document.getElementById('config-year').value);
+    if (!year) return;
+    const 정원내 = Number(document.getElementById('config-정원내').value) || 360;
+    const 정원외합계 = Number(document.getElementById('config-정원외합계').value) || 2;
+    const config = {
+      연도: year,
+      정원내,
+      정원외합계,
+      특례: Number(document.getElementById('config-특례').value) || 10,
+      국가유공자: Number(document.getElementById('config-국가유공자').value) || 10,
+      모집인원: Number(document.getElementById('config-slots').value) || (정원내 + 정원외합계),
+      메모: document.getElementById('config-memo').value
+    };
+    await DB.putYearlyConfig(config);
+    Toast.success(`${year}년도 설정이 저장되었습니다.`);
+  },
+
+  async loadDBStats() {
+    const [applicants, grades, converted, summaries] = await Promise.all([
+      db.applicants.count(),
+      db.grades.count(),
+      db.convertedScores.count(),
+      db.scoresSummary.count()
+    ]);
+    const years = await DB.getYears();
+
+    document.getElementById('db-stats').innerHTML = `
+      <div class="p-4 bg-gray-50 rounded-lg text-center">
+        <p class="text-xs text-gray-500">저장된 연도</p>
+        <p class="text-2xl font-bold text-gray-800">${years.length}개</p>
+        <p class="text-xs text-gray-400">${years.join(', ') || '-'}</p>
+      </div>
+      <div class="p-4 bg-gray-50 rounded-lg text-center">
+        <p class="text-xs text-gray-500">전체 지원자</p>
+        <p class="text-2xl font-bold text-blue-600">${applicants.toLocaleString()}명</p>
+      </div>
+      <div class="p-4 bg-gray-50 rounded-lg text-center">
+        <p class="text-xs text-gray-500">성적 데이터</p>
+        <p class="text-2xl font-bold text-green-600">${grades.toLocaleString()}건</p>
+      </div>
+      <div class="p-4 bg-gray-50 rounded-lg text-center">
+        <p class="text-xs text-gray-500">환산점수</p>
+        <p class="text-2xl font-bold text-purple-600">${converted.toLocaleString()}건</p>
+      </div>
+    `;
+  }
+};
+
+window.SettingsPage = SettingsPage;

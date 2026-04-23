@@ -1,0 +1,22 @@
+# 가상환경
+venv/
+env/
+__pycache__/
+*.pyc
+
+# 환경 변수 (절대 깃 커밋 금지)
+.env
+.streamlit/secrets.toml
+
+# 학교 식별 가능 데이터 (배포 시 익명화 후 제외)
+data/master_school_data.csv
+data/high_risk_schools.csv
+data/school_code_mapping.csv
+
+# 로그
+poc_logs/
+*.log
+
+# 시스템
+.DS_Store
+Thumbs.db

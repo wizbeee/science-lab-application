@@ -1,0 +1,16 @@
+venv/
+env/
+__pycache__/
+*.pyc
+.env
+.streamlit/secrets.toml
+data/master_school_data.csv
+data/high_risk_schools.csv
+data/school_code_mapping.csv
+data/risk_analysis_result.csv
+school_storage/
+mock_edu_receipt/
+poc_logs/
+*.log
+.DS_Store
+Thumbs.db

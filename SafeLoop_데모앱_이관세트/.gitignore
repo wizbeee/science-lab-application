@@ -1,0 +1,30 @@
+# ───── 민감 정보 (절대 커밋 금지) ─────
+env_config/.env
+safeloop_demo/.env
+**/.streamlit/secrets.toml
+**/*_api_key*
+**/*apikey*
+
+# ───── 가상환경·파이썬 캐시 ─────
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# ───── 런타임 생성 데이터 (학교별) ─────
+safeloop_demo/school_storage/
+safeloop_demo/mock_edu_receipt/
+safeloop_demo/poc_logs/
+**/_ai_cache/
+
+# ───── 로그·임시 ─────
+*.log
+.DS_Store
+Thumbs.db
+
+# ───── IDE ─────
+.vscode/
+.idea/
+*.swp

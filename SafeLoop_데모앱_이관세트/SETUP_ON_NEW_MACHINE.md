@@ -27,16 +27,44 @@ pip install -r requirements.txt
 ```
 
 ## 3) API 키 설정
-**이전 컴퓨터의 `.env`는 커밋되지 않습니다 (보안 정책).** 새 컴퓨터에선 `.env`를 직접 만들어 주세요.
 
-`safeloop_demo/.env` 파일 생성:
+평문 `.env`는 공개 저장소에 커밋되지 않습니다. 대신 **AES-256 암호화본 `.env.enc`**가 커밋되어 있습니다.
+
+### 경로 A — 암호로 복호화 (추천, 파일 이전 불필요)
+```bash
+cd safeloop_demo
+python setup.py unlock
+# 프롬프트: 암호 입력 → .env 자동 생성
+```
+암호는 현재 기기에서 `python setup.py lock` 으로 지정한 비밀번호입니다 (password manager에서 꺼내세요).
+
+### 경로 B — 키를 직접 입력해 새 .env 생성
+`safeloop_demo/.env` 파일을 텍스트 에디터로 생성:
 ```
 ANTHROPIC_API_KEY=sk-ant-api03-...
 # 선택 (OpenAI 사용 시)
 OPENAI_API_KEY=sk-...
 ```
 
-또는 앱 실행 후 **설정 페이지 → AI 공급자** 섹션에서 키를 입력해도 됩니다 (세션 전용, 재시작 시 재입력).
+### 경로 C — 앱 안에서 세션 입력
+앱 실행 후 **설정 페이지 → AI 공급자** 섹션에서 키 입력 (세션 전용, 재시작 시 재입력 필요).
+
+---
+
+### 📝 처음 설정한 컴퓨터에서 암호화하기 (lock 절차)
+새 기기용 저장소를 만들려면 현재 기기에서 다음을 한 번 실행:
+```bash
+cd safeloop_demo
+# .env 에 ANTHROPIC_API_KEY=sk-ant-... 가 있는 상태에서
+python setup.py lock
+#   → 암호 입력·재입력 (10자 이상, password manager 저장)
+#   → .env.enc 생성
+
+git add safeloop_demo/.env.enc
+git commit -m "chore: encrypt .env with AES-256"
+git push
+```
+이후 다른 컴퓨터에서 경로 A로 바로 복원됩니다.
 
 ## 4) 실행
 ```bash

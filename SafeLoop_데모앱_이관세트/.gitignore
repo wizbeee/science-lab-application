@@ -1,9 +1,13 @@
-# ───── 민감 정보 (절대 커밋 금지) ─────
+# ───── 민감 정보 (평문 절대 커밋 금지) ─────
 env_config/.env
 safeloop_demo/.env
+safeloop_demo/.env.backup
 **/.streamlit/secrets.toml
 **/*_api_key*
 **/*apikey*
+
+# ───── 암호화본은 허용 (AES-256 / PBKDF2) ─────
+!safeloop_demo/.env.enc
 
 # ───── 가상환경·파이썬 캐시 ─────
 venv/

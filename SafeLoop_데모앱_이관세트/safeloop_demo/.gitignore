@@ -2,12 +2,16 @@ venv/
 env/
 __pycache__/
 *.pyc
+
+# 평문 환경 파일 — 절대 커밋 금지
 .env
+.env.backup
 .streamlit/secrets.toml
-data/master_school_data.csv
-data/high_risk_schools.csv
-data/school_code_mapping.csv
-data/risk_analysis_result.csv
+
+# 암호화본은 커밋 허용 (setup.py 로 생성)
+!.env.enc
+
+# 런타임 생성 (자동 재생성)
 school_storage/
 mock_edu_receipt/
 poc_logs/

@@ -67,20 +67,26 @@ div.stButton > button {
     border-radius: 4px; font-weight: 600; letter-spacing: -0.01em;
     transition: all 0.15s ease; min-height: 44px;
 }
-div.stButton > button[kind="primary"] {
-    background: #0A0A0B; color: #FFF; border: 1px solid #0A0A0B;
+div.stButton > button[kind="primary"],
+div.stButton > button[kind="primary"] * {
+    background: #0A0A0B; color: #FFF !important; border-color: #0A0A0B;
 }
-div.stButton > button[kind="primary"]:hover { background: #D50000; border-color: #D50000; }
-div.stButton > button[kind="secondary"] {
-    background: #FFF; color: #0A0A0B; border: 1px solid #D1D1D4;
+div.stButton > button[kind="primary"]:hover,
+div.stButton > button[kind="primary"]:hover * {
+    background: #D50000; color: #FFF !important; border-color: #D50000;
+}
+div.stButton > button[kind="secondary"],
+div.stButton > button[kind="secondary"] * {
+    background: #FFF; color: #0A0A0B !important; border-color: #D1D1D4;
 }
 div.stButton > button[kind="secondary"]:hover { border-color: #0A0A0B; }
 div.stButton > button:focus-visible { outline: 2px solid #D50000; outline-offset: 2px; }
 
 /* 다운로드 버튼도 동일 톤 */
-.stDownloadButton > button {
+.stDownloadButton > button,
+.stDownloadButton > button * {
     border-radius: 4px; font-weight: 600; min-height: 44px;
-    background: #FFF; border: 1px solid #D1D1D4; color: #0A0A0B;
+    background: #FFF; border-color: #D1D1D4; color: #0A0A0B !important;
 }
 .stDownloadButton > button:hover { border-color: #0A0A0B; background: #FAFAFA; }
 
@@ -123,13 +129,21 @@ div[role="radiogroup"] > label { padding: 6px 14px; border: 1px solid transparen
 /* ───────── 사이드바 ───────── */
 [data-testid="stSidebar"] { border-right: 1px solid #E5E5E8; }
 [data-testid="stSidebar"] .block-container { padding-top: 1.6rem; }
-[data-testid="stSidebarNav"] li a {
+[data-testid="stSidebarNav"] li a,
+[data-testid="stSidebarNav"] li a * {
     font-size: 13px !important; font-weight: 500; padding: 8px 12px !important;
     border-radius: 4px; color: #0A0A0B !important;
 }
-[data-testid="stSidebarNav"] li a:hover { background: #FAFAFA; }
-[data-testid="stSidebarNav"] li a[aria-current="page"] {
-    background: #0A0A0B; color: #FFF !important; font-weight: 600;
+[data-testid="stSidebarNav"] li a:hover,
+[data-testid="stSidebarNav"] li a:hover * { background: #FAFAFA; color: #0A0A0B !important; }
+[data-testid="stSidebarNav"] li a[aria-current="page"],
+[data-testid="stSidebarNav"] li a[aria-current="page"] * {
+    background: #0A0A0B; color: #FFFFFF !important; font-weight: 600;
+}
+/* 사이드바 내부 버튼도 동일 원칙: 검정 배경엔 흰 글자 강제 */
+[data-testid="stSidebar"] div.stButton > button[kind="primary"],
+[data-testid="stSidebar"] div.stButton > button[kind="primary"] * {
+    color: #FFFFFF !important;
 }
 
 /* ───────── 표 ───────── */

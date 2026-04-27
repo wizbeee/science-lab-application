@@ -12,13 +12,14 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from modules.laws import CATEGORIES
-from modules.session import ensure_state
+from modules.session import ensure_state, require_role
 from modules.storage import list_recent_sessions
 from modules.ui import apply_theme, hero
 
 st.set_page_config(page_title="본교 현황 · SafeLoop", page_icon="/", layout="wide")
 apply_theme()
 ensure_state()
+require_role(["학교"])
 
 school = st.session_state.get("school")
 if not school:

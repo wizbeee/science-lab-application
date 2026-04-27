@@ -39,8 +39,12 @@ with col_b:
         ["학교 담당자", "교육청 담당자"],
         horizontal=True,
         index=0 if st.session_state.get("role", "학교") == "학교" else 1,
+        key="settings_role_radio",
     )
-    st.session_state["role"] = "학교" if role == "학교 담당자" else "교육청"
+    new_role = "학교" if role == "학교 담당자" else "교육청"
+    if new_role != st.session_state.get("role"):
+        st.session_state["role"] = new_role
+        st.rerun()
 
 # ─────────────────────────────────────────
 # 결재라인 기본값

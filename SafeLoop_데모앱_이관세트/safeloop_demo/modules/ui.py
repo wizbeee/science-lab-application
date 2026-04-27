@@ -124,15 +124,49 @@ div[role="radiogroup"] > label { padding: 6px 14px; border: 1px solid transparen
     h1 { font-size: 24px; }
     div.stButton > button, .stDownloadButton > button { min-height: 48px; font-size: 15px; }
     [data-testid="stMetricValue"] { font-size: 22px !important; }
+
+    /* 위저드 진행 인디케이터: 좁아도 한 줄 유지 + 가로 스크롤 */
+    .sl-wizard-progress {
+        white-space: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
+        font-size: 12px !important; padding: 8px 10px !important;
+    }
+    .sl-wizard-progress::-webkit-scrollbar { height: 0; }
+
+    /* 토글(클래식 모드 등)은 모바일에서 더 크게 */
+    label[data-testid="stToggle"] { transform: scale(1.1); transform-origin: right center; }
+
+    /* 카드/샷 헤더: 우측 pill·상태가 줄바꿈되도록 */
+    .sl-shot-head { flex-wrap: wrap; gap: 8px; }
+    .sl-shot-head > div[style*="margin-left:auto"] { margin-left: 0 !important; width: 100%; }
+
+    /* 썸네일 그리드: 4열을 2열로 강제하면 너무 작아지는 것 방지
+       (Streamlit st.columns 는 모바일에서 자동 1열로 떨어지므로 별도 조정 불필요) */
+
+    /* 위저드 이전/다음 버튼: 컬럼이 모바일에서 세로로 떨어질 때도 큼직하게 */
+    div.stButton > button { font-size: 16px; padding: 12px 16px; }
+
+    /* 사이드바 네비게이션 항목: 모바일에서 더 얇게 */
+    [data-testid="stSidebarNav"] li a,
+    [data-testid="stSidebarNav"] li a * {
+        font-size: 12.5px !important; padding: 3px 10px !important;
+        min-height: 0 !important; line-height: 1.25 !important;
+    }
+    [data-testid="stSidebarNav"] li { margin: 0 !important; }
+
+    /* 파일 업로더 박스: 모바일에서 충분한 터치 영역 */
+    section[data-testid="stFileUploaderDropzone"] { min-height: 80px; padding: 20px 12px !important; }
 }
 
 /* ───────── 사이드바 ───────── */
 [data-testid="stSidebar"] { border-right: 1px solid #E5E5E8; }
-[data-testid="stSidebar"] .block-container { padding-top: 1.6rem; }
+[data-testid="stSidebar"] .block-container { padding-top: 1.4rem; }
+[data-testid="stSidebarNav"] li,
+[data-testid="stSidebarNav"] li * { line-height: 1.25 !important; }
+[data-testid="stSidebarNav"] li { margin: 0 !important; }
 [data-testid="stSidebarNav"] li a,
 [data-testid="stSidebarNav"] li a * {
-    font-size: 13px !important; font-weight: 500; padding: 8px 12px !important;
-    border-radius: 4px; color: #0A0A0B !important;
+    font-size: 12.5px !important; font-weight: 500; padding: 4px 10px !important;
+    border-radius: 3px; color: #0A0A0B !important; min-height: 0 !important;
 }
 [data-testid="stSidebarNav"] li a:hover,
 [data-testid="stSidebarNav"] li a:hover * { background: #FAFAFA; color: #0A0A0B !important; }
@@ -189,7 +223,21 @@ div[role="radiogroup"] > label { padding: 6px 14px; border: 1px solid transparen
 
 
 def apply_theme() -> None:
-    """페이지 최상단에서 호출 — 공통 CSS 주입."""
+    """페이지 최상단에서 호출 — 공통 CSS 주입 + 모바일 캐시 우회 + 뷰포트 메타 보장.
+
+    역할 기반 페이지 노출은 app.py 의 st.navigation 이 담당하므로
+    이 함수에선 더 이상 사이드바 DOM 을 조작하지 않는다.
+    """
+    st.markdown(
+        """
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+        <meta http-equiv="Pragma" content="no-cache">
+        <meta http-equiv="Expires" content="0">
+        <style>html, body { overflow-x: hidden; }</style>
+        """,
+        unsafe_allow_html=True,
+    )
     st.markdown(_CSS, unsafe_allow_html=True)
 
 

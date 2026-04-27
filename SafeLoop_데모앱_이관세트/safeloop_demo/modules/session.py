@@ -102,3 +102,27 @@ def require_school() -> dict | None:
         st.warning("먼저 **학교 찾기** 페이지에서 학교를 선택하고 인증하세요.")
         return None
     return school
+
+
+def require_role(allowed: list[str]) -> None:
+    """현재 역할이 허용 목록에 없으면 안내 + 자기 영역으로 이동 버튼 표시 후 stop.
+
+    allowed: ["학교"], ["교육청"], ["학교", "교육청"] 중 하나.
+    """
+    ensure_state()
+    role = st.session_state.get("role", "학교")
+    if role in allowed:
+        return
+    other_label = "학교 담당자" if role == "교육청" else "교육청 담당자"
+    expected = " / ".join(allowed)
+    st.warning(f"이 페이지는 **{expected} 담당자 전용**입니다. 현재 역할: {other_label}")
+    target = "pages/7_교육청수신함.py" if role == "교육청" else "pages/1_점검시작.py"
+    label = "교육청 수신함으로 →" if role == "교육청" else "점검 시작으로 →"
+    col_l, col_r = st.columns(2)
+    with col_l:
+        if st.button("← 홈으로", use_container_width=True, key="role_gate_home"):
+            st.switch_page("app.py")
+    with col_r:
+        if st.button(label, type="primary", use_container_width=True, key="role_gate_target"):
+            st.switch_page(target)
+    st.stop()

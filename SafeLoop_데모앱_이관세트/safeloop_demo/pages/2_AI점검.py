@@ -16,12 +16,13 @@ from modules.ai_vision import api_key_available, run_stage1, run_stage2, run_sta
 from modules.laws import CATEGORIES
 from modules.recommend import recommend_from_scores
 from modules.score import calculate_safety_score
-from modules.session import ensure_state, require_school
+from modules.session import ensure_state, require_role, require_school
 from modules.ui import apply_theme, divider, hero, section
 
 st.set_page_config(page_title="AI 점검 · SafeLoop", page_icon="/", layout="wide")
 apply_theme()
 ensure_state()
+require_role(["학교"])
 
 school = require_school()
 if not school:
@@ -168,7 +169,8 @@ def _render_progress(current: str) -> None:
         )
     sep = "<span style='color:#D1D1D4;margin:0 10px;'>—</span>"
     st.markdown(
-        "<div style='font-size:13px;margin:0 0 18px 0;letter-spacing:0.02em;"
+        "<div class='sl-wizard-progress' "
+        "style='font-size:13px;margin:0 0 18px 0;letter-spacing:0.02em;"
         "padding:10px 14px;border:1px solid #E5E5E8;border-radius:6px;"
         "background:#FAFAFA;'>" + sep.join(pieces) + "</div>",
         unsafe_allow_html=True,

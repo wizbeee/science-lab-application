@@ -12,20 +12,17 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
-from modules.session import ensure_state
+from modules.session import ensure_state, require_role
 from modules.storage import EDU_RECEIPT_DIR, list_edu_inbox
 from modules.ui import apply_theme, divider, hero, section
 
 st.set_page_config(page_title="교육청 수신함 · SafeLoop", page_icon="/", layout="wide")
 apply_theme()
 ensure_state()
+require_role(["교육청"])
 
 hero("EDU OFFICE", "교육청 담당자 수신함",
      "학교에서 에듀파인 결재 완료 후 직접 발송한 구조화 JSON 수신 — KEIIS 업로드 지원.")
-
-# 역할 안내
-if st.session_state.get("role") != "교육청":
-    st.warning("현재 역할이 **학교 담당자**로 설정되어 있습니다. 홈에서 '교육청 담당자'로 전환하면 본 수신함이 주 화면이 됩니다.")
 
 # 수신함 리스트
 inbox = list_edu_inbox()

@@ -23,12 +23,13 @@ from modules.data_loader import (
     search_schools_by_name,
     verify_auth_code,
 )
-from modules.session import ensure_state
+from modules.session import ensure_state, require_role
 from modules.ui import apply_theme, divider, hero, section
 
 st.set_page_config(page_title="점검 시작 · SafeLoop", page_icon="/", layout="centered")
 apply_theme()
 ensure_state()
+require_role(["학교"])
 
 hero("STEP 01", "점검 시작", "학교를 찾아 인증한 뒤, 점검할 공간을 선택하세요.")
 

@@ -16,7 +16,7 @@ import plotly.express as px
 import streamlit as st
 
 from modules.recommend import recommend_from_scores
-from modules.session import ensure_state, require_school
+from modules.session import ensure_state, require_role, require_school
 from modules.storage import (
     build_csv,
     build_edufine_zip,
@@ -33,6 +33,7 @@ from modules.ui import apply_theme, divider, hero, section
 st.set_page_config(page_title="결과 저장·발송 · SafeLoop", page_icon="/", layout="wide")
 apply_theme()
 ensure_state()
+require_role(["학교"])
 
 school = require_school()
 if not school:

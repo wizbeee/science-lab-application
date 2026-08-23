@@ -1426,6 +1426,9 @@ function updateApplicationStatus(applicationId, updates) {
  * GAS LockService 는 중첩 카운팅이 없어, 내부 함수가 releaseLock 하면 부모의 임계구역까지
  * 그 시점에 풀린다(v4.0.6 이 막았다고 한 승인 race 의 실제 원인). 그래서 코어 분리.
  */
+/** 직전 저장에서 시트에 없어 건너뛴 컬럼 목록 (관리자 안내용) */
+let _lastSkippedFields_ = [];
+
 function updateApplicationStatusCore_(applicationId, updates) {
   // [SR17] 날짜 필드가 문자열로 전달되면 시트에 문자열 그대로 박혀 필터/정렬이 깨질 수 있음.
   const DATE_FIELDS = ['실험할날짜', '제출일시'];
@@ -1442,8 +1445,11 @@ function updateApplicationStatusCore_(applicationId, updates) {
       const idx=rows.findIndex(r=> String(r[map['신청ID']])===String(applicationId));
       if (idx<0) continue;
       const row = idx+2;
+      // [2026-08] 시트에 없는 컬럼은 지금까지 조용히 건너뛰었다. 관리자는 저장된 줄 알지만
+      //   값은 사라진다(예: '도구장비_적절성' 컬럼 미생성 상태). 건너뛴 항목을 알려준다.
+      const skipped = [];
       Object.keys(updates).forEach(field=>{
-        if (map[field] == null) return;
+        if (map[field] == null) { skipped.push(field); return; }
         let value = updates[field];
         if (DATE_FIELDS.indexOf(field) !== -1 && value && !(value instanceof Date)) {
           const d = new Date(value);
@@ -1452,11 +1458,18 @@ function updateApplicationStatusCore_(applicationId, updates) {
         }
         sh.getRange(row, map[field]+1).setValue(value);
       });
+      if (skipped.length) {
+        Logger.log('[updateApplicationStatusCore_] 시트에 없는 컬럼 건너뜀: ' + skipped.join(', '));
+      }
+      _lastSkippedFields_ = skipped;
       done=true; break;
     }
     if (!done) throw new Error('해당 신청서를 찾을 수 없습니다.');
     logAdminAction_('상태변경', applicationId, JSON.stringify(updates));
-    return '상태가 업데이트되었습니다.';
+    return (_lastSkippedFields_ && _lastSkippedFields_.length)
+      ? '상태가 업데이트되었습니다. ⚠️ 시트에 없는 항목은 저장되지 않았습니다: ' +
+        _lastSkippedFields_.join(', ') + ' (관리자 GAS 에서 신청서의 migrateAddNewLabColumns() 실행 필요)'
+      : '상태가 업데이트되었습니다.';
   } catch (e) {
     console.error('updateApplicationStatus 오류:', e);
     throw new Error('상태 업데이트 중 오류: '+e.message);

@@ -2070,7 +2070,13 @@ function getGatewayUrl() {
 /**
  * ✅ 시약 목록(객체형) 반환
  */
+/** ✅ [클라이언트 API] 시약 목록(객체형). 호출 제한은 wrapper 에만 둔다. */
 function getChemicalList() {
+  assertCallRateLimit_('getChemicalList', 30, 60);
+  return getChemicalList_();
+}
+
+function getChemicalList_() {
   const ss = SpreadsheetApp.openById(CHEM_MASTER_SSID);
   return ss.getSheets()
     .filter(s => s.getName() !== '시약 출납')
@@ -2132,7 +2138,13 @@ function getChemicalList() {
  *  ※ rate limit은 의도적으로 넣지 않음 — 초과 시 의심 점수가 쌓여 학생이
  *    자동 차단될 수 있어, 조회 전용 페이지에는 부적절.
  */
+/** ✅ [클라이언트 API] 시약 표 데이터. 호출 제한은 wrapper 에만 둔다. */
 function getChemicalListForTable() {
+  assertCallRateLimit_('getChemicalListForTable', 30, 60);
+  return getChemicalListForTable_();
+}
+
+function getChemicalListForTable_() {
   const header = ['물질명', '화학식', '분류1', '교사임장여부', '폐수처리'];
   const CK = 'chem-table:v2';
   const cache = CacheService.getScriptCache();
@@ -2144,7 +2156,7 @@ function getChemicalListForTable() {
     }
   } catch (_) { /* 캐시 파손 시 무시하고 재계산 */ }
 
-  const list = getChemicalList();
+  const list = getChemicalList_();   // 내부 호출
   const rows = list.map(o => [
     o['물질명'] || o.name || '',
     o['화학식'] || o.formula || '',
@@ -3426,6 +3438,8 @@ function getCalendarBlocks(dateStr, force) {
  *   - 주말은 클라이언트 측에서 별도 표시 (요일 계산이 클라이언트에서 즉시 가능)
  */
 function getMonthAvailability(yearMonth) {
+  // 한 달치 캘린더를 훑는 무거운 조회 — 호출 제한 필요
+  assertCallRateLimit_('getMonthAvailability', 30, 60);
   if (!yearMonth || !/^\d{4}-\d{2}$/.test(String(yearMonth || ''))) {
     return {};
   }
@@ -3530,7 +3544,17 @@ function getMonthAvailability(yearMonth) {
  * @param {string}  dateStr
  * @param {boolean} [force]  true면 캘린더 캐시 무시하고 최신 상태 조회
  */
+/**
+ * ✅ [클라이언트 API] 해당 날짜에 신청 불가한 실험실·시간.
+ *   호출 제한은 이 wrapper 에만 둔다. 제출 검증 등 서버 내부 호출은
+ *   getUnavailableForDate_() 를 직접 써서 학생의 호출 한도를 깎지 않는다.
+ */
 function getUnavailableForDate(dateStr, force) {
+  assertCallRateLimit_('getUnavailableForDate', 90, 60);
+  return getUnavailableForDate_(dateStr, force);
+}
+
+function getUnavailableForDate_(dateStr, force) {
   const cal = getCalendarBlocks(dateStr, !!force);
 
   const unavailableLabs  = new Set(cal.blockedLabs || []);
@@ -4061,7 +4085,7 @@ function submitApplication_(data) {
   })();
 
   // 제출 시점에는 캘린더 캐시(최대 30초)를 건너뛰어 관리자의 긴급 차단을 즉시 반영
-  const unavail = getUnavailableForDate(data.date, true);
+  const unavail = getUnavailableForDate_(data.date, true);   // 내부 호출 — 학생 호출 한도와 무관
 
   const requestedSlots = String(data.timeSlot || '')
     .split(',')
@@ -5316,7 +5340,7 @@ function ensurePurgeTrigger_() {
 /* ------------------------- 검색 전용(서버 필터) ------------------------- */
 function getChemicalListForSearch(keyword) {
   const kw = String(keyword || '').trim().toLowerCase();
-  const { rows } = getChemicalListForTable();
+  const { rows } = getChemicalListForTable_();   // 내부 호출
   const filtered = kw
     ? rows.filter(r => [0,1,2].some(i => String(r[i]).toLowerCase().includes(kw)))
     : rows;

@@ -102,17 +102,19 @@ body { display: flex; min-height: 100vh; margin: 0; }
     <div class="sidebar-divider"></div>
     <div class="sidebar-section">관리</div>
     <!-- [v4.18/S3] 출석체크 -->
-    <a class="sidebar-item" href="#" onclick="if(typeof openTodayLab==='function') openTodayLab(); else dGoToPage('admin'); return false;">
+    <!-- [2026-08] 서브페이지(시약·학생·임장)에는 이 모달들이 없다.
+         기존에는 대시보드로 이동만 하고 패널은 열리지 않아, 누른 교사가 목적한 화면을
+         다시 찾아야 했다. 이제 열려는 패널을 함께 넘겨 대시보드 도착 즉시 열리게 한다. -->
+    <a class="sidebar-item" href="#" onclick="openPanelOrGo('todayLab'); return false;">
       오늘의 실험실 (출석)
     </a>
-    <!-- [v4.18/S6] 서브페이지(시약·학생·임장)에는 모달이 없어 무반응이던 문제 — 대시보드로 이동 폴백 -->
-    <a class="sidebar-item" href="#" onclick="if(typeof openGuidanceModal==='function') openGuidanceModal(); else dGoToPage('admin'); return false;">
+    <a class="sidebar-item" href="#" onclick="openPanelOrGo('guidance'); return false;">
       지도일지 작성
     </a>
-    <a class="sidebar-item" href="#" onclick="if(typeof openWarningStats==='function') openWarningStats(); else dGoToPage('admin'); return false;">
+    <a class="sidebar-item" href="#" onclick="openPanelOrGo('warning'); return false;">
       지도 통계
     </a>
-    <a class="sidebar-item" href="#" onclick="if(typeof openRestrictionModal==='function') openRestrictionModal(); else dGoToPage('admin'); return false;">
+    <a class="sidebar-item" href="#" onclick="openPanelOrGo('restriction'); return false;">
       신청 제한 관리
     </a>
   </div>
@@ -140,7 +142,21 @@ body { display: flex; min-height: 100vh; margin: 0; }
 </aside>
 
 <script>
-function dGoToPage(viewName) {
+/* [2026-08] 관리 패널 열기 — 현재 페이지에 모달이 있으면 바로 열고,
+   없으면 대시보드로 이동하면서 열 패널을 알려준다. */
+var PANEL_FN = {
+  todayLab:    'openTodayLab',
+  guidance:    'openGuidanceModal',
+  warning:     'openWarningStats',
+  restriction: 'openRestrictionModal'
+};
+function openPanelOrGo(panel) {
+  var fn = window[PANEL_FN[panel]];
+  if (typeof fn === 'function') { fn(); return; }
+  dGoToPage('admin', panel);
+}
+
+function dGoToPage(viewName, openPanel) {
   // [v4.18/S2] 로그아웃: 세션 토큰 폐기 + 저장소 정리 후 전용 로그아웃 페이지로
   if (viewName === 'logout') {
     try {
@@ -150,7 +166,8 @@ function dGoToPage(viewName) {
     try { sessionStorage.removeItem('__lab_admin_session__'); } catch (_) {}
   }
   if (typeof APP_BASE_URL !== 'undefined') {
-    window.top.location.href = APP_BASE_URL + '?view=' + encodeURIComponent(viewName);
+    window.top.location.href = APP_BASE_URL + '?view=' + encodeURIComponent(viewName) +
+      (openPanel ? '&open=' + encodeURIComponent(openPanel) : '');
   } else if (typeof goToPage === 'function') {
     goToPage(viewName);
   } else if (typeof goToAdmin === 'function' && viewName === 'admin') {

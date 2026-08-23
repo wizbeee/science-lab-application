@@ -36,6 +36,8 @@
     <!-- ✅ 서버에서 웹앱 URL 전달 (페이지 이동용) -->
     <script>
       var APP_BASE_URL = '<?= ScriptApp.getService().getUrl() ?>';
+      // [2026-08] 서브페이지 사이드바에서 넘어온 경우 열어야 할 관리 패널
+      var OPEN_PANEL = '<?= (typeof openPanel === "undefined" ? "" : openPanel) ?>';
     </script>
     
     <?!= include('desktop_sidebar'); ?>

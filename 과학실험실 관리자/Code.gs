@@ -197,7 +197,11 @@ function doGet(e) {
   
   try {
     var tpl = HtmlService.createTemplateFromFile(file);
-    
+    // [2026-08] 서브페이지 사이드바에서 넘어온 "열 패널" 지시 (todayLab/guidance/warning/restriction).
+    //   GAS 샌드박스 iframe 에서는 location.search 를 신뢰할 수 없어 서버가 직접 주입한다.
+    var _open = (e && e.parameter && e.parameter.open) ? String(e.parameter.open) : '';
+    tpl.openPanel = /^[a-zA-Z]{1,20}$/.test(_open) ? _open : '';
+
     return tpl.evaluate()
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
       .setTitle(title)
@@ -2059,6 +2063,7 @@ function approveWithDuplicateCheck(appId, approvalType) {
     // [v4.18/S6] 신규 양식(IT/가정/공학)은 단일 승인 흐름 — '1차승인' 요청이 오면 최종승인으로
     //   승격 처리. 기존엔 존재하지 않는 1차 단계가 기록되고 학생 메일도 안 나갔음.
     if (approvalType === '1차승인' && isNewLab_(app)) {
+      Logger.log('[approveWithDuplicateCheck] 단일 승인 양식 — 1차승인 요청을 최종승인으로 승격: ' + appId);
       approvalType = '최종승인';
     }
 
@@ -2083,17 +2088,6 @@ function approveWithDuplicateCheck(appId, approvalType) {
       '지도승인여부': String(app['지도승인여부'] || ''),
       '최종승인여부': String(app['최종승인여부'] || '')
     };
-
-    // ★ [2026-08] 단일 승인 양식 승격 가드 — forceApprove 에만 있고 여기엔 빠져 있었다.
-    //   IT·가정·공학·Tech & Art 양식은 1차 승인 단계 자체가 없다. 그런데도 '1차승인'
-    //   요청이 들어오면 존재하지 않는 상태가 기록되고, 메일 발송기의 신규 양식 가드가
-    //   1차 메일을 막아 학생·교사 누구도 통지를 받지 못한 채 미승인으로 방치됐다.
-    //   지금은 PC·모바일 화면이 1차승인 선택지를 주지 않아 발생하지 않지만,
-    //   화면 두 곳이 유일한 방어선이었으므로 서버에서도 동일하게 승격한다.
-    if (approvalType === '1차승인' && isNewLab_(app)) {
-      Logger.log('[approveWithDuplicateCheck] 단일 승인 양식 — 1차승인 요청을 최종승인으로 승격: ' + appId);
-      approvalType = '최종승인';
-    }
 
     const updates = {};
     if (approvalType === '1차승인') {

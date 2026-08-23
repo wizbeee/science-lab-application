@@ -144,13 +144,80 @@ function resolveSheetByHeaders_(ssid, requiredHeaders, label, headerRow) {
     return match[0];
   }
 
-  // 3) 못 찾으면 명확히 실패 — 엉뚱한 탭에 기록하는 것보다 낫다
+  // 3) 못 찾으면 명확히 실패 — 엉뚱한 탭에 기록하는 것보다 낫다.
+  //    어느 헤더가 왜 안 맞는지까지 알려줘야 운영자가 바로 고칠 수 있다.
+  //    (실제 사례: 신청 기록 시트 A1 이 '신청ID' 대신 다른 값으로 덮어써져
+  //     헤더 조회가 전부 실패한 적이 있다)
+  const diag = sheets.slice(0, 6).map(sh => {
+    let hdr = [];
+    try {
+      const lc = sh.getLastColumn();
+      if (lc > 0 && sh.getLastRow() >= hRow) {
+        hdr = sh.getRange(hRow, 1, 1, lc).getValues()[0].map(v => String(v || '').trim());
+      }
+    } catch (_) {}
+    const miss = requiredHeaders.filter(h => hdr.indexOf(h) === -1);
+    return '· ' + sh.getName() + ' → 빠진 헤더: ' + (miss.length ? miss.join(', ') : '없음') +
+           ' / 1행 앞부분: ' + (hdr.slice(0, 6).join(' | ') || '(비어 있음)');
+  }).join('\n');
+
   throw new Error(
     label + ' 시트를 찾을 수 없습니다.\n' +
     '필요한 헤더: ' + requiredHeaders.join(', ') + '\n' +
-    '현재 탭: ' + sheets.map(s => s.getName()).join(', ') + '\n' +
+    diag + '\n' +
+    '→ 해당 시트 1행의 머리글이 위 이름과 정확히 같은지 확인해 주세요. ' +
     '학과 사무실에 문의해 주세요.'
   );
+}
+
+/**
+ * ✅ [운영 진단] 신청서가 쓰는 스프레드시트들의 헤더가 정상인지 한 번에 점검한다.
+ *   GAS 편집기에서 이 함수를 실행하면 결과가 문자열로 반환된다.
+ *   헤더가 하나라도 어긋나면 신청·승인이 통째로 멈추므로, 이상 발생 시 가장 먼저 실행할 것.
+ */
+function diagnoseSheets() {
+  const checks = [
+    ['신청 기록',   MAIN_SSID,         ['신청ID', '실험할날짜', '대표자학번', '신청실험실', '신청시간',
+                                       '지도승인여부', '최종승인여부', '양식종류']],
+    ['시약 기록',   CHEM_RECORD_SSID,  ['신청ID', '시약명', '상태', '폐기 방법']],
+    ['임시저장',    DRAFT_SSID,        ['초안ID', '대표자학번', '대표자이름', 'JSON', '수정일시']],
+    ['지도교사 목록', TEACHER_LIST_SSID, ['교사이름', '과목']],
+  ];
+  const out = ['📋 신청서 시트 진단', ''];
+  let bad = 0;
+  checks.forEach(([label, ssid, need]) => {
+    try {
+      const ss = SpreadsheetApp.openById(ssid);
+      let best = null, bestMiss = null;
+      ss.getSheets().forEach(sh => {
+        let hdr = [];
+        try {
+          const lc = sh.getLastColumn();
+          if (lc > 0) hdr = sh.getRange(1, 1, 1, lc).getValues()[0].map(v => String(v || '').trim());
+        } catch (_) {}
+        const miss = need.filter(h => hdr.indexOf(h) === -1);
+        if (best === null || miss.length < bestMiss.length) { best = sh; bestMiss = miss; }
+      });
+      if (!best) { out.push('[' + label + '] ❌ 시트가 없습니다'); bad++; return; }
+      if (bestMiss.length === 0) {
+        out.push('[' + label + '] ✅ 정상 (탭: ' + best.getName() + ')');
+      } else {
+        bad++;
+        const hdr = best.getRange(1, 1, 1, best.getLastColumn()).getValues()[0]
+          .map(v => String(v || '').trim());
+        out.push('[' + label + '] ❌ 헤더 누락: ' + bestMiss.join(', '));
+        out.push('        탭: ' + best.getName() + ' / 1행: ' + hdr.slice(0, 10).join(' | '));
+        out.push('        → 1행 머리글을 위 이름과 정확히 같게 고쳐 주세요.');
+      }
+    } catch (e) {
+      bad++;
+      out.push('[' + label + '] ❌ 열기 실패: ' + (e && e.message || e));
+    }
+  });
+  out.push('', bad === 0 ? '✅ 모든 시트 정상' : '⚠️ 문제 ' + bad + '건 — 위 항목을 고치기 전에는 신청·승인이 정상 동작하지 않습니다.');
+  const msg = out.join('\n');
+  Logger.log(msg);
+  return msg;
 }
 
 /** 신청 기록 시트 (관리자 isApplicationSheet_ 와 동일 기준) */
@@ -4397,8 +4464,10 @@ function submitApplication_(data) {
   );
   // '실습주제' 는 '실험제목' 컬럼으로 통합되어 더 이상 별도 저장하지 않음
   put('사용계획',       isNewLab ? (data.usagePlan || '')     : '');
+  // [2026-08] techart 누락 수정 — Tech & Art LAB 양식에도 '신청 장비' 입력란이 있는데
+  //   저장 분기에서 빠져 있어 학생이 적은 내용이 통째로 버려지고 있었다.
   put('신청장비',
-    (formCategory === 'it' || formCategory === 'engineering')
+    (formCategory === 'it' || formCategory === 'engineering' || formCategory === 'techart')
       ? (data.requestedEquipment || '') : ''
   );
   put('재료JSON',

@@ -747,6 +747,19 @@ function categorySpecificCardsHtml(app) {
 /* =========================================================
  * 초기화 (하이브리드: 자동 조회 X)
  * ========================================================= */
+/* [2026-08] 서브페이지(시약·학생·임장) 사이드바에서 관리 메뉴를 누르면
+   대시보드로 이동하면서 ?open= 으로 열 패널을 넘겨받는다. 도착 즉시 그 패널을 연다.
+   기존에는 이동만 하고 아무것도 열리지 않아 누른 교사가 화면을 다시 찾아야 했다. */
+function openRequestedPanel_() {
+  var p = (typeof OPEN_PANEL === 'string') ? OPEN_PANEL : '';
+  if (!p) return;
+  var map = { todayLab: 'openTodayLab', guidance: 'openGuidanceModal',
+              warning: 'openWarningStats', restriction: 'openRestrictionModal' };
+  var fn = window[map[p]];
+  if (typeof fn !== 'function') return;
+  setTimeout(function () { try { fn(); } catch (_) {} }, 300);
+}
+
 window.addEventListener('load', () => {
   const today = startOfDay(new Date());
   const in7   = startOfDay(addDays(today, 7));
@@ -755,6 +768,7 @@ window.addEventListener('load', () => {
   $('#dateTo').value   = toLocalYMD(in7);
   // [v4.0.7/UX-15] localStorage 에 저장된 필터 상태가 있으면 기본값 위에 덮어씀
   try { restoreFilterStateFromStorage(); } catch (_) {}
+  openRequestedPanel_();
 
   // 조회 기준 기본값을 '실험할날짜'로
   const bs = $('#basisSelect');

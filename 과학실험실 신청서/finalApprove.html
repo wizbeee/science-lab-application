@@ -537,7 +537,7 @@
       document.getElementById('toTime').innerText   = toLocalHHMM(data['임장지도 종료시간']);
 
       // ===== 신규 양식(IT실 / 가정실습실 / N동 공학 Zone) 처리 =====
-      // 시트 '양식종류' 컬럼 값을 키로 카테고리(it/home/engineering) 식별.
+      // 시트 '양식종류' 컬럼 값을 키로 카테고리(it/home/engineering/techart) 식별.
       // 신규 양식이면 1층 전용 필드·시약 섹션·1차 승인 카드를 모두 숨기고 신규 섹션을 표시.
       var formCategoryRaw = String(data['양식종류'] || '').trim();
       // [2026-08] 판정은 서버가 한다 (Code.gs categoryFromSheetValue_).
@@ -572,7 +572,9 @@
         // 상단 요약 카드 #title 에 이미 표시됨. 별도 라벨 제거.
         document.getElementById('nlUsagePlan').innerText     = data['사용계획'] || '';
 
-        if (newCat === 'it' || newCat === 'engineering') {
+        // [2026-08] techart 추가 — Tech & Art LAB 양식도 '신청 장비'를 받는데
+        //   이 분기에 빠져 있어 승인 교사에게 표시되지 않았다.
+        if (newCat === 'it' || newCat === 'engineering' || newCat === 'techart') {
           document.getElementById('nlEquipmentBlock').style.display = '';
           document.getElementById('nlRequestedEquipment').innerText = data['신청장비'] || '';
         }
@@ -604,7 +606,8 @@
           });
         }
 
-        if (newCat === 'home' || newCat === 'engineering') {
+        // [2026-08] techart 추가 (IT 양식은 교육 확인 항목을 받지 않으므로 제외 유지)
+        if (newCat === 'home' || newCat === 'engineering' || newCat === 'techart') {
           document.getElementById('nlEduBlock').style.display = '';
           document.getElementById('nlEduEquipment').innerText = data['교육_장비사용법'] || '';
           document.getElementById('nlEduCleanup').innerText   = data['교육_정리방법']   || '';

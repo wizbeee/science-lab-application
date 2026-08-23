@@ -256,7 +256,7 @@ function formCategoryOf(app) {
   const raw = String(app && app['양식종류'] || '').trim();
   if (SHEET_CAT_MAP[raw]) return SHEET_CAT_MAP[raw];
   const lower = raw.toLowerCase();
-  if (lower === 'it' || lower === 'home' || lower === 'engineering' || lower === 'floor1' || lower === 'floor2') return lower;
+  if (lower === 'it' || lower === 'home' || lower === 'engineering' || lower === 'techart' || lower === 'floor1' || lower === 'floor2') return lower;
   const lab = String(app && app['신청실험실'] || '');
   if (/물리|파동|AP\s?Lab/i.test(lab)) return 'floor2';
   return 'floor1';

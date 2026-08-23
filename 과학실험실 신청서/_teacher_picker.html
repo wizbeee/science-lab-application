@@ -16,6 +16,13 @@
 (function () {
   'use strict';
 
+  // 같은 (실습실, 목적) 조합은 서버에 다시 묻지 않는다.
+  //   체크박스를 몇 번 바꾸는 것만으로 호출이 쌓여 rate limit 에 걸리던 문제 방지.
+  var cache = {};        // key -> 서버 응답
+  var inflight = {};     // key -> true (같은 요청 중복 발사 방지)
+  var timer = null;
+  var DEBOUNCE_MS = 200;
+
   /**
    * 선택한 실습실·사용목적에 맞는 지도교사 목록을 서버에서 받아 <select>를 채운다.
    *
@@ -77,22 +84,42 @@
       return;
     }
 
+    var key = labs.slice().sort().join('|') + '::' + (opts.purpose || '');
+
+    // 이미 받아 둔 조합이면 즉시 반영 (서버 호출 없음)
+    if (cache[key]) {
+      var c = cache[key];
+      fill(c.teachers, c.message, !c.teachers.length);
+      return;
+    }
+
     sel.innerHTML = '<option value="">불러오는 중…</option>';
     setHint('', false);
 
-    google.script.run
-      .withSuccessHandler(function (res) {
-        if (!res || !res.ok) {
-          fill([], (res && res.message) || '지도교사 목록을 불러오지 못했습니다.', true);
-          return;
-        }
-        fill(res.teachers, res.message || '', !res.teachers.length);
-      })
-      .withFailureHandler(function (err) {
-        fill([], '지도교사 목록을 불러오지 못했습니다: ' +
-          ((err && (err.message || err)) || '알 수 없는 오류'), true);
-      })
-      .getEligibleTeachers(labs, opts.purpose || '');
+    if (inflight[key]) return;   // 같은 요청이 이미 날아가 있음
+
+    if (timer) { clearTimeout(timer); timer = null; }
+    timer = setTimeout(function () {
+      timer = null;
+      inflight[key] = true;
+      google.script.run
+        .withSuccessHandler(function (res) {
+          delete inflight[key];
+          if (!res || !res.ok) {
+            fill([], (res && res.message) || '지도교사 목록을 불러오지 못했습니다.', true);
+            return;
+          }
+          cache[key] = { teachers: res.teachers || [], message: res.message || '' };
+          fill(res.teachers, res.message || '', !res.teachers.length);
+        })
+        .withFailureHandler(function (err) {
+          delete inflight[key];
+          fill([], '지도교사 목록을 불러오지 못했습니다: ' +
+            ((err && (err.message || err)) || '알 수 없는 오류') +
+            ' — 실습실을 다시 선택하면 재시도합니다.', true);
+        })
+        .getEligibleTeachers(labs, opts.purpose || '');
+    }, DEBOUNCE_MS);
   };
 
   /** 지도교사 <select> 변경 시 이메일 hidden 값을 함께 갱신 */

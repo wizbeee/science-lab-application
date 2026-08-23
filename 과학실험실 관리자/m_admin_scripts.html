@@ -618,7 +618,7 @@ function mCategorySectionsHtml(app) {
     if (recipe) {
       h += '<div class="section"><div class="section-title">재료 목록</div>' + parseRecipeJson(recipe) + '</div>';
     }
-  } else if (cat === 'engineering') {
+  } else if (cat === 'engineering' || cat === 'techart') {
     h += '<div class="section"><div class="section-title">신청 장비</div>' +
       '<p style="font-size:14px;line-height:1.6;color:var(--text-muted);white-space:pre-wrap;">' + escapeHtml(app['신청장비']||'-') + '</p>' +
     '</div>';

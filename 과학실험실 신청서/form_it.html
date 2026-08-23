@@ -812,8 +812,12 @@
         if (el) el.checked = true;
       });
       document.querySelectorAll('input[name="labRoom"]').forEach(function(cb){ cb.checked = false; });
+      // [2026-08] '컴퓨터실' → 'IT 공학실' 개명. 개명 전 임시저장을 불러와도
+      //   체크박스가 하나도 안 켜져 "실습실을 선택해주세요"로 막히던 문제 방지.
+      var ROOM_RENAME = { '컴퓨터실': 'IT 공학실' };
       (Array.isArray(d.labRooms) ? d.labRooms : []).forEach(function(v) {
-        var el = Array.from(document.querySelectorAll('input[name="labRoom"]')).find(function(cb){ return cb.value === v; });
+        var want = ROOM_RENAME[v] || v;
+        var el = Array.from(document.querySelectorAll('input[name="labRoom"]')).find(function(cb){ return cb.value === want; });
         if (el) el.checked = true;
       });
 

@@ -732,7 +732,8 @@ function categorySpecificCardsHtml(app) {
         </div>` : ''}
     ` + eduHtml;
   }
-  if (cat === 'engineering') {
+  // [2026-08] Tech & Art LAB 은 공학 양식에서 분리됐지만 저장 컬럼이 같다.
+  if (cat === 'engineering' || cat === 'techart') {
     return usageHtml + `
       <div style="margin-top:14px;">
         <h3 style="margin:0 0 6px 0;">신청 장비</h3>
@@ -2339,7 +2340,7 @@ function openEdit(id){
             </div>
           `;
         }
-        if (cat === 'engineering') {
+        if (cat === 'engineering' || cat === 'techart') {
           h += `
             <div style="margin-top:10px;">
               <div class="detail-label" style="margin-bottom:4px;">신청 장비</div>
@@ -2427,7 +2428,7 @@ function saveEdit(id){
       setIfExists('#f_dangerTools', '위험도구');
       setIfExists('#f_usagePlan', '사용계획');
       setIfExists('#f_materialsJson', '재료JSON');
-    } else if (cat === 'engineering') {
+    } else if (cat === 'engineering' || cat === 'techart') {
       setIfExists('#f_requestedEquipment', '신청장비');
     }
     setIfExists('#f_eduEquipment', '교육_장비사용법');

@@ -540,15 +540,18 @@
       // 시트 '양식종류' 컬럼 값을 키로 카테고리(it/home/engineering) 식별.
       // 신규 양식이면 1층 전용 필드·시약 섹션·1차 승인 카드를 모두 숨기고 신규 섹션을 표시.
       var formCategoryRaw = String(data['양식종류'] || '').trim();
-      // 'N동 공학 Zone' (구 라벨) 과 'N동 공학 ZONE, Tech & Art LAB' (현 라벨) 모두 매칭
-      // — 기존 데이터 호환성 유지 + 신규 라벨 인식
+      // [2026-08] 판정은 서버가 한다 (Code.gs categoryFromSheetValue_).
+      //   화면이 저장값 목록을 따로 들고 있으면 양식이 늘 때마다 조용히 옛 분기를 탄다.
+      //   아래 map 은 서버 값이 없는 구버전 응답에 대한 폴백일 뿐이다.
       var newLabMap = {
         'IT실': 'it',
         '가정실습실': 'home',
+        'N동 공학 ZONE': 'engineering',
         'N동 공학 Zone': 'engineering',
-        'N동 공학 ZONE, Tech & Art LAB': 'engineering'
+        'N동 공학 ZONE, Tech & Art LAB': 'engineering',
+        'Tech & Art LAB': 'techart'
       };
-      var newCat = newLabMap[formCategoryRaw] || '';
+      var newCat = String(data.__formCategory || '') || newLabMap[formCategoryRaw] || '';
       var isNewLab = !!newCat;
 
       if (isNewLab) {

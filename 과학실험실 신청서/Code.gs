@@ -2246,10 +2246,25 @@ function getCacheClearTokenInfo() {
     "setApplicationServerConfig('" + ScriptApp.getService().getUrl() + "', '" + t + "')";
 }
 
+/**
+ * ✅ [클라이언트 API] 교사 명단 — rate limit 적용.
+ *   서버 내부에서 명단이 필요할 때는 rate limit 없는 readTeacherList_() 를 쓴다.
+ *   (getEligibleTeachers 가 이 함수를 부르면 호출 1회가 두 번 계산돼
+ *    실습실 체크박스를 몇 번 바꾸는 것만으로 학생이 차단당했다.)
+ */
 function getTeacherList() {
-  // ★ SEC-P1: rate limit + 학생 호출 시 이메일 마스킹
   assertCallRateLimit_('getTeacherList', 30, 60);
+  return readTeacherList_();
+}
 
+/** 교사 명단 원본 조회 (rate limit 없음, 60초 캐시). 서버 내부 전용. */
+function readTeacherList_() {
+  const cache = CacheService.getScriptCache();
+  const CK = 'teacher-list:v2';
+  try {
+    const hit = cache.get(CK);
+    if (hit) return JSON.parse(hit);
+  } catch (_) {}
   const rows = getTeacherListSheet_().getDataRange().getValues();
   const [hdr, ...data] = rows;
   const nameIdx = hdr.indexOf('교사이름');
@@ -2261,10 +2276,10 @@ function getTeacherList() {
   const isStudent = !!getSessionStudentId_();
   const isStaff = !!getSessionTeacher_() || isAdminEmail_(sessionEmail);
 
-  return data.filter(r => r[nameIdx]).map(r => {
+  const out = data.filter(r => r[nameIdx]).map(r => {
     var item = {
-      name: r[nameIdx],
-      subject: r[subjectIdx] || ''
+      name: String(r[nameIdx] || '').trim(),
+      subject: String(r[subjectIdx] || '').trim()
     };
     // 교사/관리자만 이메일 전체 노출. 학생은 이메일 마스킹 (학생이 다른 교사에 사칭 메일 못 쓰게)
     if (isStaff || !isStudent) {
@@ -2277,6 +2292,8 @@ function getTeacherList() {
     }
     return item;
   });
+  try { cache.put(CK, JSON.stringify(out), 60); } catch (_) {}
+  return out;
 }
 
 /**
@@ -2657,7 +2674,7 @@ function getEligibleTeachers(labNames, purpose) {
              message: '함께 신청할 수 없는 실습실 조합입니다. 지도교사 자격이 서로 다릅니다.' };
   }
 
-  const all = getTeacherList();
+  const all = readTeacherList_();
   const teachers = all.filter(t => teacherMatchesSubjects_(t.subject, req.subjects));
 
   return {
@@ -2686,7 +2703,7 @@ function assertTeacherEligible_(teacherName, labNames, purpose) {
   }
 
   const name = String(teacherName || '').trim();
-  const rows = getTeacherList().filter(t => String(t.name || '').trim() === name);
+  const rows = readTeacherList_().filter(t => String(t.name || '').trim() === name);
   if (!rows.length) {
     throw new Error('지도교사 "' + name + '" 를 교사 명단에서 찾을 수 없습니다.');
   }
@@ -2800,6 +2817,30 @@ const NEW_LAB_CONFIG = {
     ]
   }
 };
+
+/**
+ * ✅ [2026-08] 시트 '양식종류' 저장값 → 카테고리 단일 매핑.
+ *   승인 페이지(approve/finalApprove)가 각자 하드코딩 표를 들고 있어, 양식이 추가되거나
+ *   저장값이 바뀔 때마다 화면이 조용히 옛 분기를 타는 문제가 있었다.
+ *   서버가 계산해 getApplication 결과에 __formCategory 로 실어 보낸다.
+ *   과거 저장값도 함께 인식해 기존 신청 기록이 깨지지 않게 한다.
+ */
+const SHEET_CATEGORY_MAP_ = {
+  'IT실':                          'it',
+  '가정실습실':                    'home',
+  'N동 공학 ZONE':                 'engineering',
+  'N동 공학 Zone':                 'engineering',   // 과거 저장값
+  'N동 공학 ZONE, Tech & Art LAB': 'engineering',   // Tech & Art 분리 전 저장값
+  'Tech & Art LAB':                'techart'
+};
+function categoryFromSheetValue_(raw) {
+  const v = String(raw || '').trim();
+  if (!v) return '';
+  if (SHEET_CATEGORY_MAP_[v]) return SHEET_CATEGORY_MAP_[v];
+  const lower = v.toLowerCase();
+  if (['it','home','engineering','techart'].indexOf(lower) !== -1) return lower;
+  return '';   // 'S동 1층' / 'S동 2층' / 빈 값 → 2단 승인 양식
+}
 
 /** 룸명(단일) → 카테고리(it/home/engineering/techart). 매칭 실패 시 빈 문자열. */
 function getNewLabCategory_(roomName) {
@@ -4633,6 +4674,12 @@ function getApplication(id, arg2) {
       .filter(r => String(r[0]) === String(id))
       .map(r => chemHdr.reduce((o, h, j) => (o[h] = r[j], o), {}));
   }
+
+  // [2026-08] 승인 화면이 양식 종류를 스스로 추측하지 않도록 서버가 계산해 실어 보낸다.
+  //   '' 이면 1·2층(2단 승인), 그 외는 단일 승인 양식.
+  rec.__formCategory = categoryFromSheetValue_(rec['양식종류']);
+  rec.__isSingleApproval = !!rec.__formCategory;
+
   return rec;
 }
 
@@ -4939,7 +4986,9 @@ function submitFinalApproval_(info) {
     const stg1Col = map['지도승인여부'];
     const formTypeCol = map['양식종류'];
     const formType = formTypeCol != null ? String(rows[idx][formTypeCol] || '').trim() : '';
-    const isSingleApproval = !!formType && !/^S동/.test(formType); // 'IT실'|'가정실습실'|'N동 공학…'
+    // [2026-08] "S동으로 시작하지 않으면 단일 승인" 이라는 문자열 추측을 걷어내고
+    //   categoryFromSheetValue_ 단일 매핑으로 판정한다. 양식이 늘어도 자동 반영된다.
+    const isSingleApproval = !!categoryFromSheetValue_(formType);
     if (!isSingleApproval && stg1Col != null) {
       const stg1 = String(rows[idx][stg1Col] || '').trim();
       if (stg1 !== '승인') {

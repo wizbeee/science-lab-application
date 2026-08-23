@@ -666,10 +666,13 @@
       //   대신 명확한 안내만 표시 (신규 양식은 메일의 최종 승인 링크로만 접근).
       if (!data) return false;
       var cat = String(data['양식종류'] || '').trim();
-      if (cat !== 'IT실' &&
-          cat !== '가정실습실' &&
-          cat !== 'N동 공학 Zone' &&
-          cat !== 'N동 공학 ZONE, Tech & Art LAB') return false;
+      // [2026-08] 단일 승인 양식 판정은 서버가 계산한 값을 우선 사용한다.
+      //   화면이 저장값 목록을 하드코딩하면 양식이 늘 때마다 새 양식을 놓친다.
+      var SINGLE = { 'IT실':1, '가정실습실':1, 'N동 공학 ZONE':1, 'N동 공학 Zone':1,
+                     'N동 공학 ZONE, Tech & Art LAB':1, 'Tech & Art LAB':1 };
+      var isSingle = data.__isSingleApproval === true ||
+                     (data.__isSingleApproval === undefined && !!SINGLE[cat]);
+      if (!isSingle) return false;
       try {
         var status = document.getElementById('statusMsg');
         if (status) status.innerText =

@@ -4257,7 +4257,7 @@ function _adm_sendLabTeacherFinalEmail_(rec, appId) {
   const ENGINEERING_ROOMS = ['융합기술실', '창의공학실', '공작기계실', 'FAB Lab', 'Tech & Art LAB'];
   const groupCanons = [];
   if (ENGINEERING_ROOMS.indexOf(wantCanon) >= 0) groupCanons.push('공학ZONE','공학Zone','공학존');
-  if (wantCanon === '코딩실') groupCanons.push('컴퓨터실','IT실','IT 실험실');
+  if (wantCanon === '코딩실') groupCanons.push('IT 공학실','컴퓨터실','IT실','IT 실험실');
 
   const toRow = labRows.find(r => {
     const cell = String(r[labIdx] || '').trim();
@@ -4448,10 +4448,22 @@ const _ADM_NEW_LAB_CONFIG = {
     ]
   },
   engineering: {
-    sheetCategory: 'N동 공학 ZONE, Tech & Art LAB',  // ※ 시트 저장값(데이터 키) — 변경 금지
-    // [v4.18/S8] Tech & Art LAB 은 S동 3층 — 표시 라벨만 정정(신청서 GAS 와 동일 문구)
-    title: 'N동 공학 ZONE · S동 3층 Tech & Art LAB',
+    // [2026-08] Tech & Art LAB 분리 — 신청서 NEW_LAB_CONFIG 와 저장값을 맞춘다.
+    sheetCategory: 'N동 공학 ZONE',
+    title: 'N동 공학 ZONE',
     labTeacherSheetKey: '공학존',
+    confirmItems: [
+      '직접 실습실에 가서 지도해야 하는 과정 여부 (필요 시 임장 시간 함께 기재)',
+      '실습에 필요한 장비와 도구 적절성',
+      '실습 장비 사용법에 대한 사전 교육 완료 여부',
+      '실습 후 정리 방법에 대한 사전 교육 완료 여부'
+    ]
+  },
+  techart: {
+    // [2026-08] S동 3층 Tech & Art LAB — 공학 ZONE 에서 분리된 단일 승인 양식
+    sheetCategory: 'Tech & Art LAB',
+    title: 'S동 3층 Tech & Art LAB',
+    labTeacherSheetKey: 'Tech & Art LAB',
     confirmItems: [
       '직접 실습실에 가서 지도해야 하는 과정 여부 (필요 시 임장 시간 함께 기재)',
       '실습에 필요한 장비와 도구 적절성',
@@ -4465,7 +4477,9 @@ const _ADM_NEW_LAB_CONFIG = {
 function _adm_getNewLabCategory_(rec) {
   const raw = String((rec && rec['양식종류']) || '').trim();
   const mapped = SHEET_CAT_MAP_[raw];
-  if (mapped === 'it' || mapped === 'home' || mapped === 'engineering') return mapped;
+  // [2026-08] techart 누락 시 Tech & Art LAB 신청이 단일 승인 양식으로 인식되지 않아
+  //   메일 재발송·안내가 2단 승인 경로를 타던 문제 수정.
+  if (mapped === 'it' || mapped === 'home' || mapped === 'engineering' || mapped === 'techart') return mapped;
   return '';
 }
 
@@ -4829,14 +4843,9 @@ function notifyAfterAdminAction_(appId, prevState, newState, comment) {
   // [P1-2] 신규 LAB(IT/가정/공학) 단일 승인 흐름 보호 — '지도승인여부' 단계 자체가 없으므로
   //   관리자가 실수로 '지도승인여부'를 변경해도 1차 승인/반려 메일을 발송하지 않는다.
   //   (정상 흐름: mapStatusToApprovals 가 신규 LAB 인지하면 '지도승인여부'='' 강제. 이 가드는 fail-safe.)
-  const formCategoryRaw = String((rec && rec['양식종류']) || '').trim();
-  const NEW_LAB_FORM_CATEGORIES = {
-    'IT실': true,
-    '가정실습실': true,
-    'N동 공학 Zone': true,
-    'N동 공학 ZONE, Tech & Art LAB': true
-  };
-  const isNewLab = !!NEW_LAB_FORM_CATEGORIES[formCategoryRaw];
+  // [2026-08] 하드코딩 목록 대신 공용 판정 함수 사용 — 양식이 추가돼도 자동 반영된다.
+  //   (기존 목록엔 'N동 공학 ZONE'·'Tech & Art LAB' 이 빠져 있어 새 양식이 2단 승인으로 취급됐다)
+  const isNewLab = isNewLab_(rec);
 
   // 1차 승인 (대기/빈값 → 승인) — 신규 LAB 은 1차 단계 자체가 없으므로 skip
   // [v4.18/S1] newSF==='승인' (대기→최종승인 점프 저장) 이면 1차 흐름 생략 —

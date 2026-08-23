@@ -1,0 +1,271 @@
+<!--
+  ===========================================
+  _adm_security_guard.html — 관리자 페이지 클라이언트 보안 가드
+  ===========================================
+  - F12 / Ctrl+Shift+I/J/C / Ctrl+U 차단 (Ctrl+S 는 저장 단축키라 허용)
+  - 우클릭 / 드래그 제한
+  - DevTools 감지 (debugger trap + 창 크기 변화)
+  - 콘솔 경고
+============================================ -->
+<script>
+(function() {
+  'use strict';
+
+  // 개발자 도구 단축키 차단
+  document.addEventListener('keydown', function(e) {
+    var blocked = false;
+    if (e.key === 'F12' || e.keyCode === 123) blocked = true;
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
+      var k = (e.key || '').toUpperCase();
+      if (['I', 'J', 'C', 'K'].indexOf(k) !== -1) blocked = true;
+    }
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey) {
+      var k2 = (e.key || '').toUpperCase();
+      // [v4.18/S6] Ctrl+S 차단 해제 — 관리자 페이지의 '전체 저장' 단축키(Ctrl+S)를
+      //   이 가드가 capture 단계에서 죽이고 있었음. 소스 보기(Ctrl+U)만 유지.
+      if (k2 === 'U') blocked = true;
+    }
+    if (blocked) {
+      e.preventDefault(); e.stopPropagation();
+      try { console.warn('[SEC-ADM] 개발자 도구 단축키는 차단됩니다.'); } catch(_) {}
+      return false;
+    }
+  }, true);
+
+  // 우클릭 차단 (입력란 제외)
+  document.addEventListener('contextmenu', function(e) {
+    var tag = (e.target && e.target.tagName) || '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    e.preventDefault();
+    return false;
+  }, true);
+
+  // 드래그 차단 (입력란 제외)
+  document.addEventListener('dragstart', function(e) {
+    var tag = (e.target && e.target.tagName) || '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    e.preventDefault();
+    return false;
+  }, true);
+
+  // [v4.18/S5] DevTools 감지 — debugger 타이밍 방식만 사용.
+  //   기존 outerWidth-innerWidth 크기 휴리스틱은 브라우저 확대(120%↑)·화면 분할·
+  //   사이드 패널 환경에서 교사를 오탐 차단하는 문제가 실사용에서 확인되어 제거.
+  //   debugger 트랩은 개발자 도구가 실제로 열려 있을 때만 지연이 발생하므로 정확함.
+  function debuggerTrap() {
+    try {
+      var start = performance.now();
+      (function(){}).constructor('debugger')();
+      if (performance.now() - start > 200) showOverlay();
+      else hideOverlay(); // 도구를 닫으면 자동 복귀
+    } catch(_) {}
+  }
+  setInterval(debuggerTrap, 2000);
+
+  function showOverlay() {
+    var ov = document.getElementById('__adm_sec_overlay__');
+    if (!ov) {
+      ov = document.createElement('div');
+      ov.id = '__adm_sec_overlay__';
+      ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);color:#fff;z-index:2147483647;display:flex;align-items:center;justify-content:center;font-family:"맑은 고딕",sans-serif;text-align:center;padding:24px;';
+      ov.innerHTML =
+        '<div>' +
+        '<div style="font-size:60px;margin-bottom:18px;">⚠️</div>' +
+        '<h1 style="margin:0 0 12px;font-size:28px;">관리자 페이지 — 접근 차단</h1>' +
+        '<p style="font-size:16px;line-height:1.6;max-width:520px;margin:0 auto;">' +
+        '개발자 도구는 사용할 수 없습니다.<br>관리자 페이지는 학생이 접근할 수 없으며,<br>모든 시도는 자동 기록·추적됩니다.<br><br>' +
+        '<b>학교 규정 위반 시 학생 생활 지도부에 통보됩니다.</b>' +
+        '</p>' +
+        '<p style="margin-top:24px;font-size:13px;color:#ccc;">개발자 도구를 닫으면 자동으로 복귀됩니다.</p>' +
+        '</div>';
+      document.body.appendChild(ov);
+    }
+    ov.style.display = 'flex';
+  }
+  function hideOverlay() {
+    var ov = document.getElementById('__adm_sec_overlay__');
+    if (ov) ov.style.display = 'none';
+  }
+
+  // 콘솔 경고
+  try {
+    console.log('%c⛔ 관리자 페이지 — 접근 차단', 'color:#ef4444;font-size:32px;font-weight:bold;');
+    console.log('%c본 관리자 페이지는 교사·관리자만 접근 가능합니다.', 'color:#1f2937;font-size:14px;');
+    console.log('%c학생의 모든 콘솔 호출은 자동 기록되며 학교 규정에 따라 처리됩니다.', 'color:#1f2937;font-size:14px;');
+  } catch(_) {}
+
+  // ========== ★ 10분 비활성 자동 로그아웃 ==========
+  // 활동: 마우스 이동·클릭·키보드·터치·스크롤
+  // 10분 무활동 → 빨간 오버레이 + 30초 카운트다운 → entry로 리다이렉트
+  // 활동 발생 시: 클라이언트 타이머 reset + 서버 세션 토큰 5분마다 갱신
+  //   ※ entry.html 등 로그인 전 페이지에서는 sessionStorage에 토큰 없음 → 비활성 로그아웃 비활성화
+  (function setupInactivityLogout() {
+    // 세션 토큰이 없으면 (= 로그인 전 entry 페이지) 비활성 로그아웃 비활성화
+    try {
+      var sess = sessionStorage.getItem('__lab_admin_session__');
+      if (!sess) return; // entry 페이지에서는 skip
+    } catch(_) { return; }
+    var INACTIVITY_LIMIT = 10 * 60 * 1000; // 10분
+    var WARN_BEFORE = 30 * 1000;            // 만료 30초 전 경고
+    var lastActivity = Date.now();
+    var warnTimer = null;
+    var logoutTimer = null;
+
+    // ========== 우측 상단 카운트다운 배지 (남은 시간 표시) ==========
+    function ensureBadge() {
+      var b = document.getElementById('__adm_session_badge__');
+      if (b) return b;
+      b = document.createElement('div');
+      b.id = '__adm_session_badge__';
+      b.title = '자동 로그아웃까지 남은 시간 — 화면 클릭/이동 시 자동 연장';
+      // [v4.18/S6] 모바일은 상단바 우측 버튼(새로고침·다크모드)을 가리지 않도록 하단 배치
+      var isMobileUI = (typeof PLATFORM !== 'undefined' && PLATFORM === 'mobile');
+      b.style.cssText = [
+        'position:fixed', (isMobileUI ? 'bottom:74px' : 'top:12px'),'right:14px','z-index:2147483640',
+        'background:rgba(15,23,42,0.88)','color:#fff','font-size:12px','font-weight:700',
+        'padding:6px 12px','border-radius:999px','box-shadow:0 4px 12px rgba(0,0,0,0.25)',
+        'font-family:"맑은 고딕",Arial,sans-serif','user-select:none','pointer-events:none',
+        'display:flex','align-items:center','gap:6px','transition:background 0.3s,color 0.3s'
+      ].join(';');
+      b.innerHTML = '<span id="__adm_session_badge_icon__">🕐</span>' +
+                    '<span id="__adm_session_badge_text__">--:--</span>';
+      document.body.appendChild(b);
+      return b;
+    }
+    function updateBadge() {
+      var b = ensureBadge();
+      var elapsed = Date.now() - lastActivity;
+      var remain = Math.max(0, INACTIVITY_LIMIT - elapsed);
+      var mins = Math.floor(remain / 60000);
+      var secs = Math.floor((remain % 60000) / 1000);
+      var txt = (mins < 10 ? '0'+mins : mins) + ':' + (secs < 10 ? '0'+secs : secs);
+      var t = document.getElementById('__adm_session_badge_text__');
+      var ic = document.getElementById('__adm_session_badge_icon__');
+      if (t) t.textContent = txt;
+      if (remain <= 60 * 1000) {
+        b.style.background = '#dc2626'; b.style.color = '#fff';
+        if (ic) ic.textContent = '⚠️';
+        b.style.animation = 'admBlink 1s infinite';
+      } else if (remain <= 3 * 60 * 1000) {
+        b.style.background = '#f59e0b'; b.style.color = '#fff';
+        if (ic) ic.textContent = '⏱️';
+        b.style.animation = '';
+      } else {
+        b.style.background = 'rgba(15,23,42,0.88)'; b.style.color = '#fff';
+        if (ic) ic.textContent = '🕐';
+        b.style.animation = '';
+      }
+    }
+    try {
+      var __st = document.createElement('style');
+      __st.textContent = '@keyframes admBlink { 0%,100% { opacity:1 } 50% { opacity:0.55 } }';
+      document.head.appendChild(__st);
+    } catch(_) {}
+
+    function resetTimers() {
+      lastActivity = Date.now();
+      clearTimeout(warnTimer);
+      clearTimeout(logoutTimer);
+      hideInactivityWarn();
+      warnTimer   = setTimeout(showInactivityWarn,    INACTIVITY_LIMIT - WARN_BEFORE);
+      logoutTimer = setTimeout(performAutoLogout,     INACTIVITY_LIMIT);
+      updateBadge();
+    }
+    // 매초 배지 갱신 (활동 여부와 상관없이 남은 시간 표시)
+    setInterval(updateBadge, 1000);
+
+    function showInactivityWarn() {
+      var ov = document.getElementById('__adm_inactivity_warn__');
+      if (!ov) {
+        ov = document.createElement('div');
+        ov.id = '__adm_inactivity_warn__';
+        ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);color:#fff;z-index:2147483646;display:flex;align-items:center;justify-content:center;font-family:"맑은 고딕",sans-serif;text-align:center;padding:24px;';
+        ov.innerHTML =
+          '<div style="background:#1e293b;border:1px solid #f59e0b;border-radius:12px;padding:28px 32px;max-width:480px;">' +
+            '<div style="font-size:48px;margin-bottom:10px;">⏱️</div>' +
+            '<h2 style="margin:0 0 8px;font-size:22px;color:#fbbf24;">곧 자동 로그아웃</h2>' +
+            '<p style="font-size:14px;line-height:1.6;margin:8px 0 14px;">10분 동안 사용하지 않아 보안상 자동 로그아웃됩니다.<br>계속 사용하시려면 화면을 클릭해 주세요.</p>' +
+            '<div id="__inact_countdown__" style="font-size:32px;font-weight:bold;color:#f87171;margin:12px 0;">30</div>' +
+            '<button id="__inact_continue__" style="background:#3b82f6;color:#fff;border:none;padding:10px 24px;border-radius:8px;font-weight:bold;font-size:14px;cursor:pointer;">계속 사용하기</button>' +
+          '</div>';
+        document.body.appendChild(ov);
+        document.getElementById('__inact_continue__').addEventListener('click', function(){
+          resetTimers();
+          // 서버 토큰도 갱신
+          tryRefreshServerToken();
+        });
+      }
+      ov.style.display = 'flex';
+      // 카운트다운
+      var remain = Math.max(1, Math.floor(WARN_BEFORE / 1000));
+      var cd = document.getElementById('__inact_countdown__');
+      var iv = setInterval(function(){
+        remain--;
+        if (cd) cd.textContent = String(remain);
+        if (remain <= 0) clearInterval(iv);
+      }, 1000);
+      ov.__cdInterval = iv;
+    }
+
+    function hideInactivityWarn() {
+      var ov = document.getElementById('__adm_inactivity_warn__');
+      if (ov) {
+        ov.style.display = 'none';
+        if (ov.__cdInterval) { clearInterval(ov.__cdInterval); ov.__cdInterval = null; }
+      }
+    }
+
+    function performAutoLogout() {
+      // 서버 토큰 무효화 시도
+      try {
+        var sess = sessionStorage.getItem('__lab_admin_session__');
+        if (sess) {
+          var obj = JSON.parse(sess);
+          if (obj && obj.token && window.google && google.script && google.script.run) {
+            google.script.run.revokeSessionToken(obj.token);
+          }
+        }
+      } catch(_) {}
+      try { sessionStorage.removeItem('__lab_admin_session__'); } catch(_) {}
+
+      // [v4.18/S6] 전용 로그아웃 안내 페이지로 이동 (기존: entry → 자동 재인증으로 1초 복귀).
+      //   window.top 사용 — iframe 내부 탐색으로 이중 프레임이 생기는 문제 방지.
+      try {
+        var url = (typeof APP_BASE_URL !== 'undefined' && APP_BASE_URL) ? APP_BASE_URL : '';
+        if (url) window.top.location.href = url + '?view=logout';
+        else window.location.reload();
+      } catch(_) {
+        window.location.reload();
+      }
+    }
+
+    function tryRefreshServerToken() {
+      try {
+        var sess = sessionStorage.getItem('__lab_admin_session__');
+        if (!sess) return;
+        var obj = JSON.parse(sess);
+        if (!obj || !obj.token) return;
+        if (window.google && google.script && google.script.run) {
+          google.script.run
+            .withFailureHandler(function(){})
+            .refreshSessionToken(obj.token);
+        }
+      } catch(_) {}
+    }
+
+    // 활동 이벤트들
+    ['mousemove', 'click', 'keydown', 'touchstart', 'scroll'].forEach(function(ev){
+      window.addEventListener(ev, function(){ resetTimers(); }, true);
+    });
+
+    // 5분마다 서버 토큰 자동 갱신 (활동 중이면)
+    setInterval(function(){
+      if (Date.now() - lastActivity < 5 * 60 * 1000) tryRefreshServerToken();
+    }, 5 * 60 * 1000);
+
+    // 초기 타이머 시작
+    resetTimers();
+  })();
+
+})();
+</script>

@@ -1,59 +1,252 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
   <base target="_top">
-  <title>과학실험실 사용 신청서(S동 1층 실험실)</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>과학 실험·실습실 사용 신청서(S동 1층 실험·실습실)</title>
   <style>
+    /* ===== Design System Variables ===== */
+    :root {
+      --primary: #4361ee;
+      --primary-light: #eef2ff;
+      --primary-dark: #3730a3;
+      --success: #10b981;
+      --success-light: #ecfdf5;
+      --warning: #f59e0b;
+      --warning-light: #fffbeb;
+      --danger: #ef4444;
+      --danger-light: #fef2f2;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --text-light: #94a3b8;
+      --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      display: flex;
-      justify-content: center;
-      padding: 20px;
-      background: #f5f5f5;
-      font-family: Arial, sans-serif;
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.6;
     }
-    #applicationForm {
-      width: 1200px;
-      background: #fff;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+
+    /* ===== Header ===== */
+    .header {
+      background: var(--card); border-bottom: 1px solid var(--border);
+      padding: 16px 0; position: sticky; top: 0; z-index: 100;
+      box-shadow: var(--shadow);
     }
-    h1, h3, h4 { color: #333; margin-bottom: 8px; }
+    .header-inner {
+      max-width: 900px; margin: 0 auto; padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .header-logo {
+      display: flex; align-items: center; gap: 12px;
+      font-size: 18px; font-weight: 700; color: var(--primary);
+    }
+    .header-logo .icon { font-size: 28px; }
+    .header-actions { display: flex; gap: 8px; }
+    .header-btn {
+      padding: 8px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+      background: var(--card); color: var(--text-muted); font-size: 13px; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; gap: 6px;
+      transition: all 0.15s;
+    }
+    .header-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+    /* ===== Progress Bar ===== */
+    .progress-section {
+      background: var(--card); border-bottom: 1px solid var(--border); padding: 20px 0;
+      position: sticky; top: 57px; z-index: 99;
+    }
+    .progress-inner { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+    .progress-steps {
+      display: flex; align-items: center; justify-content: space-between; position: relative;
+    }
+    .progress-steps::before {
+      content: ''; position: absolute; top: 20px; left: 40px; right: 40px;
+      height: 3px; background: var(--border); z-index: 0;
+    }
+    .progress-steps::after {
+      content: ''; position: absolute; top: 20px; left: 40px;
+      height: 3px; background: var(--primary); z-index: 1;
+      transition: width 0.3s;
+    }
+    .progress-steps.step-1::after { width: 0%; }
+    .progress-steps.step-2::after { width: 25%; }
+    .progress-steps.step-3::after { width: 50%; }
+    .progress-steps.step-4::after { width: 75%; }
+    .progress-steps.step-5::after { width: calc(100% - 80px); }
+
+    .step-item {
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      z-index: 2; position: relative;
+    }
+    .step-circle {
+      width: 40px; height: 40px; border-radius: 50%; display: flex;
+      align-items: center; justify-content: center; font-weight: 700; font-size: 14px;
+      background: var(--card); border: 3px solid var(--border); color: var(--text-muted);
+      transition: all 0.2s;
+    }
+    .step-item.active .step-circle { background: var(--primary); border-color: var(--primary); color: white; }
+    .step-item.done .step-circle { background: var(--success); border-color: var(--success); color: white; }
+    .step-label { font-size: 12px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+    .step-item.active .step-label { color: var(--primary); }
+    .step-item.done .step-label { color: var(--success); }
+
+    /* ===== Main Content ===== */
+    .main { max-width: 900px; margin: 0 auto; padding: 32px 24px 120px; }
+
+    .form-card {
+      background: var(--card); border-radius: var(--radius); border: 1px solid var(--border);
+      padding: 32px; margin-bottom: 24px; box-shadow: var(--shadow);
+    }
+    .form-card-title {
+      font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 4px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .form-card-desc { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+
+    .form-group { margin-bottom: 20px; }
+    .form-label {
+      display: block; font-size: 13px; font-weight: 600; color: var(--text);
+      margin-bottom: 6px;
+    }
+    .form-label .required { color: var(--danger); margin-left: 2px; }
+    .form-label .hint { font-weight: 400; color: var(--text-muted); margin-left: 8px; font-size: 12px; }
+
     input, select, textarea, button, label { font-size: 14px; }
-    input, select, textarea {
-      width: 100%; padding: 6px; margin-bottom: 12px; box-sizing: border-box;
+    .form-input, .form-select, .form-textarea,
+    input[type="text"], input[type="number"], input[type="date"], select, textarea {
+      width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      font-size: 14px; color: var(--text); background: var(--card);
+      transition: border-color 0.15s, box-shadow 0.15s;
+      outline: none; box-sizing: border-box;
     }
-    button { padding: 8px 16px; cursor: pointer; margin-top: 10px; }
+    input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus, select:focus, textarea:focus,
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      border-color: var(--primary); box-shadow: 0 0 0 3px rgba(67,97,238,0.1);
+    }
+    input::placeholder, textarea::placeholder { color: var(--text-light); }
+    textarea { min-height: 100px; resize: vertical; }
+    select { cursor: pointer; }
+    button { padding: 8px 16px; cursor: pointer; }
 
-    table { width: 100%; border-collapse: collapse; margin: 10px 0; table-layout: fixed; }
-    th, td { border: 1px solid #ccc; padding: 6px; text-align: center; word-break: keep-all; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
+    /* ===== Step Visibility ===== */
+    .step-view { display: none; }
+    .step-view.active { display: block; }
+
+    /* ===== Info box ===== */
+    .info-box {
+      background: var(--primary-light); border: 1px solid #c7d2fe; border-radius: var(--radius-sm);
+      padding: 12px 16px; font-size: 13px; color: var(--primary-dark); margin-bottom: 20px;
+      display: flex; align-items: flex-start; gap: 10px; line-height: 1.5;
+    }
+    .info-box .icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .info-box.warning { background: var(--warning-light); border-color: #fde68a; color: #92400e; }
+    .info-box.success { background: var(--success-light); border-color: #a7f3d0; color: #065f46; }
+    .info-box.danger { background: var(--danger-light); border-color: #fecaca; color: #991b1b; }
+
+    /* ===== Checkbox & Radio ===== */
+    input[type="checkbox"], input[type="radio"] {
+      width: 20px !important; height: 20px; min-width: 20px;
+      padding: 0 !important; margin: 0 !important; margin-right: 6px !important;
+      flex-shrink: 0; cursor: pointer;
+    }
+    .safety-row {
+      display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+    }
+    .safety-item {
+      display: flex; align-items: center; gap: 8px; padding: 12px 16px;
+      border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      cursor: pointer; transition: all 0.15s; font-size: 13px; font-weight: 500;
+    }
+    .safety-item:hover { border-color: var(--primary); }
+    .safety-item input[type="text"] { flex: 1; margin-left: 8px; box-sizing: border-box; }
+    .radio-row {
+      display: flex; gap: 16px; align-items: center;
+    }
+    .radio-item {
+      display: flex; align-items: center; gap: 6px; padding: 10px 16px;
+      border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      cursor: pointer; transition: all 0.15s; font-size: 14px; font-weight: 500;
+    }
+    .radio-item:hover { border-color: var(--primary); }
+
+    /* ===== Tables ===== */
+    table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+    th, td { border: 1px solid var(--border); padding: 8px; text-align: center; word-break: keep-all; }
+    th { background: #f8fafc; font-weight: 600; font-size: 12px; color: var(--text-muted); }
+
+    .chem-table { table-layout: fixed; }
+    #chemicalList input[type="text"], #chemicalList input[type="number"], #chemicalList select {
+      width: 100%; box-sizing: border-box; padding: 6px 8px; font-size: 13px;
+    }
+    .btn-del {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; padding: 0;
+      background: transparent;
+      border: 1px solid var(--border, #e2e8f0);
+      color: var(--text-muted, #64748b);
+      border-radius: 8px; cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+    .btn-del:hover {
+      background: var(--danger-light, #fef2f2);
+      border-color: var(--danger, #dc2626);
+      color: var(--danger, #dc2626);
+    }
+    .btn-del svg { width: 14px; height: 14px; pointer-events: none; }
     #chemicalSearchGroup { display: flex; gap: 8px; margin-bottom: 8px; }
     #chemicalSearchGroup input { flex: 1; }
-
-    .time-row, .safety-row, .radio-row {
-      display: flex; gap: 24px; margin-bottom: 16px; flex-wrap: wrap; align-items: center;
+    #chemicalSearchGroup button {
+      padding: 10px 20px; background: var(--primary); color: white; border: none;
+      border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; white-space: nowrap;
     }
-    input[type="checkbox"], input[type="radio"] {
-      width: 16px !important;
-      height: 16px;
-      min-width: 16px;
-      padding: 0 !important;
-      margin: 0 !important;
-      margin-right: 6px !important;
-      margin-bottom: 0 !important;
-      flex-shrink: 0;
-    }
-    .safety-row input[type="text"] { flex: 1; margin-left: 8px; box-sizing: border-box; }
-    #statusMessage { display: inline-block; font-weight: bold; margin-left: 16px; color: #555; }
 
+    .guidance-pill {
+      display: inline-block; padding: 3px 10px; border-radius: 999px;
+      font-size: 12px; font-weight: 600; line-height: 1.4;
+      white-space: nowrap; letter-spacing: 0.2px;
+    }
+    .guidance-pill.req  { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+    .guidance-pill.opt  { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+    .guidance-pill.none { background: transparent; color: #94a3b8; border: 1px dashed #e2e8f0; }
+    .guidance-required { color: #d32f2f !important; font-weight: bold; }
+
+    /* ===== Status badges ===== */
+    .pill { display: inline-block; padding: 4px 10px; border-radius: 999px; background: var(--primary-light); color: var(--primary-dark); font-size: 12px; font-weight: 600; }
+    .badge-ok { color: #065f46; background: var(--success-light); border: 1px solid #a7f3d0; }
+    .badge-err { color: #991b1b; background: var(--danger-light); border: 1px solid #fecaca; }
+    .note { background: var(--warning-light); color: #9a3412; border: 1px solid #fed7aa; padding: 10px 14px; border-radius: var(--radius-sm); font-size: 13px; }
+    .danger { background: var(--danger-light); color: #991b1b; border: 1px solid #fecaca; padding: 10px 14px; border-radius: var(--radius-sm); font-size: 13px; }
+    .ok { background: var(--success-light); color: #065f46; border: 1px solid #a7f3d0; padding: 10px 14px; border-radius: var(--radius-sm); font-size: 13px; }
+
+    .unit-hint { font-size: .85rem; color: #d32f2f; margin-top: 6px; }
+    .unit-hint code { background: #f3f4f6; padding: 2px 6px; border-radius: 6px; }
+
+    .blocked-input { outline: 2px solid #d32f2f; background: #fff6f6; }
+
+    /* ===== Overlays & Dialogs ===== */
     #customAlert {
       display: none; position: fixed; top: 30%; left: 50%;
-      transform: translate(-50%,-30%); background: white; border: 1px solid #333;
-      padding: 20px; z-index:1000; box-shadow:0 0 10px black; text-align:center;
+      transform: translate(-50%,-30%); background: white; border-radius: var(--radius);
+      padding: 28px 32px; z-index: 10002; box-shadow: var(--shadow-lg); text-align: center;
+      max-width: 500px; width: 90%;
     }
-    #customAlert button { margin-top: 15px; }
-    .guidance-required { color: #d32f2f !important; font-weight: bold; }
+    #customAlert p { margin-bottom: 16px; line-height: 1.6; font-size: 14px; }
+    #customAlert button {
+      padding: 10px 24px; background: var(--primary); color: white; border: none;
+      border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;
+    }
+    #customAlertOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.3); z-index: 10001; }
 
     #dialogOverlay {
       display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(2px); z-index: 9999;
@@ -64,192 +257,199 @@
       z-index: 10000; text-align: center;
     }
     #overlayBlock .block-msg {
-      margin-top: 180px; font-size: 1.6rem; font-weight: bold; color: #333;
-      background: #fff; display: inline-block; padding: 32px 60px; border-radius: 16px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+      margin-top: 180px; font-size: 1.6rem; font-weight: bold; color: var(--text);
+      background: var(--card); display: inline-block; padding: 32px 60px; border-radius: 16px;
+      box-shadow: var(--shadow-lg);
     }
 
     #confirmDialog {
       display: none; position: fixed; top: 50%; left: 50%;
-      transform: translate(-50%, -50%); background: white; border: 1px solid #ddd;
-      padding: 20px; z-index: 10001; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-      border-radius: 8px; width: 600px; max-width: 90%; max-height: 80vh; overflow-y: auto;
+      transform: translate(-50%, -50%); background: white; border: 1px solid var(--border);
+      padding: 24px; z-index: 10001; box-shadow: var(--shadow-lg);
+      border-radius: var(--radius); width: 600px; max-width: 90%; max-height: 80vh; overflow-y: auto;
     }
     #confirmDialog h3 {
-      margin-top: 0; color: #333; border-bottom: 2px solid #4285F4; padding-bottom: 10px;
-      position: sticky; top: -20px; background: white; z-index: 1;
+      margin-top: 0; color: var(--text); border-bottom: 2px solid var(--primary); padding-bottom: 10px;
+      position: sticky; top: -24px; background: white; z-index: 1;
     }
     #confirmDialog .content-wrapper { padding: 10px 0; line-height: 1.8; }
-    #confirmDialog .question-item { margin-bottom: 15px; padding: 10px; background: #f9f9f9; border-radius: 5px; }
+    #confirmDialog .question-item { margin-bottom: 15px; padding: 12px; background: #f8fafc; border-radius: var(--radius-sm); }
     #confirmDialog .question-item strong { display: block; margin-bottom: 8px; font-size: 14px; }
-    #confirmDialog .sub-text { font-size: 13px; color: #666; margin: 5px 0 8px 20px; }
+    #confirmDialog .sub-text { font-size: 13px; color: var(--text-muted); margin: 5px 0 8px 20px; }
     #confirmDialog .input-group { margin-left: 20px; display: flex; align-items: center; gap: 10px; }
     #confirmDialog .radio-group { margin-left: 20px; display: flex; gap: 30px; align-items: center; }
     #confirmDialog .radio-group label { display: flex; align-items: center; cursor: pointer; }
     #confirmDialog .radio-group input[type="radio"] { margin-right: 5px; cursor: pointer; }
-    #confirmDialog .button-group { display: flex; gap: 10px; justify-content: center; margin-top: 20px; padding-top: 15px;
-      border-top: 1px solid #ddd; position: sticky; bottom: -20px; background: white; z-index: 1; }
-    #confirmDialog button { padding: 10px 25px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; }
-    #confirmDialog .btn-confirm { background: #4285F4; color: white; }
-    #confirmDialog .btn-confirm:disabled { background: #ccc; cursor: not-allowed; }
+    #confirmDialog .button-group {
+      display: flex; gap: 10px; justify-content: center; margin-top: 20px; padding-top: 15px;
+      border-top: 1px solid var(--border); position: sticky; bottom: -24px; background: white; z-index: 1;
+    }
+    #confirmDialog button { padding: 10px 25px; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 14px; font-weight: bold; }
+    #confirmDialog .btn-confirm { background: var(--primary); color: white; }
+    #confirmDialog .btn-confirm:disabled { background: #8e8e8e; color: #e0e0e0; cursor: not-allowed; }
     #confirmDialog .btn-cancel { background: #6c757d; color: white; }
-
-    @media (max-width: 650px) {
-      .time-row, .safety-row { flex-direction: column; gap: 8px; align-items: flex-start; }
-      .time-item, .safety-item { width: auto; }
-    }
-
-    /* ===== 모바일 대응 강화 ===== */
-    @media (max-width: 768px) {
-      body { padding: 8px; }
-      #applicationForm { width: 100%; padding: 14px; box-sizing: border-box; }
-      h1 { font-size: 1.3rem; }
-      h3 { font-size: 1rem; }
-      input, select, textarea, button { font-size: 16px !important; }
-      table { font-size: 12px; display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-      .chem-table { min-width: 700px; }
-      #chemicalSearchGroup { flex-direction: column; }
-      #chemicalSearchGroup input, #chemicalSearchGroup button { width: 100%; }
-      .radio-row { flex-direction: column; gap: 8px; align-items: flex-start; }
-      .fab-container { right: 12px; bottom: 12px; gap: 8px; }
-      .fab { padding: 8px 12px; font-size: 13px; }
-      #confirmDialog { width: 95vw; max-height: 85vh; padding: 14px; }
-      #loadDialog { width: 95vw; padding: 14px; }
-      .info-box { font-size: 11px; }
-      .unit-hint { font-size: .75rem; }
-    }
-
     #confirmDialog, #confirmDialog .content-wrapper { word-break: keep-all; }
     #confirmDialog .radio-group label { white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
 
-    .blocked-input { outline: 2px solid #d32f2f; background: #fff6f6; }
-
-    .fab-container { position: fixed; right: 24px; bottom: 24px; display: flex; flex-direction: column; gap: 10px; z-index: 10002; }
-    .fab {
-      position: relative; overflow: hidden;
-      background: #4285F4; color: #fff; border: none; border-radius: 24px;
-      padding: 10px 14px; font-weight: bold; cursor: pointer;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-      transition: transform .08s ease, box-shadow .12s ease, filter .12s ease;
-      outline: none;
-    }
-    .fab.secondary { background: #6c757d; }
-    .fab:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,0.28); filter: brightness(1.02); }
-    .fab:active { transform: translateY(0) scale(0.98); box-shadow: 0 2px 8px rgba(0,0,0,0.25); filter: brightness(0.98); }
-    .fab:focus-visible { box-shadow: 0 0 0 3px rgba(66,133,244,0.35), 0 2px 8px rgba(0,0,0,0.25); }
-    .fab .ripple { position: absolute; border-radius: 50%; transform: scale(0); animation: ripple .5s linear; background: rgba(255,255,255,.45); pointer-events: none; }
-    @keyframes ripple { to { transform: scale(4); opacity: 0; } }
-
-    /* ===== 통합 불러오기 다이얼로그 ===== */
-    #loadOverlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.35); backdrop-filter: blur(2px); z-index:10010; }
+    /* ===== Load Dialog ===== */
+    #loadOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.35); backdrop-filter: blur(2px); z-index: 10010; }
     #loadDialog {
-      display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
-      background:#fff; width:520px; max-width:92vw; border-radius:10px;
-      box-shadow:0 10px 30px rgba(0,0,0,.3); z-index:10011; padding:0; overflow:hidden;
+      display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      background: var(--card); width: 520px; max-width: 92vw; border-radius: var(--radius);
+      box-shadow: var(--shadow-lg); z-index: 10011; padding: 0; overflow: hidden;
     }
-    #loadDialog.blurred {
-      filter: blur(3px);
-      pointer-events: none;
-    }
-    #loadDialog .load-header {
-      padding: 16px 20px 0 20px;
-    }
-    #loadDialog .load-header h3 {
-      margin: 0 0 12px; font-size: 1.1rem; color: #333;
-    }
-    /* 탭 스타일 */
-    .load-tabs {
-      display: flex; border-bottom: 2px solid #e0e0e0; margin: 0;
-    }
+    #loadDialog.blurred { filter: blur(3px); pointer-events: none; }
+    #loadDialog .load-header { padding: 16px 20px 0 20px; }
+    #loadDialog .load-header h3 { margin: 0 0 12px; font-size: 1.1rem; color: var(--text); }
+    .load-tabs { display: flex; border-bottom: 2px solid var(--border); margin: 0; }
     .load-tab {
       flex: 1; padding: 10px 12px; text-align: center; cursor: pointer;
-      font-size: 14px; font-weight: 600; color: #888; background: none;
+      font-size: 14px; font-weight: 600; color: var(--text-muted); background: none;
       border: none; border-bottom: 3px solid transparent;
-      transition: color .15s, border-color .15s;
-      margin: 0; outline: none;
+      transition: color .15s, border-color .15s; margin: 0; outline: none;
     }
-    .load-tab:hover { color: #555; }
-    .load-tab.active {
-      color: #4285F4; border-bottom-color: #4285F4;
-    }
-    .load-tab.active-green {
-      color: #34a853; border-bottom-color: #34a853;
-    }
-    /* 탭 패널 */
+    .load-tab:hover { color: var(--text); }
+    .load-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .load-tab.active-green { color: var(--success); border-bottom-color: var(--success); }
     .load-panel { display: none; padding: 16px 20px 20px 20px; }
     .load-panel.active { display: block; }
-    .load-panel .form-row { display:flex; gap:10px; margin:10px 0; }
-    .load-panel .form-row > * { flex:1; }
-    .load-panel .btns { display:flex; gap:10px; justify-content:flex-end; margin-top:12px; }
-    .load-panel .btn { padding:8px 14px; border:none; border-radius:6px; cursor:pointer; font-weight:600; background:#e0e0e0; }
+    .load-panel .form-row { display: flex; gap: 10px; margin: 10px 0; }
+    .load-panel .form-row > * { flex: 1; }
+    .load-panel .btns { display: flex; gap: 10px; justify-content: flex-end; margin-top: 12px; }
+    .load-panel .btn {
+      padding: 8px 14px; border: none; border-radius: var(--radius-sm); cursor: pointer; font-weight: 600; background: #e0e0e0;
+    }
     .load-panel .btn:hover { filter: brightness(1.05); }
-    .load-panel .btn:active { filter: brightness(0.95); }
-    /* 승인 조회 결과 */
-    .load-panel .result-list { margin-top:12px; max-height:280px; overflow-y:auto; }
+    .load-panel .result-list { margin-top: 12px; max-height: 280px; overflow-y: auto; }
     .load-panel .result-item {
-      display:flex; justify-content:space-between; align-items:center; padding:10px; margin:6px 0;
-      border:1px solid #e0e0e0; border-radius:6px; background:#fafafa; gap:8px; flex-wrap:wrap;
+      display: flex; justify-content: space-between; align-items: center; padding: 10px; margin: 6px 0;
+      border: 1px solid var(--border); border-radius: var(--radius-sm); background: #fafafa; gap: 8px; flex-wrap: wrap;
     }
-    .load-panel .result-item:hover { background:#f0f7ff; border-color:#4285F4; }
-    .load-panel .result-info { flex:1; font-size:13px; line-height:1.5; }
-    .load-panel .result-info b { color:#333; }
+    .load-panel .result-item:hover { background: var(--primary-light); border-color: var(--primary); }
+    .load-panel .result-info { flex: 1; font-size: 13px; line-height: 1.5; }
+    .load-panel .result-info b { color: var(--text); }
 
-    @media (max-width: 768px) {
-      #loadDialog { width:95vw; }
-      .load-tab { font-size: 13px; padding: 8px 6px; }
-      .load-panel .result-item { flex-direction:column; align-items:stretch; }
+    /* ===== Bottom Nav ===== */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--card); border-top: 1px solid var(--border);
+      padding: 16px 24px; display: flex; justify-content: center;
+      box-shadow: 0 -4px 6px -1px rgba(0,0,0,0.05); z-index: 100;
+    }
+    .bottom-nav-inner { max-width: 900px; width: 100%; display: flex; justify-content: space-between; align-items: center; }
+    .nav-btn {
+      padding: 12px 32px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600;
+      cursor: pointer; border: none; transition: all 0.15s;
+    }
+    .nav-btn.prev { background: #f1f5f9; color: var(--text-muted); }
+    .nav-btn.prev:hover { background: #e2e8f0; }
+    .nav-btn.next { background: var(--primary); color: white; }
+    .nav-btn.next:hover { background: var(--primary-dark); }
+    .nav-btn.submit { background: var(--success); color: white; font-size: 15px; padding: 14px 48px; }
+    .nav-btn.submit:hover { background: #059669; }
+    .nav-btn.draft { background: #f1f5f9; color: var(--text-muted); }
+    .step-indicator { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+
+    /* ===== Review Section (Step 5) ===== */
+    .review-section {
+      margin-bottom: 20px; padding: 20px; background: #f8fafc;
+      border-radius: var(--radius-sm); border: 1px solid var(--border);
+    }
+    .review-section-title {
+      font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 12px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .review-row { display: flex; padding: 6px 0; font-size: 13px; }
+    .review-label { width: 120px; color: var(--text-muted); font-weight: 500; flex-shrink: 0; }
+    .review-value { color: var(--text); font-weight: 500; flex: 1; }
+
+    /* ===== Agreement ===== */
+    .agreement-box {
+      background: #f8fafc; border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 20px; max-height: 200px; overflow-y: auto; font-size: 13px; line-height: 1.8;
+      margin-bottom: 16px; color: var(--text-muted);
     }
 
-    .unit-hint{ font-size:.85rem; color:#d32f2f; margin-top:6px }
-    .unit-hint code{ background:#f3f4f6; padding:2px 6px; border-radius:6px; }
+    /* ===== Ripple Effect ===== */
+    .fab .ripple, button .ripple { position: absolute; border-radius: 50%; transform: scale(0); animation: ripple .5s linear; background: rgba(255,255,255,.45); pointer-events: none; }
+    @keyframes ripple { to { transform: scale(4); opacity: 0; } }
 
-    .pill { display:inline-block; padding:4px 8px; border-radius:999px; background:#eef2ff; color:#3730a3; font-size:12px; }
-    .badge-ok { color:#065f46; background:#ecfdf5; border:1px solid #a7f3d0; }
-    .badge-err { color:#991b1b; background:#fef2f2; border:1px solid #fecaca; }
-    .note { background:#fff7ed; color:#9a3412; border:1px solid #fed7aa; padding:8px 10px; border-radius:8px; font-size:12px; }
-    .danger { background:#fef2f2; color:#991b1b; border:1px solid #fecaca; padding:8px 10px; border-radius:8px; font-size:12px; }
-    .ok { background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; padding:8px 10px; border-radius:8px; font-size:12px; }
-
-    .chem-table { table-layout: fixed; }
-    #chemicalList input[type="text"], #chemicalList input[type="number"], #chemicalList select {
-      width: 100%; box-sizing: border-box;
-    }
-    .btn-del {
-      display:inline-block; width:100%; max-width:56px; padding:4px 6px;
-      font-size:12px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-    }
-
+    /* ===== Pointer events ===== */
     #overlayBlock, #dialogOverlay, #loadOverlay { pointer-events: none; }
     #overlayBlock[style*="display: block"],
     #dialogOverlay[style*="display: block"],
     #loadOverlay[style*="display: block"] { pointer-events: auto; }
 
-    .info-box {
-      background:#eff6ff;
-      border:1px solid #bfdbfe;
-      border-radius:6px;
-      padding:8px 12px;
-      font-size:12px;
-      margin-bottom:12px;
-      line-height:1.4;
+    /* ===== Focus styles ===== */
+    :focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+    button:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+
+    /* ===== Reduced motion ===== */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+
+    /* ===== Tablet / Mobile Responsive ===== */
+    @media (max-width: 900px) {
+      .main { padding: 24px 16px 120px; }
+      .form-card { padding: 24px; }
+      .form-row { grid-template-columns: 1fr; }
+      .header-inner { padding: 0 16px; }
+      .progress-inner { padding: 0 16px; }
+      .safety-row { flex-direction: column; gap: 8px; align-items: stretch; }
+      .radio-row { flex-direction: column; gap: 8px; align-items: stretch; }
+      #chemicalSearchGroup { flex-direction: column; }
+      #chemicalSearchGroup input, #chemicalSearchGroup button { width: 100%; }
+      table { font-size: 12px; display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .chem-table { min-width: 700px; }
+      #confirmDialog { width: 95vw; max-height: 85vh; padding: 14px; }
+      #loadDialog { width: 95vw; padding: 0; }
+      .load-tab { font-size: 13px; padding: 8px 6px; }
+      .load-panel .result-item { flex-direction: column; align-items: stretch; }
+      .header-logo span:not(.icon) { font-size: 15px; }
+      .step-label { font-size: 10px; }
+    }
+
+    @media (max-width: 650px) {
+      .time-row { flex-direction: column; gap: 8px; align-items: flex-start; }
+      .header-actions { gap: 4px; }
+      .header-btn { padding: 6px 10px; font-size: 12px; }
+      input, select, textarea, button { font-size: 16px !important; }
+    }
+
+    /* ===== Hidden helper for form ID ===== */
+    #statusMessage { display: inline-block; font-weight: bold; margin-left: 16px; color: var(--text-muted); }
+
+    /* ===== noWarningDialog ===== */
+    #noWarningDialog {
+      display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      background: white; border: 2px solid var(--danger); padding: 24px; z-index: 10002;
+      box-shadow: var(--shadow-lg); border-radius: var(--radius); width: 400px; max-width: 90%;
     }
   </style>
   <script>
     (function throttleReload(){
+      // [v3.58 / 7-7] 기존엔 body 전체를 오류 문구로 교체해 이후 초기화 코드가
+      // TypeError를 내며 "버튼 없는 죽은 화면"이 됐음 (F5 연타는 흔한 행동).
+      // → body는 그대로 두고 잠시 덮개만 씌운 뒤 자동 복귀.
       try {
         var lastReloadTime = Number(localStorage.getItem('lastReloadTime') || 0);
         var now = Date.now();
         if (now - lastReloadTime < 3000) {
           function showMsg() {
-            document.body.innerHTML =
-              '<div style="font-size:2rem; color:red; text-align:center; margin-top:100px;">새로고침이 너무 빠릅니다.<br>잠시 후 다시 시도하세요.</div>';
+            try {
+              var ov = document.createElement('div');
+              ov.id = '__reloadThrottleOverlay__';
+              ov.style.cssText = 'position:fixed;inset:0;background:rgba(255,255,255,0.97);z-index:2147483000;display:flex;align-items:center;justify-content:center;text-align:center;';
+              ov.innerHTML = '<div style="font-size:1.3rem;color:#dc2626;line-height:1.7;">새로고침이 너무 빠릅니다.<br><span style="font-size:1rem;color:#6b7280;">3초 후 자동으로 계속됩니다…</span></div>';
+              document.body.appendChild(ov);
+              setTimeout(function(){ try { ov.remove(); } catch(_) {} }, 3200);
+            } catch(_) {}
           }
           if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', showMsg);
           else showMsg();
-          throw new Error('Reload throttled');
-        } else {
-          localStorage.setItem('lastReloadTime', String(now));
         }
+        localStorage.setItem('lastReloadTime', String(now));
       } catch(e) {}
     })();
 
@@ -262,6 +462,126 @@
         }
       });
     });
+
+    // ===== 페이지 이탈 경고 =====
+    let formDirty = false;
+    window.addEventListener('DOMContentLoaded', () => {
+      const appForm = document.getElementById('applicationForm');
+      if (appForm) {
+        appForm.addEventListener('input', () => { formDirty = true; });
+        appForm.addEventListener('change', () => { formDirty = true; });
+      }
+    });
+    window.addEventListener('beforeunload', (e) => {
+      if (formDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    });
+
+    // ===== 로컬 자동 임시저장 =====
+    // [v3.58 / 7-2] 공용 PC에서 타 학생 데이터가 노출되지 않도록 계정별 키 사용.
+    //   세션 확인(getMyStudentInfo) 전에는 저장/복원하지 않음. 구(공용) 키는 즉시 삭제.
+    let autoSaveTimer = null;
+    const AUTO_SAVE_BASE = 'lab-form-autosave';
+    let AUTO_SAVE_KEY = null; // 세션 확인 후 'lab-form-autosave:<학번|staff>' 로 설정됨
+
+    function scheduleAutoSave() {
+      if (autoSaveTimer) clearTimeout(autoSaveTimer);
+      autoSaveTimer = setTimeout(doAutoSave, 3000);
+    }
+
+    function doAutoSave() {
+      try {
+        if (!AUTO_SAVE_KEY) return; // 세션 미확인 상태에서는 저장 안 함 (v3.58 / 7-2)
+        const sid = (document.getElementById('studentId')?.value || '').trim();
+        if (!sid) return;
+        const snapshot = {
+          studentId: sid,
+          studentName: document.getElementById('studentName')?.value || '',
+          date: document.getElementById('date')?.value || '',
+          lab: document.getElementById('lab')?.value || '',
+          title: document.getElementById('title')?.value || '',
+          purpose: document.getElementById('purpose')?.value || '',
+          materials: document.getElementById('materials')?.value || '',
+          process: document.getElementById('process')?.value || '',
+          cleanup: document.getElementById('cleanup')?.value || '',
+          precautions: document.getElementById('precautions')?.value || '',
+          savedAt: new Date().toISOString()
+        };
+        localStorage.setItem(AUTO_SAVE_KEY, JSON.stringify(snapshot));
+      } catch(e) { /* localStorage 실패 무시 */ }
+    }
+
+    // [v3.58 / 7-2] 세션 확인 후 계정별 키 설정 → 복원 배너 표시
+    function initAutoSave() {
+      try { localStorage.removeItem(AUTO_SAVE_BASE); } catch(_) {} // 구 공용 키 정리 (개인정보)
+      if (!(window.google && google.script && google.script.run)) return;
+      google.script.run
+        .withSuccessHandler(function(info) {
+          const who = (info && info.isStudent && info.studentId)
+            ? String(info.studentId)
+            : ((info && (info.isTeacher || info.isAdmin)) ? 'staff' : '');
+          if (!who) return;
+          AUTO_SAVE_KEY = AUTO_SAVE_BASE + ':' + who;
+          checkAutoSave();
+        })
+        .withFailureHandler(function() { /* 세션 미확인 → 자동저장 비활성 (안전) */ })
+        .getMyStudentInfo();
+    }
+
+    function checkAutoSave() {
+      try {
+        if (!AUTO_SAVE_KEY) return;
+        const saved = localStorage.getItem(AUTO_SAVE_KEY);
+        if (!saved) return;
+        const data = JSON.parse(saved);
+        if (!data.studentId) return;
+
+        const savedAt = new Date(data.savedAt);
+        if (Date.now() - savedAt.getTime() > 30 * 60 * 1000) {
+          localStorage.removeItem(AUTO_SAVE_KEY);
+          return;
+        }
+
+        const bar = document.createElement('div');
+        bar.id = 'autoSaveBar';
+        bar.style.cssText = 'background:var(--primary-light);border:1px solid #c7d2fe;border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;';
+        bar.innerHTML = '<span style="font-weight:600;color:var(--primary-dark);">💾 이전에 작성 중이던 내용이 있습니다 (' + data.studentId + ', ' + (data.title || '제목 없음') + ')</span>' +
+          '<span><button onclick="loadAutoSave()" style="padding:6px 14px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;margin-right:6px;">불러오기</button>' +
+          '<button onclick="dismissAutoSave()" style="padding:6px 14px;background:#e5e7eb;color:#374151;border:none;border-radius:6px;cursor:pointer;font-weight:600;">무시</button></span>';
+
+        const form = document.getElementById('applicationForm');
+        const firstStep = document.getElementById('step1');
+        if (firstStep) firstStep.insertBefore(bar, firstStep.firstChild);
+        else form.insertBefore(bar, form.firstChild);
+      } catch(e) { /* 무시 */ }
+    }
+
+    function loadAutoSave() {
+      try {
+        if (!AUTO_SAVE_KEY) return;
+        const saved = localStorage.getItem(AUTO_SAVE_KEY);
+        if (!saved) return;
+        const data = JSON.parse(saved);
+        ['studentId','studentName','date','lab','title','purpose','materials','process','cleanup','precautions'].forEach(field => {
+          const el = document.getElementById(field);
+          if (el && data[field]) el.value = data[field];
+        });
+        // [v3.58] 날짜 복원 후 요일 표시·캘린더 차단 조회가 누락되던 문제 — change 발화
+        try {
+          const dateEl = document.getElementById('date');
+          if (dateEl && dateEl.value) dateEl.dispatchEvent(new Event('change'));
+        } catch(_) {}
+        dismissAutoSave();
+      } catch(e) { /* 무시 */ }
+    }
+
+    function dismissAutoSave() {
+      const bar = document.getElementById('autoSaveBar');
+      if (bar) bar.remove();
+      if (AUTO_SAVE_KEY) localStorage.removeItem(AUTO_SAVE_KEY);
+    }
 
     const TIME_SLOTS = ['ET','EP1','7교시'];
     let labOriginalLabels = {};
@@ -286,6 +606,13 @@
       if (isX){ if (t-lastCopyTime<ACTION_DELAY || copyCount>=MAX_ACTIONS_PER_MINUTE){ e.preventDefault(); showCustomAlert('잘라내기 제한을 초과했습니다. 잠시 후 다시 시도해주세요.'); return false; } lastCopyTime=t; copyCount++; }
     });
 
+    // 오버레이 안전 타임아웃 — 네트워크가 죽거나 핸들러 누락으로 오버레이가
+    // 영구 노출되는 것을 방지. 45초 경과 시 자동 해제 + 안내 알림.
+    let __overlayFailSafeTimer = null;
+    const OVERLAY_FAILSAFE_MS = 45000;
+    function __clearOverlayFailSafe() {
+      if (__overlayFailSafeTimer) { clearTimeout(__overlayFailSafeTimer); __overlayFailSafeTimer = null; }
+    }
     function showOverlayBlock(msg, bringToFront) {
       const overlay = document.getElementById('overlayBlock');
       overlay.querySelector('.block-msg').innerHTML = msg;
@@ -298,8 +625,31 @@
       } else {
         overlay.style.zIndex = '10000';
       }
+
+      // 이전 타이머 정리 후 새 안전 타이머 예약
+      __clearOverlayFailSafe();
+      __overlayFailSafeTimer = setTimeout(function(){
+        // 이미 정상 경로로 닫혔으면 아무 일도 안 함
+        if (overlay.style.display === 'none') return;
+        hideOverlayBlock();
+        // [v3.58 / 7-7] 제출 상태도 함께 복구 — 기존엔 오버레이만 닫고
+        //   __SUBMITTING·버튼 잠금은 그대로라 "다시 시도"가 불가능한 영구 잠금이었음.
+        try {
+          __SUBMITTING = false;
+          const b = document.getElementById('btnSubmit');
+          if (b) b.disabled = false;
+        } catch (_) {}
+        try {
+          if (typeof showCustomAlert === 'function') {
+            showCustomAlert('네트워크 응답이 지연되고 있습니다.<br>제출이 접수됐을 수도 있으니, <b>메일함(신청 완료 안내)</b>을 먼저 확인한 뒤 다시 시도해 주세요.');
+          } else {
+            alert('네트워크 응답이 지연되고 있습니다. 제출이 접수됐을 수도 있으니 메일함을 먼저 확인한 뒤 다시 시도해 주세요.');
+          }
+        } catch (_) { /* alert 실패는 무시 */ }
+      }, OVERLAY_FAILSAFE_MS);
     }
     function hideOverlayBlock() {
+      __clearOverlayFailSafe();
       const overlay = document.getElementById('overlayBlock');
       overlay.style.display = 'none';
       overlay.style.zIndex = '10000';
@@ -314,7 +664,11 @@
       const purpose=(document.getElementById('purpose')?.value||'').trim();
       const dateStr=(document.getElementById('date')?.value||'').trim();
       const p7=document.getElementById('period7');
-      return !!(p7 && p7.checked) && purpose==='동아리 활동' && isTuesday(dateStr);
+      // [v3.58 / 7-4] 7교시 예외는 "7교시만 단독 선택"일 때만 — 서버와 동일 기준.
+      //   기존엔 7교시+ET 동시 선택 시 ET까지 제한 검사를 통과했음.
+      const slots = Array.from(document.querySelectorAll('input[name="timeSlot"]:checked')).map(cb=>cb.value);
+      const onlySeventh = slots.length > 0 && slots.every(s => s === '7교시');
+      return !!(p7 && p7.checked) && onlySeventh && purpose==='동아리 활동' && isTuesday(dateStr);
     }
 
     let chemicalDB = [], allTeachers = [];
@@ -325,6 +679,89 @@
     function teachersBySubject(subj){ return (allTeachers||[]).filter(t=>t.subject===subj); }
     function dedupeTeachers(list){ const seen=new Map(); list.forEach(t=>{ const key=`${t.name}||${t.email||''}`; if(!seen.has(key)) seen.set(key,t); }); return Array.from(seen.values()); }
     function getC1(obj){ return (obj.class1 || obj['분류1'] || obj.state || '').trim(); }
+    /* === 통일된 시약 상태 판별 함수 === */
+    const RE_SOLID = /고체|분말|결정|시약병|pellet|powder/i;
+    const RE_BIO   = /생물/i;
+    const RE_INDICATOR = /지시약/i;
+/* [v3.58 / 4-1] 시약 분류 단일 기준 — 서버 Code.js의 classifyChemForValidation_와
+   반드시 동일하게 유지할 것. 「단위 유형」과 「농도 필요 여부」를 분리:
+     · 고체(고체·분말·결정 등)            → g 단위, 농도 금지
+     · 농도 면제 액체(지시약·생물·균·효소·기체·용매·증류수·완충액 등) → mL 단위, 농도 선택
+     · 일반 액체                          → mL 단위, 농도 필수
+   기존엔 이 판별이 화면 2곳+서버 1곳에서 서로 달라 증류수·지시약·기체류가
+   어느 쪽 기준으로도 통과 불가능한 데드락이었음. */
+const RE_CONC_EXEMPT = /지시약|생물|배지|효소|기체|gas\b|용매|증류수|멸균수|정제수|distilled|deionized|di\s*water|mineral\s*oil|완충|buffer|페놀프탈레인|phenolphthalein|btb|bromothymol|메틸\s*오렌지|methyl\s*orange|메틸렌\s*블루|methylene\s*blue|페놀\s*레드|phenol\s*red|리트머스|litmus|인디고카민|베네딕트|benedict/i;
+const RE_EXEMPT_CAT = /^(균|효소|생물|기체|지시약|액체-용매)$/;
+function classifyChem(state, name, category) {
+  const s = String(state || ''), n = String(name || ''), c = String(category || '').trim();
+  if (RE_SOLID.test(s) || RE_SOLID.test(c) || RE_SOLID.test(n)) {
+    return { unit: 'solid', conc: 'forbidden' };
+  }
+  if (RE_EXEMPT_CAT.test(c) || RE_CONC_EXEMPT.test(c) ||
+      RE_CONC_EXEMPT.test(n) || RE_CONC_EXEMPT.test(s)) {
+    return { unit: 'liquid', conc: 'optional' };
+  }
+  // [2026-08-19] 상태·분류를 모두 알 수 없는 시약(마스터에 없어 수기 입력한 경우)은
+  //   액체로 단정하지 않는다. 기존엔 고체 분말을 '5g'으로 적으면
+  //   "사용량 형식 오류(mL로 쓰라)" + "액체는 농도 필수"가 동시에 떠서
+  //   어떤 값을 넣어도 검증을 통과할 수 없는 데드락이었음.
+  //   ※ 서버 classifyChemForValidation_와 반드시 동일하게 유지.
+  if (!s && !c) return { unit: 'any', conc: 'optional' };
+  return { unit: 'liquid', conc: 'required' };
+}
+function isSolidLike_(state, name, category) {
+  return classifyChem(state, name, category).unit === 'solid';
+}
+// ✅ 시약명 직접 입력 시 마스터 자동 lookup → dataset.state/category 자동 주입
+// debounce + race guard로 다중 호출 결과 순서 뒤섞임 방지
+let _chemLookupTimer = null;
+let _chemLookupSeq = 0;
+function setupChemNameAutoLookup_() {
+  const list = document.getElementById('chemicalList');
+  if (!list || list.dataset.lookupBound) return;
+  list.dataset.lookupBound = '1';
+  list.addEventListener('blur', function(ev) {
+    const inp = ev.target;
+    if (!inp || inp.tagName !== 'INPUT') return;
+    const tr = inp.closest('tr');
+    if (!tr || !tr.cells || !tr.cells[0]) return;
+    if (!tr.cells[0].contains(inp)) return;
+    const name = (inp.value || '').trim();
+    if (!name) return;
+    if (tr.dataset.state && tr.dataset.category) return;
+    if (_chemLookupTimer) clearTimeout(_chemLookupTimer);
+    const seq = ++_chemLookupSeq;
+    _chemLookupTimer = setTimeout(function() {
+      try {
+        google.script.run
+          .withSuccessHandler(function(info){
+            if (seq !== _chemLookupSeq) return; // 후속 입력 발생 시 stale 응답 무시
+            if (!info) return;
+            if (info.class1 && !tr.dataset.state) tr.dataset.state = info.class1;
+            if (info.category && !tr.dataset.category) tr.dataset.category = info.category;
+            try {
+              const concInp = tr.cells[3] && tr.cells[3].querySelector('input');
+              if (concInp) concInp.placeholder = getConcPlaceholder_(info.class1 || '', info.name || name);
+            } catch(_){}
+          })
+          .withFailureHandler(function(){})
+          .lookupChemicalByName(name);
+      } catch(_){}
+    }, 250);
+  }, true);
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', setupChemNameAutoLookup_);
+} else {
+  setupChemNameAutoLookup_();
+}
+    function getConcPlaceholder_(state, name) {
+      const cls = classifyChem(state, name, '');
+      if (cls.conc === 'forbidden') return '고체 시약(입력 불필요)';
+      if (cls.conc === 'optional') return '농도 생략 가능';
+      return '농도 단위를 꼭 입력하세요.';
+    }
+
     function normalizeRecord(rec){
       const r = {
         name:       rec['물질명'] || rec.name || '',
@@ -338,6 +775,8 @@
         cas:        rec['화학물질 고유번호'] || rec.cas || ''
       };
       r.state = getC1(r);
+      r.isBio = RE_BIO.test(r.state);
+      r.isIndicator = RE_INDICATOR.test(r.state + ' ' + r.name);
       r.studentOK = normalizeYesNo(r.studentOK);
       r.guidance  = normalizeGuidance(r.guidance);
       r.disposal  = normDisposal(r.disposal);
@@ -359,9 +798,9 @@
     }
     function normDisposal(v){
       const s=String(v||'').trim().toLowerCase();
-      const map={ '유기':'유기','유기성':'유기','organic':'유기','무기':'무기','무기성':'무기','inorganic':'무기','산':'산','산성':'산','acid':'산','염기':'염기','알칼리':'염기','base':'염기' };
+      const map={ '유기':'유기','유기성':'유기','organic':'유기','무기':'무기','무기성':'무기','inorganic':'무기','산':'산','산성':'산','acid':'산','염기':'염기','알칼리':'염기','base':'염기','기타':'기타','etc':'기타','other':'기타' };
       if(map[s]) return map[s];
-      if(/organic/i.test(s)) return '유기'; if(/inorganic/i.test(s)) return '무기'; if(/acid/i.test(s)) return '산'; if(/base|alkali/i.test(s)) return '염기';
+      if(/inorganic/i.test(s)) return '무기'; if(/organic/i.test(s)) return '유기'; if(/acid/i.test(s)) return '산'; if(/base|alkali/i.test(s)) return '염기';
       return v||'';
     }
 
@@ -414,14 +853,34 @@
           if (searchBtn) searchBtn.disabled = false;
         })
         .withFailureHandler(_ => {
+          // [v3.58 / 7-7] 실패를 조용히 삼키지 않음 — 기존엔 이후 모든 검색이
+          // "검색 결과 없음"으로 나와 시약이 등록 안 된 것으로 오해했음.
           if (searchBtn) searchBtn.disabled = false; chemicalDB = [];
+          try {
+            const box = document.getElementById('searchResults');
+            if (box) box.innerHTML = '<tr><td style="color:#dc2626;font-size:13px;padding:8px;">⚠️ 시약 목록을 불러오지 못했습니다. 페이지를 새로고침한 뒤 다시 검색해 주세요. (직접 입력은 가능합니다)</td></tr>';
+          } catch(_) {}
         })
         .getChemicalList();
 
-      google.script.run.withSuccessHandler(list => {
-        allTeachers = list;
-        loadTeachers([]); recomputeTeacherOptions(); enforceAdvancedLabByLab(document.getElementById('lab')?.value);
-      }).getTeacherList();
+      // [v3.58 / 7-7] 교사 목록 실패 시 자동 재시도 (최대 3회) — 기존엔 실패 핸들러가
+      // 없어 드롭다운이 빈 채로 남고 학생이 원인도 모른 채 진행 불가였음.
+      function fetchTeachers_() {
+        google.script.run.withSuccessHandler(list => {
+          allTeachers = list;
+          loadTeachers([]); recomputeTeacherOptions(); enforceAdvancedLabByLab(document.getElementById('lab')?.value);
+        }).withFailureHandler(function() {
+          window.__teacherRetry__ = (window.__teacherRetry__ || 0) + 1;
+          const sel = document.getElementById('teacher');
+          if (window.__teacherRetry__ <= 3) {
+            if (sel) sel.innerHTML = '<option value="">교사 목록 로드 실패 — 잠시 후 자동 재시도</option>';
+            setTimeout(fetchTeachers_, 3000);
+          } else {
+            if (sel) sel.innerHTML = '<option value="">로드 실패 — 페이지를 새로고침해 주세요</option>';
+          }
+        }).getTeacherList();
+      }
+      fetchTeachers_();
 
       google.script.run.withSuccessHandler(list => { restrictedIds = Array.isArray(list) ? list.slice() : []; }).getRestrictedList();
 
@@ -437,7 +896,7 @@
       tmEl?.addEventListener('blur', immediateWarnIfBlocked);
 
       document.querySelectorAll('input[name="timeSlot"]').forEach(cb => {
-        cb.disabled = false;
+        if (cb.id !== 'period7') cb.disabled = false;
       });
 
       const chemSearchInput = document.getElementById('chemicalSearch');
@@ -448,10 +907,33 @@
       const chemTable = document.getElementById('chemicalList');
       chemTable.addEventListener('input', markUnvalidated);
       chemTable.addEventListener('change', markUnvalidated);
+
+      document.getElementById('applicationForm').addEventListener('input', scheduleAutoSave);
+      initAutoSave(); // [v3.58 / 7-2] 세션 확인 후 계정별 자동저장 활성화
     }
+    // [검토반영] 과거 날짜 선택 차단 — 기존엔 min이 없어 학생이 어제 날짜를 고른 뒤
+    //   5단계·확인 다이얼로그를 전부 거치고 제출 시점에야 서버에서 거부당했음.
+    //   (신규 양식 3종은 이미 동일 처리가 되어 있었음)
+    document.addEventListener('DOMContentLoaded', function () {
+      try {
+        var _t = new Date();
+        var _y = _t.getFullYear();
+        var _m = ('0' + (_t.getMonth() + 1)).slice(-2);
+        var _d = ('0' + _t.getDate()).slice(-2);
+        var _dateEl = document.getElementById('date');
+        if (_dateEl) _dateEl.min = _y + '-' + _m + '-' + _d;
+      } catch (_) {}
+    });
+
     document.addEventListener('DOMContentLoaded', initApp);
+    // 캘린더 위젯 — input #date 와 양방향 동기화 (5분 캐시 월별 차단 정보 시각화)
+    document.addEventListener('DOMContentLoaded', function() {
+      if (typeof initCalendarWidget === 'function') initCalendarWidget('#date');
+    });
 
     function loadTeachers(list) {
+      // [v3.58 / 7-5] 테스트용 '홍권능 항상 포함' 블록 제거
+
       const sel = document.getElementById('teacher');
       sel.innerHTML = '<option value="">선택</option>';
       list.forEach(item => {
@@ -580,7 +1062,7 @@
         if (info.notice) {
           showCustomAlert(info.notice);
         } else {
-          showCustomAlert('해당 날짜에는 과학실험실 사용이 불가능합니다.');
+          showCustomAlert('해당 날짜에는 과학 실험·실습실 사용이 불가능합니다.');
         }
         return;
       }
@@ -659,6 +1141,7 @@
           if (mySeq !== calendarFetchSeq) return;
           currentCalendarBlocks = info;
           applyCalendarBlocksForSelectedLab();
+          renderAvailabilityTable(info);
           if (info && info.notice && !info.allBlocked) {
             showCustomAlert(info.notice);
           }
@@ -667,6 +1150,11 @@
         .withFailureHandler(function(err) {
           if (mySeq !== calendarFetchSeq) return;
           hideLookupLoading();
+          // [v3.58 / M-10] 실패 시 이전 날짜의 차단 상태가 새 날짜에 그대로 남던 문제 —
+          //   상태를 초기화하고 학생에게 알림 (제출 시 서버 검증이 최종 방어).
+          currentCalendarBlocks = null;
+          try { applyCalendarBlocksForSelectedLab(); } catch(_) {}
+          try { showCustomAlert('이 날짜의 사용 가능 여부를 불러오지 못했습니다.<br>제출 시 서버에서 다시 확인되지만, 가급적 날짜를 다시 선택해 주세요.'); } catch(_) {}
           console && console.warn && console.warn('캘린더 조회 실패:', err);
         })
         .getUnavailableForDate(dateStr);
@@ -687,7 +1175,7 @@
       const dayOfWeek = d.getDay();
 
       if (dayOfWeek === 0 || dayOfWeek === 6) {
-        showCustomAlert('주말은 실험실을 이용할 수 없습니다.');
+        showCustomAlert('주말은 실험·실습실을 이용할 수 없습니다.');
         input.value = '';
         span.textContent = '';
         updatePeriod7Availability();
@@ -807,7 +1295,7 @@
       if (isSeventhExceptionActive()) return;
       if (hasRestrictedMatch) {
         showCustomAlert(
-          '해당 학생은 실험실 사용 신청 불가합니다.<br>' +
+          '해당 학생은 실험·실습실 사용 신청 불가합니다.<br>' +
           '문의 사항은 과학기술과 학과사무실에 문의해주세요.<br><br>' +
           '<b>※ 단, 7교시에는 신청이 가능합니다.</b>'
         );
@@ -888,30 +1376,35 @@
       const stateCell = r.insertCell(); const state = rec.state || ''; stateCell.innerText = state;
 
       const inpConc = document.createElement('input'); inpConc.type='text'; inpConc.placeholder='농도 단위를 꼭 입력하세요.';
-      const isSolidLike = /고체/.test(state) || rec.isBio || rec.isIndicator;
-      if (isSolidLike) { inpConc.value=''; inpConc.disabled=true; inpConc.placeholder = rec.isBio ? '생물 시약(입력 불필요)' : '입력 불필요'; }
+      if (isSolidLike_(state, rec.name)) { inpConc.value=''; inpConc.disabled=true; inpConc.placeholder = getConcPlaceholder_(state, rec.name); }
       r.insertCell().appendChild(inpConc);
 
       const inpVol = document.createElement('input'); inpVol.type='text'; inpVol.placeholder='사용량 단위를 꼭 입력하세요.'; r.insertCell().appendChild(inpVol);
 
       const selDisp = document.createElement('select');
-      selDisp.innerHTML = '<option>선택하세요</option><option>유기</option><option>무기</option><option>산</option><option>염기</option>';
+      selDisp.innerHTML = '<option>선택하세요</option><option>유기</option><option>무기</option><option>산</option><option>염기</option><option>기타</option>';
       if (rec.disposal) selDisp.value = rec.disposal;
       r.insertCell().appendChild(selDisp);
 
       const inpMsds= document.createElement('input'); inpMsds.type='text'; inpMsds.placeholder='취급 주의/MSDS 핵심사항을 기록하세요.'; r.insertCell().appendChild(inpMsds);
 
       const tdGuidance = r.insertCell();
-      tdGuidance.innerText = rec.guidance || '';
-      if (rec.guidance === '필요') tdGuidance.classList.add('guidance-required');
+      const _gv = (rec.guidance || '').trim();
+      const _pill = document.createElement('span');
+      _pill.className = 'guidance-pill';
+      if (_gv === '필요')      { _pill.classList.add('req');  _pill.textContent = '필요'; }
+      else if (_gv === '불필요'){ _pill.classList.add('opt');  _pill.textContent = '불필요'; }
+      else                       { _pill.classList.add('none'); _pill.textContent = '—'; }
+      tdGuidance.appendChild(_pill);
 
-      const del = document.createElement('button'); del.type='button'; del.textContent='삭제'; del.className='btn-del';
+      const del = document.createElement('button'); del.type='button'; del.className='btn-del'; del.title='행 삭제'; del.setAttribute('aria-label','행 삭제'); del.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>';
       del.onclick = () => { tbl.deleteRow(r.rowIndex); markUnvalidated(); };
       r.insertCell().appendChild(del);
 
       r.dataset.state = state;
       r.dataset.isBio = rec.isBio ? '1' : '0';
       r.dataset.isIndicator = rec.isIndicator ? '1' : '0';
+      r.dataset.isSolidLike = isSolidLike_(state, rec.name) ? '1' : '0';
       r.dataset.disposalDefault = rec.disposal || '';
       r.dataset.guidance = rec.guidance || '';
       r.dataset.class1 = rec.class1 || '';
@@ -944,7 +1437,7 @@
       const inpConc = document.createElement('input'); inpConc.type = 'text'; inpConc.placeholder = '농도 단위를 꼭 입력하세요.'; r.insertCell().appendChild(inpConc);
       const inpVol = document.createElement('input'); inpVol  .type  = 'text'; inpVol.placeholder  = '사용량 단위를 꼭 입력하세요.'; r.insertCell().appendChild(inpVol);
 
-      const selDisp = document.createElement('select'); selDisp.innerHTML = '<option>선택하세요</option><option>유기</option><option>무기</option><option>산</option><option>염기</option>'; r.insertCell().appendChild(selDisp);
+      const selDisp = document.createElement('select'); selDisp.innerHTML = '<option>선택하세요</option><option>유기</option><option>무기</option><option>산</option><option>염기</option><option>기타</option>'; r.insertCell().appendChild(selDisp);
 
       const inpMsds= document.createElement('input'); inpMsds.type = 'text'; inpMsds.placeholder = '취급 주의/MSDS 핵심사항을 기록하세요.'; r.insertCell().appendChild(inpMsds);
 
@@ -999,25 +1492,41 @@
           conc: (c[3].querySelector('input').value || '').trim(),
           vol:  (c[4].querySelector('input').value || '').trim(),
           msds: (c[6].querySelector('input').value || '').trim(),
-          state: state
+          state: state,
+          category: (tr.dataset.category || '')
         });
       });
       return chems;
     }
 
+    // [v3.58 / 4-1] 농도·사용량 정규식 — 서버 Code.js와 동일하게 유지할 것.
+    // 농도: 숫자(+범위) + 단위. 예: "0.1M", "0.01~0.1mol/L", "5%", "100ppm", "2g/L"
+    const RE_CONC_OK = /^\s*\d+(?:\.\d+)?\s*(?:[~\-]\s*\d+(?:\.\d+)?\s*)?(?:m|mm|μm|um|nm|%|n|mol\/l|mg\/ml|μg\/ml|ug\/ml|g\/l|mg\/l|g\/ml|w\/v|w\/w|v\/v|ppm|ppb|x|배)\s*$/i;
+    const RE_VOL_LIQUID = /^\s*(?:약\s*)?\d+(?:\.\d+)?\s*(?:[~\-]\s*\d+(?:\.\d+)?\s*)?(?:ml|l|cc|μl|ul|방울)\s*$/i;
+    const RE_VOL_SOLID  = /^\s*(?:약\s*)?\d+(?:\.\d+)?\s*(?:[~\-]\s*\d+(?:\.\d+)?\s*)?(?:mg|g|kg)\s*$/i;
     function preCheckChems(chems){
       const errs = [];
       chems.forEach(ch => {
+        const tag = ch.name || '시약';
+        const cls = classifyChem(ch.state, ch.name, ch.category);
         if (!ch.name) errs.push('• 시약명 누락');
-        if (!ch.vol)  errs.push(`• ${ch.name||'시약'}: 사용량 누락`);
-        if (!ch.msds) errs.push(`• ${ch.name||'시약'}: MSDS/주의사항 누락`);
-        const isSolidLike = /고체/.test(ch.state) || /생물|지시약/.test((ch.state||'') + ' + ' + (ch.name||''));
-        if (/액체/.test(ch.state)) {
-          if (!ch.conc) errs.push(`• ${ch.name||'시약'}: 액체는 농도 필수`);
-        } else if (isSolidLike) {
-          if (ch.conc) errs.push(`• ${ch.name||'시약'}: 고체/생물/지시약은 농도 입력 금지`);
+        if (!ch.vol) {
+          errs.push(`• ${tag}: 사용량 누락`);
+        } else {
+          const ok = (cls.unit === 'solid') ? RE_VOL_SOLID.test(ch.vol)
+                   : (cls.unit === 'any')   ? (RE_VOL_SOLID.test(ch.vol) || RE_VOL_LIQUID.test(ch.vol))
+                   :                          RE_VOL_LIQUID.test(ch.vol);
+          if (!ok) errs.push(`• ${tag}: 사용량 형식 오류 (예: ${cls.unit === 'solid' ? '5g, 100mg' : cls.unit === 'any' ? '10mL 또는 5g' : '10mL, 0.5L, 3방울'})`);
         }
-        if (!ch.disposal || ch.disposal==='선택하세요') errs.push(`• ${ch.name||'시약'}: 폐기 방법 미선택`);
+        if (!ch.msds || ch.msds.length < 2) errs.push(`• ${tag}: MSDS/주의사항 누락`);
+        if (cls.conc === 'forbidden') {
+          if (ch.conc) errs.push(`• ${tag}: 고체는 농도 입력 금지 (비워 두세요)`);
+        } else if (cls.conc === 'required') {
+          if (!ch.conc) errs.push(`• ${tag}: 액체는 농도 필수 (예: 0.1M, 5%)`);
+          else if (!RE_CONC_OK.test(ch.conc)) errs.push(`• ${tag}: 농도 형식 오류 (예: 0.1M, 5%, 100ppm, 2g/L)`);
+        }
+        // cls.conc === 'optional' (증류수·완충용액·지시약 등): 농도 검사 생략
+        if (!ch.disposal || ch.disposal==='선택하세요') errs.push(`• ${tag}: 폐기 방법 미선택`);
       });
       return errs;
     }
@@ -1031,9 +1540,11 @@
       const btn = document.getElementById('btnValidateChem');
 
       if (pre.length){
+        // [v3.58 / 4-4] 화면 단계 오류(입력 누락 등)에는 잠금을 걸지 않음 —
+        //   기존엔 MSDS 한 칸 누락에도 30초 대기가 강제됐음. 수정 후 바로 재검증 가능.
         const box = document.getElementById('chemValidateReport');
         box.className='danger'; box.style.display='block';
-        box.innerHTML = `<b>검증 실패(입력 누락)</b><br>${pre.join('<br>')}`;
+        box.innerHTML = `<b>검증 실패(입력 확인 필요)</b><br>${pre.join('<br>')}`;
         badge.className = 'pill badge-err'; badge.textContent = '검증 실패';
         validatedOk = false; return;
       }
@@ -1045,13 +1556,8 @@
       google.script.run
         .withSuccessHandler(res => {
           btn.disabled = false;
-          if (res.throttle && !res.ok) {
-            startCooldown(res.retryAfterSec || 30);
-            showReport([], true);
-            badge.className = 'pill badge-err';
-            badge.textContent = '검증 실패(잠금)';
-            validatedOk = false; return;
-          }
+          // [v3.58 / 4-3] 실패 상세(mismatches)를 항상 우선 표시.
+          //   기존엔 throttle 분기가 먼저 잡혀 어떤 시약이 왜 틀렸는지 영영 표시되지 않았음.
           if (res.ok) {
             badge.className = 'pill badge-ok';
             badge.textContent = '검증 통과';
@@ -1061,10 +1567,18 @@
             const rep = document.getElementById('chemValidateReport');
             rep.style.display='none'; rep.innerHTML='';
             validatedOk = true;
-          } else {
+          } else if (res.mismatches && res.mismatches.length) {
             badge.className = 'pill badge-err';
             badge.textContent = '검증 실패';
-            showReport(res.mismatches || [], false);
+            showReport(res.mismatches, false);
+            if (res.retryAfterSec) startCooldown(res.retryAfterSec);
+            validatedOk = false;
+          } else {
+            // 상세 없는 잠금 응답 (연타로 인한 일시 잠금)
+            startCooldown(res.retryAfterSec || 10);
+            showReport([], true);
+            badge.className = 'pill badge-err';
+            badge.textContent = '잠시 후 재시도';
             validatedOk = false;
           }
         })
@@ -1077,16 +1591,32 @@
         .validateChemicalsWithThrottle(key, chems);
     }
 
+    // 시약 이름 set의 32-bit DJB2 hash → 같은 학생이 다른 시약 조합 시도 시 락 영향 없음
+    function _hashChemSet_(chems) {
+      const list = (chems || [])
+        .map(c => String((c && (c.name || '')) || '').trim().toLowerCase())
+        .filter(Boolean)
+        .sort();
+      let h = 5381;
+      for (let i = 0; i < list.length; i++) {
+        const s = list[i];
+        for (let j = 0; j < s.length; j++) h = ((h << 5) + h + s.charCodeAt(j)) & 0xffffffff;
+        h = ((h << 5) + h + 124) & 0xffffffff; // separator
+      }
+      return (h >>> 0).toString(36);
+    }
     function keyForThrottle(){
       const sid   = (document.getElementById('studentId').value || '').trim();
       const sname = (document.getElementById('studentName').value || '').trim();
       const date  = (document.getElementById('date').value || '').trim();
-      if (sid && sname && date) return `${sid}_${sname}_${date}`;
+      const chems = (typeof collectChemsForValidation === 'function') ? collectChemsForValidation() : [];
+      const setHash = _hashChemSet_(chems);
+      if (sid && sname && date) return `${sid}_${sname}_${date}_${setHash}`;
 
       const today = new Date().toISOString().slice(0,10);
       let anon = localStorage.getItem('anonThrottleKey');
       if (!anon) { anon = 'anon_' + Math.random().toString(36).slice(2); localStorage.setItem('anonThrottleKey', anon); }
-      return `${anon}_${today}`;
+      return `${anon}_${today}_${setHash}`;
     }
 
     function showReport(mismatches, throttled){
@@ -1104,12 +1634,16 @@
     }
 
     function startCooldown(sec){
+      // 기존 타이머가 남아 있으면 먼저 정리 (중복 호출 시 카운트다운 가속 방지)
+      if (cooldownTimer) { clearTimeout(cooldownTimer); cooldownTimer = null; }
       cooldownRemain = sec;
       const msg = document.getElementById('cooldownMsg');
       msg.style.display='inline-block';
       tickCooldown();
     }
     function tickCooldown(){
+      // 다음 tick을 예약하기 전에 기존 예약 정리 (방어적)
+      if (cooldownTimer) { clearTimeout(cooldownTimer); cooldownTimer = null; }
       const msg = document.getElementById('cooldownMsg');
       msg.textContent = `재검증까지 ${cooldownRemain}초`;
       const btn = document.getElementById('btnValidateChem'); btn.disabled = true;
@@ -1136,7 +1670,7 @@
       }
 
       if (document.getElementById('purpose').value==='기타' && !document.getElementById('otherPurpose').value.trim()) { showCustomAlert('사용 목적을 "기타"로 선택한 경우 내용을 입력해야 합니다.'); return false; }
-      const agr = document.querySelector('input[name="agreement"]:checked'); if (!agr || agr.value!=='yes') { showCustomAlert('실험실 사용 제약 안내에 동의해야 신청할 수 있습니다.'); return false; }
+      const agr = document.querySelector('input[name="agreement"]:checked'); if (!agr || agr.value!=='yes') { showCustomAlert('실험·실습실 사용 제약 안내에 동의해야 신청할 수 있습니다.'); return false; }
       if (!document.querySelectorAll('.safety-item input:checked').length) { showCustomAlert('안전장구를 최소 하나 이상 선택해야 합니다.'); return false; }
       if (document.getElementById('otherSafetyCheck').checked && !document.getElementById('otherSafety').value.trim()) { showCustomAlert('기타 안전장구를 선택한 경우 내용을 입력해야 합니다.'); return false; }
 
@@ -1166,15 +1700,15 @@
 
           if (!name) { showCustomAlert('시약명을 입력해야 합니다.'); return false; }
           if (!vol || !msds) { showCustomAlert('시약의 사용량과 MSDS를 모두 입력하세요.'); return false; }
-          if (!disposal || disposal === '선택하세요') { showCustomAlert('시약의 폐수 처리 분류(유기/무기/산/염기)를 선택하세요.'); return false; }
+          if (!disposal || disposal === '선택하세요') { showCustomAlert('시약의 폐수 처리 분류(유기/무기/산/염기/기타)를 선택하세요.'); return false; }
 
-          const isBio = tr.dataset.isBio === '1';
-          const isIndicator = tr.dataset.isIndicator === '1';
           const conc  = c[3].querySelector('input').value.trim();
 
-          if (isBio || isIndicator || /고체/.test(state)) {
-            if (conc) { showCustomAlert('생물/지시약/고체 시약은 농도를 입력할 수 없습니다.'); return false; }
-          } else if (/액체/.test(state)) {
+          // [v3.58 / 4-1] 검증 버튼과 동일 기준(classifyChem) 사용 — category 포함
+          const _vfCls = classifyChem(state, name, tr.dataset.category || '');
+          if (_vfCls.conc === 'forbidden') {
+            if (conc) { showCustomAlert('고체 시약은 농도를 입력할 수 없습니다. (비워 두세요)'); return false; }
+          } else if (_vfCls.conc === 'required') {
             if (!conc) { showCustomAlert('액체 시약은 농도를 반드시 입력해야 합니다.'); return false; }
           }
         }
@@ -1186,15 +1720,26 @@
         document.getElementById('teamMembers')?.classList.remove('blocked-input');
       } else if (hasRestrictedMatch) {
         showCustomAlert(
-          '과학실험실 사용 신청이 불가능한 학생의 정보가 포함되어 있습니다.<br>' +
-          '과학실험실 사용 신청하려면 해당 정보를 수정 혹은 삭제한 뒤 다시 신청해주세요.<br><br>' +
+          '과학 실험·실습실 사용 신청이 불가능한 학생의 정보가 포함되어 있습니다.<br>' +
+          '과학 실험·실습실 사용 신청하려면 해당 정보를 수정 혹은 삭제한 뒤 다시 신청해주세요.<br><br>' +
           '<b>※ 단, 7교시에는 신청이 가능합니다.</b>'
         );
         return false;
       }
 
-      if (!validatedOk) {
-        showCustomAlert('시약 정보 검증을 먼저 통과하세요.');
+      // [2026-08-19] 시약 검증 게이트 개선.
+      //   (1) 시약을 한 건도 넣지 않는 신청(프로젝트실험실·오픈랩 등)까지 빈 표에 대고
+      //       '시약 정보 검증'을 누르게 하던 문제 -> 시약이 없으면 게이트 면제.
+      //   (2) 통과 못 했을 때 "어디서 무엇을" 눌러야 하는지 알려주고 3단계로 데려간다.
+      //       (실험실·사용 목적을 바꾸면 검증이 조용히 해제돼 영문 모르고 막히던 문제)
+      const _chemRowCount = Math.max(0, document.querySelectorAll('#chemicalList tr').length - 1);
+      if (_chemRowCount > 0 && !validatedOk) {
+        showCustomAlert(
+          '시약 정보 검증을 통과해야 제출할 수 있습니다.<br><br>' +
+          '<b>3단계(실험 내용)</b>의 <b>[시약 정보 검증]</b> 버튼을 눌러 주세요.<br>' +
+          '<span style="font-size:13px;color:#64748b;">※ 실험실이나 사용 목적을 바꾸면 검증이 자동으로 해제됩니다.</span>'
+        );
+        try { clickStep(3); } catch (_) {}
         return false;
       }
 
@@ -1220,12 +1765,28 @@
       const confirm2 = document.querySelector('input[name="confirm2"]:checked');
       const confirm3 = document.querySelector('input[name="confirm3"]:checked');
       const confirm4 = document.querySelector('input[name="confirm4"]:checked');
+      // [v3.58 / 7-7] 숫자 비교("05"와 "5" 동일 취급) + 불일치 시 이유 표시
+      const countMatch = studentCount !== '' && totalParticipants !== '' &&
+        parseInt(studentCount, 10) === parseInt(totalParticipants, 10);
       const allYes =
-        studentCount && studentCount === totalParticipants &&
+        countMatch &&
         confirm2 && confirm2.value === 'yes' &&
         confirm3 && confirm3.value === 'yes' &&
         confirm4 && confirm4.value === 'yes';
       document.getElementById('btnConfirmSubmit').disabled = !allYes;
+      try {
+        let hintEl = document.getElementById('__countHint__');
+        if (!hintEl) {
+          hintEl = document.createElement('div');
+          hintEl.id = '__countHint__';
+          hintEl.style.cssText = 'font-size:12px;color:#dc2626;margin-top:4px;';
+          const cc = document.getElementById('confirmStudentCount');
+          if (cc && cc.parentNode) cc.parentNode.appendChild(hintEl);
+        }
+        hintEl.textContent = (studentCount !== '' && !countMatch)
+          ? '입력한 인원(' + studentCount + ')이 신청서의 총인원수(' + totalParticipants + ')와 다릅니다.'
+          : '';
+      } catch (_) {}
     }
     function handleNo(q) {
       document.getElementById('noWarningDialog').style.display = 'block';
@@ -1241,10 +1802,16 @@
       if (confirmCount) confirmCount.addEventListener('input', function() { this.value = this.value.replace(/[^0-9]/g, ''); checkAllConfirms(); });
     });
 
+    // 제출 진행 중 가드 — 같은 제출이 두 번 실행되는 것을 완전히 차단
+    var __SUBMITTING = false;
     function processSubmit() {
+      if (__SUBMITTING) return;            // 이미 진행 중이면 조용히 무시
+      __SUBMITTING = true;
       closeConfirmDialog();
       showOverlayBlock("신청 중입니다.<br>잠시만 기다려주세요.<br>클릭은 한 번만 해주세요.");
-      const btn = document.querySelector('#applicationForm button'); if (btn) btn.disabled = true;
+      // #applicationForm 바깥(.bottom-nav)에 있는 실제 제출 버튼을 직접 타겟
+      const btn = document.getElementById('btnSubmit');
+      if (btn) btn.disabled = true;
 
       const timeSlots = Array.from(document.querySelectorAll('input[name="timeSlot"]:checked')).map(cb => cb.value);
       const safety = Array.from(document.querySelectorAll('.safety-item input:checked')).map(cb => cb.id==='otherSafetyCheck' ? document.getElementById('otherSafety').value : cb.value);
@@ -1293,28 +1860,73 @@
 
       google.script.run
         .withSuccessHandler(res => {
-          hideOverlayBlock(); alert(res);
-          document.getElementById('statusMessage').textContent = '';
-          if (btn) btn.disabled = false; document.getElementById('applicationForm').reset();
-          resetChemicalTable(); resetSearchResults();
-          markUnvalidated();
+          __SUBMITTING = false;
+          hideOverlayBlock();
+          formDirty = false;
+          if (AUTO_SAVE_KEY) localStorage.removeItem(AUTO_SAVE_KEY);
+          const idMatch = String(res).match(/ID:\s*([^\s)]+)/);
+          const appId = idMatch ? idMatch[1] : '';
+          // [검토반영] 서버가 함께 보낸 경고(승인요청 메일 발송 실패 등)를 학생에게 노출.
+          //   기존엔 res에서 ID만 뽑고 경고를 버려서, 지도교사에게 메일이 안 갔는데도
+          //   학생 화면엔 "신청 완료"만 떠 아무도 문제를 모르는 상태가 됐음.
+          const __resText = String(res || '');
+          const __wIdx = __resText.indexOf('⚠');
+          const __warnMsg = __wIdx !== -1 ? __resText.slice(__wIdx) : '';
+
+          const form = document.getElementById('applicationForm');
+          form.style.display = 'none';
+          document.querySelector('.header').style.display = 'none';
+          document.querySelector('.progress-section').style.display = 'none';
+          document.querySelector('.bottom-nav').style.display = 'none';
+
+          let completionDiv = document.getElementById('completionScreen');
+          if (!completionDiv) {
+            completionDiv = document.createElement('div');
+            completionDiv.id = 'completionScreen';
+            form.parentNode.insertBefore(completionDiv, form.nextSibling);
+          }
+
+          const lab = document.getElementById('lab') ? document.getElementById('lab').value : '';
+          const date = document.getElementById('date') ? document.getElementById('date').value : '';
+          const title = document.getElementById('title') ? document.getElementById('title').value : '';
+
+          completionDiv.innerHTML =
+            '<div style="text-align:center;max-width:600px;margin:60px auto;padding:30px;">' +
+            '<div style="font-size:3rem;margin-bottom:16px;">✅</div>' +
+            '<h2 style="color:var(--success);margin-bottom:12px;">신청이 완료되었습니다!</h2>' +
+            '<div style="background:var(--success-light);border:1px solid #bbf7d0;border-radius:var(--radius);padding:20px;margin:20px 0;text-align:left;">' +
+            '<div style="margin-bottom:8px;"><b>신청 ID:</b> <code style="background:#e2e8f0;padding:2px 8px;border-radius:4px;user-select:all;">' + (appId || '(확인 중)') + '</code></div>' +
+            (lab ? '<div style="margin-bottom:8px;"><b>실험·실습실:</b> ' + lab + '</div>' : '') +
+            (date ? '<div style="margin-bottom:8px;"><b>실험 날짜:</b> ' + date + '</div>' : '') +
+            (title ? '<div style="margin-bottom:8px;"><b>실험·실습 주제:</b> ' + title + '</div>' : '') +
+            '</div>' +
+            (__warnMsg
+              ? '<div style="background:var(--warning-light);border:1px solid #fde68a;border-radius:var(--radius);padding:16px;margin:20px 0;text-align:left;color:#92400e;font-size:14px;line-height:1.7;">' +
+                '<b>확인이 필요합니다</b><br>' + escapeHtml(__warnMsg).replace(/\n/g, '<br>') +
+                '<br><br>신청은 정상 접수됐지만 위 안내 메일이 발송되지 않았습니다.<br>' +
+                '<b>지도교사께 신청 사실을 직접 알려 주세요.</b> (신청 ID를 함께 알려주면 확인이 빠릅니다)</div>'
+              : '') +
+            '<p style="color:var(--text-muted);margin:16px 0;">지도교사의 1차 승인 → 담당교사의 최종 승인을 거쳐 확정됩니다.<br>승인/반려 결과는 이메일로 안내됩니다.</p>' +
+            '<button onclick="resetToNewForm()" style="padding:12px 24px;background:var(--primary);color:#fff;border:none;border-radius:var(--radius-sm);font-size:1rem;font-weight:600;cursor:pointer;">새 신청서 작성</button>' +
+            '</div>';
+          completionDiv.style.display = 'block';
         })
         .withFailureHandler(err => {
+          __SUBMITTING = false;
           hideOverlayBlock();
           console.error(err);
           const raw = (err && err.message ? err.message : String(err) || '');
-          const note = '\n\n※ 단, 7교시에는 신청이 가능합니다.';
-          const finalMsg = /7교시에는 신청이 가능합니다/.test(raw) ? raw : (raw + note);
-          alert('오류 발생: ' + finalMsg);
+          // [v3.58] 기존엔 모든 오류 뒤에 "※ 단, 7교시에는 신청이 가능합니다"를 무조건
+          // 덧붙여 차단·중복신청 오류에서도 엉뚱한 안내가 붙었음 → 서버 메시지 그대로 표시.
+          alert('오류 발생: ' + raw);
           if (btn) btn.disabled = false;
           document.getElementById('statusMessage').textContent = '';
         })
-        .submitApplication(data);
+        .submitApplication(typeof attachSecurityFields === 'function' ? attachSecurityFields(data) : data);
     }
 
     /* ====================== 통합 불러오기 다이얼로그 ====================== */
     function openLoadDialog(tabIndex) {
-      // 초기화
       document.getElementById('loadSid').value  = '';
       document.getElementById('loadName').value = '';
       document.getElementById('loadDate').value = '';
@@ -1325,7 +1937,6 @@
       document.getElementById('loadOverlay').style.display = 'block';
       document.getElementById('loadDialog').style.display  = 'block';
 
-      // 탭 전환
       switchLoadTab(tabIndex || 0);
 
       if (tabIndex === 1) {
@@ -1350,6 +1961,21 @@
           panels[i].classList.add('active');
         }
       });
+    }
+
+    function goHome() {
+      if (formDirty && !confirm('작성 중인 내용이 있습니다. 홈으로 돌아가시겠습니까?')) return;
+      showOverlayBlock("홈으로 이동 중입니다…<br>잠시만 기다려주세요.");
+      google.script.run
+        .withSuccessHandler(function(url) {
+          // 페이지 전환 전까지 오버레이 유지 (사용자에게 로딩 중 피드백)
+          window.top.location.href = url;
+        })
+        .withFailureHandler(function() {
+          hideOverlayBlock();
+          history.back();
+        })
+        .getGatewayUrl();
     }
 
     function snapshotForm() {
@@ -1377,6 +2003,7 @@
         });
       });
       const payload = {
+        formType    : '1F', // [v3.58 / 7-1] 폼 종류 — 1층/2층/신규 초안 상호 덮어쓰기 방지 키
         studentId   : sid,
         studentName : name,
         date        : date,
@@ -1401,7 +2028,7 @@
         totalParticipants: document.getElementById('totalParticipants').value
       };
       google.script.run.withSuccessHandler(msg => {
-        hideOverlayBlock(); alert(msg || '임시저장 완료');
+        hideOverlayBlock(); formDirty = false; alert(msg || '임시저장 완료');
       }).withFailureHandler(err => {
         hideOverlayBlock(); alert('임시저장 실패: ' + (err && err.message || err));
       }).saveDraft(payload);
@@ -1438,7 +2065,7 @@
       }).withFailureHandler(err => {
         hideOverlayBlock();
         alert((err && err.message) ? err.message : '임시저장 불러오기 실패');
-      }).loadDraft(sid, name, date);
+      }).loadDraft(sid, name, date, '1F'); // [v3.58 / 7-1] 폼 종류 지정
     }
 
     /* ===== 승인된 신청서 조회 ===== */
@@ -1464,7 +2091,7 @@
                 ${escapeHtml(item.lab)} / ${escapeHtml(item.date)} / ${escapeHtml(item.time)}<br>
                 <span style="color:#888;font-size:11px;">제출: ${escapeHtml(item.submit)}</span>
               </div>
-              <button type="button" style="padding:6px 14px;background:#34a853;color:#fff;border:none;border-radius:4px;cursor:pointer;font-weight:bold;white-space:nowrap;"
+              <button type="button" style="padding:6px 14px;background:var(--success);color:#fff;border:none;border-radius:4px;cursor:pointer;font-weight:bold;white-space:nowrap;"
                       onclick="loadApprovedItem('${escapeHtml(item.id)}')">불러오기</button>
             </div>`).join('');
         })
@@ -1480,7 +2107,6 @@
         .withSuccessHandler(data => {
           hideOverlayBlock();
           try {
-            // 승인된 신청서는 날짜를 비워둠 (새로 선택해야 함)
             applyLoadedData(data, true);
             closeLoadDialog();
             alert('승인된 신청서를 불러왔습니다.\n실험 날짜와 시간을 새로 선택해 주세요.');
@@ -1569,15 +2195,22 @@
         const inpName = document.createElement('input'); inpName.type='text'; inpName.value=c['시약명']||''; r.insertCell().appendChild(inpName);
         const inpFormula = document.createElement('input'); inpFormula.type='text'; inpFormula.value=c['화학식']||''; r.insertCell().appendChild(inpFormula);
         const tdState = r.insertCell(); tdState.innerText = c['상태'] || c['분류1'] || '';
-        const inpConc = document.createElement('input'); inpConc.type='text'; inpConc.value=c['농도']||''; r.insertCell().appendChild(inpConc);
+        const chemState = tdState.innerText;
+        const chemName = inpName.value;
+        const inpConc = document.createElement('input'); inpConc.type='text'; inpConc.value=c['농도']||'';
+        if (isSolidLike_(chemState, chemName)) { inpConc.value=''; inpConc.disabled=true; inpConc.placeholder=getConcPlaceholder_(chemState, chemName); }
+        r.insertCell().appendChild(inpConc);
         const inpVol  = document.createElement('input'); inpVol.type='text'; inpVol.value=c['용량']||''; r.insertCell().appendChild(inpVol);
-        const selDisp = document.createElement('select'); selDisp.innerHTML='<option>선택하세요</option><option>유기</option><option>무기</option><option>산</option><option>염기</option>'; r.insertCell().appendChild(selDisp);
+        const selDisp = document.createElement('select'); selDisp.innerHTML='<option>선택하세요</option><option>유기</option><option>무기</option><option>산</option><option>염기</option><option>기타</option>'; r.insertCell().appendChild(selDisp);
         selDisp.value = normDisposal(c['폐기 방법']||'');
         const inpMsds = document.createElement('input'); inpMsds.type='text'; inpMsds.value=c['MSDS 및 취급 주의사항']||c['MSDS']||''; r.insertCell().appendChild(inpMsds);
         const tdG = r.insertCell(); tdG.innerText = normalizeGuidance(c['교사임장여부']||'');
         const del = document.createElement('button'); del.type='button'; del.textContent='삭제'; del.className='btn-del'; del.onclick=()=>{ tbl.deleteRow(r.rowIndex); markUnvalidated(); }; r.insertCell().appendChild(del);
-        r.dataset.state = tdState.innerText;
-        r.dataset.isBio='0'; r.dataset.isIndicator='0'; r.dataset.disposalDefault='';
+        r.dataset.state = chemState;
+        r.dataset.isBio = RE_BIO.test(chemState) ? '1' : '0';
+        r.dataset.isIndicator = RE_INDICATOR.test(chemState + ' ' + chemName) ? '1' : '0';
+        r.dataset.isSolidLike = isSolidLike_(chemState, chemName) ? '1' : '0';
+        r.dataset.disposalDefault='';
         r.dataset.guidance = tdG.innerText; r.dataset.class1 = c['분류1']||'';
         r.dataset.class2=''; r.dataset.studentOK=''; r.dataset.hazard=''; r.dataset.cas='';
         r.dataset.formula = inpFormula.value;
@@ -1589,6 +2222,9 @@
         document.getElementById('advancedLabNote').style.display = 'block';
         document.getElementById('advancedLabReason').style.display = 'block';
       }
+
+      // 스텝1로 이동
+      goStep(1);
     }
 
     function resetChemicalTable() { const tbl = document.getElementById('chemicalList'); while (tbl.rows.length > 1) tbl.deleteRow(1); markUnvalidated(); }
@@ -1605,6 +2241,8 @@
 
     function createRipple(e){
       const btn = e.currentTarget;
+      if (!btn.style.position || btn.style.position === 'static') btn.style.position = 'relative';
+      btn.style.overflow = 'hidden';
       const rect = btn.getBoundingClientRect();
       const ripple = document.createElement('span');
       const size = Math.max(rect.width, rect.height);
@@ -1617,19 +2255,23 @@
       setTimeout(() => ripple.remove(), 500);
     }
     function initFabFeedback(){
-      document.querySelectorAll('.fab, button').forEach(btn=>{
+      document.querySelectorAll('button').forEach(btn=>{
         btn.addEventListener('click', createRipple);
         btn.addEventListener('keydown', (ev)=>{ if(ev.key === ' ' || ev.key === 'Enter'){ ev.preventDefault(); btn.click(); }});
       });
     }
 
     function handlePurposeChange(sel) {
+      const wrap = document.getElementById('otherPurposeWrap');
+      const lbl = document.getElementById('otherPurposeLabel');
       const other = document.getElementById('otherPurpose');
-      if (sel.value === '기타') {
-        other.style.display = 'block';
+      const v = sel.value;
+      if (v === '동아리 활동' || v === '기타') {
+        if (wrap) wrap.style.display = '';
+        if (lbl)  lbl.textContent = (v === '동아리 활동') ? '동아리명' : '기타 사유';
       } else {
-        other.style.display = 'none';
-        other.value = '';
+        if (wrap) wrap.style.display = 'none';
+        if (other) other.value = '';
       }
       updatePeriod7Availability();
       markUnvalidated();
@@ -1645,7 +2287,220 @@
         });
       }
     });
+
+    function resetToNewForm() {
+      const form = document.getElementById('applicationForm');
+      const completion = document.getElementById('completionScreen');
+      if (completion) completion.style.display = 'none';
+      form.style.display = '';
+      document.querySelector('.header').style.display = '';
+      document.querySelector('.progress-section').style.display = '';
+      document.querySelector('.bottom-nav').style.display = '';
+      form.reset();
+      if (typeof resetChemicalTable === 'function') resetChemicalTable();
+      if (typeof resetSearchResults === 'function') resetSearchResults();
+      if (typeof markUnvalidated === 'function') markUnvalidated();
+      // 제출 버튼 재활성화 + 제출 가드 해제
+      __SUBMITTING = false;
+      const submitBtn = document.getElementById('btnSubmit');
+      if (submitBtn) submitBtn.disabled = false;
+      document.getElementById('statusMessage').textContent = '';
+      formDirty = false;
+      goStep(1);
+      window.scrollTo(0, 0);
+    }
+
+    function renderAvailabilityTable(unavail) {
+      let tableDiv = document.getElementById('availabilityTable');
+      if (!tableDiv) {
+        tableDiv = document.createElement('div');
+        tableDiv.id = 'availabilityTable';
+        tableDiv.style.cssText = 'margin:12px 0;font-size:13px;';
+        const labSel = document.getElementById('lab');
+        if (labSel) labSel.parentNode.insertBefore(tableDiv, labSel.nextSibling);
+      }
+
+      if (!unavail) {
+        tableDiv.innerHTML = '';
+        return;
+      }
+
+      if (unavail.allBlocked) {
+        tableDiv.innerHTML = '<div style="background:var(--danger-light);color:#dc2626;padding:8px 12px;border-radius:6px;font-weight:600;">해당 날짜는 전체 사용 불가입니다.</div>';
+        return;
+      }
+
+      const labs = [...document.getElementById('lab').options].filter(o => o.value).map(o => o.value);
+      const purposeVal = (document.getElementById('purpose')?.value || '').trim();
+      const dateVal = (document.getElementById('date')?.value || '').trim();
+      const show7th = purposeVal === '동아리 활동' && isTuesday(dateVal);
+      const slots = show7th ? ['ET','EP1','7교시'] : ['ET','EP1'];
+
+      let html = '<table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;">';
+      html += '<tr><th style="border:1px solid #ddd;padding:6px;background:#f3f4f6;">실험·실습실</th>';
+      slots.forEach(s => { html += '<th style="border:1px solid #ddd;padding:6px;background:#f3f4f6;">' + s + '</th>'; });
+      html += '</tr>';
+
+      labs.forEach(lab => {
+        html += '<tr><td style="border:1px solid #ddd;padding:6px;font-weight:600;">' + lab + '</td>';
+        slots.forEach(slot => {
+          const labBlocked = (unavail.blockedLabs || []).includes(lab);
+          const timeBlocked = (unavail.blockedTimes || []).includes(slot);
+          const perLabBlocked = unavail.blockedTimesByLab && unavail.blockedTimesByLab[lab] && unavail.blockedTimesByLab[lab].includes(slot);
+          const blocked = labBlocked || timeBlocked || perLabBlocked;
+          const style = blocked
+            ? 'border:1px solid #ddd;padding:6px;text-align:center;background:var(--danger-light);color:#dc2626;'
+            : 'border:1px solid #ddd;padding:6px;text-align:center;background:var(--success-light);color:#16a34a;';
+          html += '<td style="' + style + '">' + (blocked ? '❌' : '✅') + '</td>';
+        });
+        html += '</tr>';
+      });
+      html += '</table>';
+      tableDiv.innerHTML = html;
+    }
+
+    /* ===== Step Navigation ===== */
+    var currentStep = 1;
+    var highestStep = 1;
+
+    function goStep(n) {
+      currentStep = n;
+      highestStep = Math.max(highestStep, n);
+      for (var i = 1; i <= 5; i++) {
+        document.getElementById('step' + i).classList.toggle('active', i === n);
+        var si = document.getElementById('si' + i);
+        si.classList.remove('active', 'done');
+        if (i < n) si.classList.add('done');
+        else if (i === n) si.classList.add('active');
+      }
+      document.getElementById('progressSteps').className = 'progress-steps step-' + n;
+
+      // Bottom nav
+      document.getElementById('btnPrev').style.display = n > 1 ? '' : 'none';
+      document.getElementById('btnNext').style.display = n < 5 ? '' : 'none';
+      document.getElementById('btnSubmit').style.display = n === 5 ? '' : 'none';
+      document.getElementById('stepIndicator').textContent = 'Step ' + n + ' / 5';
+
+      // Build review on step 5
+      if (n === 5) buildReview();
+
+      window.scrollTo(0, 0);
+    }
+
+    function clickStep(n) {
+      if (n <= highestStep) goStep(n);
+    }
+
+    function validateCurrentStep() {
+      if (currentStep === 1) {
+        if (!document.getElementById('studentId').value.trim()) { showCustomAlert('학번을 입력해주세요.'); return false; }
+        if (!document.getElementById('studentName').value.trim()) { showCustomAlert('이름을 입력해주세요.'); return false; }
+        if (!document.getElementById('totalParticipants').value.trim()) { showCustomAlert('총 참여 인원을 입력해주세요.'); return false; }
+        if (!document.getElementById('purpose').value) { showCustomAlert('사용 목적을 선택해주세요.'); return false; }
+        if (document.getElementById('purpose').value === '기타' && !document.getElementById('otherPurpose').value.trim()) {
+          showCustomAlert('사용 목적을 "기타"로 선택한 경우 내용을 입력해야 합니다.'); return false;
+        }
+        if (!document.getElementById('title').value.trim()) { showCustomAlert('실험·실습 주제를 입력해주세요.'); return false; }
+      } else if (currentStep === 2) {
+        if (!document.getElementById('date').value) { showCustomAlert('실험할 날짜를 선택해주세요.'); return false; }
+        var timeCbs = Array.from(document.querySelectorAll('input[name="timeSlot"]')).filter(function(cb) { return !cb.disabled; });
+        if (!timeCbs.some(function(cb) { return cb.checked; })) {
+          showCustomAlert('신청 가능한 시간 중 하나 이상을 선택해주세요.'); return false;
+        }
+        if (!document.getElementById('lab').value) { showCustomAlert('실험·실습실을 선택해주세요.'); return false; }
+      } else if (currentStep === 3) {
+        if (!document.getElementById('materials').value.trim()) { showCustomAlert('실험 준비물을 입력해주세요.'); return false; }
+      } else if (currentStep === 4) {
+        if (!document.getElementById('process').value.trim()) { showCustomAlert('실험 과정을 입력해주세요.'); return false; }
+        if (!document.getElementById('cleanup').value.trim()) { showCustomAlert('뒷정리 방법을 입력해주세요.'); return false; }
+        if (!document.getElementById('precautions').value.trim()) { showCustomAlert('주의사항을 입력해주세요.'); return false; }
+        if (!document.querySelectorAll('.safety-item input:checked').length) { showCustomAlert('안전장구를 최소 하나 이상 선택해야 합니다.'); return false; }
+        if (document.getElementById('otherSafetyCheck').checked && !document.getElementById('otherSafety').value.trim()) {
+          showCustomAlert('기타 안전장구를 선택한 경우 내용을 입력해야 합니다.'); return false;
+        }
+        if (!document.getElementById('teacher').value) { showCustomAlert('지도교사를 선택해주세요.'); return false; }
+      }
+      return true;
+    }
+
+    function nextStep() {
+      if (validateCurrentStep()) {
+        if (currentStep < 5) goStep(currentStep + 1);
+      }
+    }
+    function prevStep() { if (currentStep > 1) goStep(currentStep - 1); }
+
+    function buildReview() {
+      const r = document.getElementById('reviewContent');
+      if (!r) return;
+
+      const sid = document.getElementById('studentId').value || '';
+      const sname = document.getElementById('studentName').value || '';
+      const tm = document.getElementById('teamMembers').value || '';
+      const total = document.getElementById('totalParticipants').value || '';
+      const purpose = document.getElementById('purpose').value || '';
+      const otherPurpose = document.getElementById('otherPurpose').value || '';
+      const dateVal = document.getElementById('date').value || '';
+      const daySpan = document.getElementById('dayOfWeek').textContent || '';
+      const timeSlots = Array.from(document.querySelectorAll('input[name="timeSlot"]:checked')).map(cb => cb.value).join(', ');
+      const lab = document.getElementById('lab').value || '';
+      const title = document.getElementById('title').value || '';
+      const advLab = document.getElementById('advancedLab').value || '';
+      const hood = document.getElementById('hood').value || '';
+      const materials = document.getElementById('materials').value || '';
+      const teacher = document.getElementById('teacher').value || '';
+      const safety = Array.from(document.querySelectorAll('.safety-item input:checked')).map(cb => {
+        if (cb.id === 'otherSafetyCheck') return document.getElementById('otherSafety').value || '기타';
+        return cb.value;
+      }).join(', ');
+
+      // 시약 목록
+      let chemHtml = '';
+      document.querySelectorAll('#chemicalList tr').forEach((tr, i) => {
+        if (i === 0) return;
+        const c = tr.cells;
+        const name = c[0].querySelector('input').value.trim();
+        const conc = c[3].querySelector('input').value.trim();
+        const vol = c[4].querySelector('input').value.trim();
+        const guidance = (c[7].innerText || '').trim();
+        const guidanceBadge = guidance === '필요'
+          ? '<span style="color:#92400e;font-weight:600;">임장필요</span>'
+          : '<span style="color:#065f46;">불필요</span>';
+        chemHtml += '<div style="margin-bottom:4px;">' + escapeHtml(name);
+        if (conc || vol) chemHtml += ' (' + (conc ? escapeHtml(conc) : '') + (conc && vol ? ', ' : '') + (vol ? escapeHtml(vol) : '') + ')';
+        chemHtml += ' — ' + guidanceBadge + '</div>';
+      });
+      if (!chemHtml) chemHtml = '<span style="color:var(--text-muted);">시약 없음</span>';
+
+      r.innerHTML =
+        '<div class="review-section">' +
+        '<div class="review-section-title">📋 기본 정보</div>' +
+        '<div class="review-row"><div class="review-label">대표자</div><div class="review-value">' + escapeHtml(sid) + ' ' + escapeHtml(sname) + '</div></div>' +
+        '<div class="review-row"><div class="review-label">동반자</div><div class="review-value">' + escapeHtml(tm || '없음') + '</div></div>' +
+        '<div class="review-row"><div class="review-label">총 인원</div><div class="review-value">' + escapeHtml(total) + '명</div></div>' +
+        '<div class="review-row"><div class="review-label">목적</div><div class="review-value">' + escapeHtml(purpose === '기타' ? otherPurpose : purpose) + '</div></div>' +
+        '</div>' +
+        '<div class="review-section">' +
+        '<div class="review-section-title">📅 일정</div>' +
+        '<div class="review-row"><div class="review-label">날짜</div><div class="review-value">' + escapeHtml(dateVal) + ' ' + escapeHtml(daySpan) + '</div></div>' +
+        '<div class="review-row"><div class="review-label">시간</div><div class="review-value">' + escapeHtml(timeSlots || '미선택') + '</div></div>' +
+        '<div class="review-row"><div class="review-label">실험실</div><div class="review-value">' + escapeHtml(lab) + '</div></div>' +
+        '</div>' +
+        '<div class="review-section">' +
+        '<div class="review-section-title">🧪 실험 내용</div>' +
+        '<div class="review-row"><div class="review-label">제목</div><div class="review-value">' + escapeHtml(title) + '</div></div>' +
+        '<div class="review-row"><div class="review-label">첨단기기실</div><div class="review-value">' + escapeHtml(advLab || '미선택') + '</div></div>' +
+        '<div class="review-row"><div class="review-label">후드 사용</div><div class="review-value">' + escapeHtml(hood || '미선택') + '</div></div>' +
+        '<div class="review-row"><div class="review-label">시약</div><div class="review-value">' + chemHtml + '</div></div>' +
+        '</div>' +
+        '<div class="review-section">' +
+        '<div class="review-section-title">🦺 안전 계획</div>' +
+        '<div class="review-row"><div class="review-label">안전장구</div><div class="review-value">' + escapeHtml(safety || '미선택') + '</div></div>' +
+        '<div class="review-row"><div class="review-label">지도교사</div><div class="review-value">' + escapeHtml(teacher || '미선택') + '</div></div>' +
+        '</div>';
+    }
   </script>
+  <?!= include('_security_guard') ?>
 </head>
 <body>
   <div id="overlayBlock">
@@ -1665,171 +2520,388 @@
     </div>
   </div>
 
-  <form id="applicationForm" onsubmit="return false;">
-    <h1>과학실험실 사용 신청서</h1>
-
-    <h3>대표자 정보</h3>
-    학번: <input type="text" id="studentId" placeholder="대표 학생의 학번을 입력하세요.(나이스학번)" required>
-    이름: <input type="text" id="studentName" placeholder="대표 학생의 이름을 입력하세요." required>
-
-    <h3>동반자 정보(선택)</h3>
-    <textarea id="teamMembers" rows="2" placeholder="참석하는 모든 학생의 학번 이름을 입력해주세요.(예시: 학번 이름, 학번 이름)"></textarea>
-
-    <h3>총 인원수(대표자 포함, 숫자만 쓰세요.)</h3>
-    <input type="number" id="totalParticipants" min="1" required placeholder="대표자 포함해서 참석하는 총 인원수를 입력하세요.">
-
-    <h3>사용 목적</h3>
-    <select id="purpose" onchange="handlePurposeChange(this)" required>
-      <option value="">선택</option>
-      <option>과제연구</option>
-      <option>학급활동</option>
-      <option>동아리 활동</option>
-      <option>기타</option>
-    </select>
-    <input type="text" id="otherPurpose" placeholder="기타 목적 입력" style="display:none;">
-
-    <h3>실험할 날짜(신청하고자 하는 연도-월-일 잘 보고 선택하세요.)</h3>
-    <input type="date" id="date" required onchange="showDayOfWeek();">
-    <span id="dayOfWeek" style="margin-left:8px; font-weight:bold;"></span>
-
-    <h3>신청 실험실</h3>
-    <select id="lab" onchange="handleLabChange(this)" required>
-      <option value="">선택</option>
-      <option>화학실험실</option>
-      <option>생물실험실</option>
-      <option>프로젝트실험실</option>
-      <option>첨단기기실험실</option>
-      <option>오픈랩</option>
-    </select>
-
-    <h3>신청 시간</h3>
-    <div class="time-row">
-      <label class="time-item"><input type="checkbox" name="timeSlot" value="ET"> ET</label>
-      <label class="time-item"><input type="checkbox" name="timeSlot" value="EP1"> EP1</label>
-      <label class="time-item" id="period7Label" style="display:none;">
-        <input type="checkbox" name="timeSlot" value="7교시" id="period7"> 7교시
-      </label>
-    </div>
-
-    <h3>실험 제목</h3>
-    <input type="text" id="title" placeholder="실험 제목" required>
-
-    <h3>첨단기기실 이용 여부</h3>
-    <div id="advancedLabNote" style="display:none; margin:6px 0 8px 0; padding:8px 10px; background:#FFF3CD; border:1px solid #FFEEA5; border-radius:6px; font-size:13px; color:#7A5D00;">
-      '첨단기기실험실'을 선택하면 이 항목은 자동으로 <b>예</b>로 고정되며, <b>이용 사유</b>를 반드시 입력해야 합니다.
-    </div>
-    <select id="advancedLab" onchange="handleAdvancedLabChange(this)" required>
-      <option value="">선택</option>
-      <option>예</option>
-      <option>아니오</option>
-    </select>
-    <input type="text" id="advancedLabReason" placeholder="사유 입력" style="display:none;">
-
-    <h3>후드 사용 여부</h3>
-    <select id="hood" onchange="handleHoodChange(this)" required>
-      <option value="">선택</option>
-      <option>예</option>
-      <option>아니오</option>
-    </select>
-    <input type="text" id="hoodReason" placeholder="사유 입력" style="display:none;">
-
-    <h3>실험 준비물(시약 제외)</h3>
-    <textarea id="materials" rows="2" placeholder="실험에 사용할 시약을 제외하고 실험에 필요한 모든 장치와 도구를 입력하세요." required></textarea>
-
-    <h3>시약 검색 및 추가(교내 구비된 시약만 검색 가능)</h3>
-    <div id="chemicalSearchGroup">
-      <input type="text" id="chemicalSearch" placeholder="시약명 또는 화학식입력하세요. 두글자 이상 검색 가능합니다.">
-      <button type="button" onclick="searchChemical()">검색</button>
-    </div>
-    <table id="searchResults">
-      <tr>
-        <th>물질명</th><th>화학식</th><th>분류1</th><th>교사임장여부</th><th>선택</th>
-      </tr>
-    </table>
-
-    <h4>
-      추가된 시약 목록
-      <button type="button" onclick="addBlankChemical()">+ 행 추가</button>
-      <div class="unit-hint">
-        <strong>단위 입력 가이드</strong> — 농도: M, m, %, 질량: g, kg, mg, 부피: mL, L, cc, 방울 등 단위를 꼭 입력해주세요.
+  <!-- ===== Header ===== -->
+  <div class="header">
+    <div class="header-inner">
+      <div class="header-logo">
+        <span class="icon">🔬</span>
+        <span>과학 실험실 사용 신청</span>
       </div>
-    </h4>
-    <table id="chemicalList" class="chem-table">
-      <colgroup>
-        <col style="width:18%;"><col style="width:13%;"><col style="width:10%;"><col style="width:10%;"><col style="width:10%;">
-        <col style="width:11%;"><col style="width:18%;"><col style="width:6%;"><col style="width:4%;">
-      </colgroup>
-      <tr>
-        <th>시약명</th><th>화학식</th><th>상태</th><th>농도(단위를 기록하세요.)</th><th>사용량(단위를 기록하세요.)</th>
-        <th>폐기 방법</th><th>MSDS 및 취급 주의사항</th><th>교사 임장 여부</th><th>삭제</th>
-      </tr>
-    </table>
-
-    <div style="display:flex; align-items:center; gap:12px; margin:10px 0;">
-      <button type="button" id="btnValidateChem" onclick="onValidateChem()">시약 정보 검증</button>
-      <span id="chemValidateBadge" class="pill">미검증</span>
-      <span id="cooldownMsg" style="display:none; font-size:12px; color:#666;"></span>
+      <div class="header-actions">
+        <button class="header-btn" type="button" onclick="goHome()">🏠 홈</button>
+        <button class="header-btn" type="button" onclick="openLoadDialog(0)">📂 불러오기</button>
+        <button class="header-btn" type="button" onclick="snapshotForm()">💾 임시저장</button>
+      </div>
     </div>
-    <div style="font-size:12px;color:#9a3412;margin:4px 0 10px 0;">
-      ※ 시약 목록을 수정(추가/삭제/수정)하면 검증 상태가 자동으로 해제됩니다. 제출 전 다시 '시약 정보 검증'을 눌러주세요.
+  </div>
+
+  <!-- ===== Progress Bar ===== -->
+  <div class="progress-section">
+    <div class="progress-inner">
+      <div class="progress-steps step-1" id="progressSteps">
+        <div class="step-item active" id="si1" onclick="clickStep(1)" style="cursor:pointer">
+          <div class="step-circle">1</div>
+          <div class="step-label">기본 정보</div>
+        </div>
+        <div class="step-item" id="si2" onclick="clickStep(2)" style="cursor:pointer">
+          <div class="step-circle">2</div>
+          <div class="step-label">일정 선택</div>
+        </div>
+        <div class="step-item" id="si3" onclick="clickStep(3)" style="cursor:pointer">
+          <div class="step-circle">3</div>
+          <div class="step-label">실험 내용</div>
+        </div>
+        <div class="step-item" id="si4" onclick="clickStep(4)" style="cursor:pointer">
+          <div class="step-circle">4</div>
+          <div class="step-label">안전 계획</div>
+        </div>
+        <div class="step-item" id="si5" onclick="clickStep(5)" style="cursor:pointer">
+          <div class="step-circle">5</div>
+          <div class="step-label">확인/제출</div>
+        </div>
+      </div>
     </div>
-    <div id="chemValidateReport" class="note" style="display:none;"></div>
-    <div id="submitGuard" class="danger">시약 정보 검증을 통과해야 제출할 수 있습니다.</div>
+  </div>
 
-    <h3>실험 과정</h3>
-    <textarea id="process" rows="6" style="height:140px;" placeholder="실험 과정을 기록할 때 번호를 붙여서 나열하시오." required></textarea>
+  <!-- ===== Main Content ===== -->
+  <div class="main">
+    <form id="applicationForm" onsubmit="return false;">
 
-    <h3>실험 뒷정리</h3>
-    <textarea id="cleanup" rows="6" style="height:100px;" placeholder="실험 후 뒷정리 방법을 기록하세요." required></textarea>
+      <!-- ==================== STEP 1: 기본 정보 ==================== -->
+      <div class="step-view active" id="step1">
 
-    <h3>실험시 주의사항</h3>
-    <textarea id="precautions" rows="6" style="height:100px;" placeholder="실험시 반드시 주의해야 할 사항을 기록하세요." required></textarea>
+        <div class="form-card">
+          <div class="form-card-title">📝 기본 정보</div>
+          <div class="form-card-desc">대표자·동반자 정보, 사용 목적과 신청 제목을 입력하세요.</div>
 
-    <h3>안전장구 선택</h3>
-    <div class="safety-row">
-      <label class="safety-item"><input type="checkbox" value="실험복"> 실험복</label>
-      <label class="safety-item"><input type="checkbox" value="보안경"> 보안경</label>
-      <label class="safety-item"><input type="checkbox" value="덮개신발(슬리퍼 금지)"> 덮개신발(슬리퍼 금지)</label>
-      <label class="safety-item"><input type="checkbox" value="라텍스 장갑(흰색)"> 라텍스 장갑(흰색)</label>
-      <label class="safety-item"><input type="checkbox" value="내열장갑(주황색)"> 내열장갑(주황색)</label>
-      <label class="safety-item"><input type="checkbox" value="산 방호장갑(초록색)"> 산 방호장갑(초록색)</label>
-      <label class="safety-item"><input type="checkbox" id="otherSafetyCheck" onchange="handleSafetyOtherChange(this)"> 기타</label>
-      <input type="text" id="otherSafety" placeholder="기타 입력" style="display:none;width:120px;">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="studentId">학번 <span class="required">*</span></label>
+              <input type="text" id="studentId" inputmode="numeric" pattern="\d{5}" maxlength="5" required placeholder="5자리 숫자">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="studentName">이름 <span class="required">*</span></label>
+              <input type="text" id="studentName" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="teamMembers">동반자 명단 <span class="hint">대표자 제외 / 쉼표 구분</span></label>
+              <input type="text" id="teamMembers" placeholder="예) 10101 김철수, 10102 이영희">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="totalParticipants">총 참여 인원 <span class="required">*</span> <span class="hint">대표자 포함</span></label>
+              <input type="number" id="totalParticipants" min="1" max="20" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="purpose">사용 목적 <span class="required">*</span></label>
+              <select id="purpose" onchange="handlePurposeChange(this)" required>
+                <option value="">선택</option>
+                <option>과제연구</option>
+                <option>학급활동</option>
+                <option>동아리 활동</option>
+                <option>기타</option>
+              </select>
+            </div>
+            <div class="form-group" id="otherPurposeWrap" style="display:none;">
+              <label class="form-label" id="otherPurposeLabel" for="otherPurpose">상세</label>
+              <input type="text" id="otherPurpose" placeholder="동아리명 또는 기타 사유">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="title">실험·실습 주제 <span class="required">*</span> <span class="hint">한 줄로 간단히</span></label>
+            <input type="text" id="title" placeholder="실험·실습 주제를 입력하세요." required>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== STEP 2: 일정 선택 ==================== -->
+      <div class="step-view" id="step2">
+
+        <div class="form-card">
+          <div class="form-card-title">📅 실험 날짜 선택</div>
+          <div class="form-card-desc">실험을 진행할 날짜를 선택하세요.</div>
+
+          <div class="info-box warning">
+            <span class="icon">⚠️</span>
+            <span>신청하고자 하는 연도-월-일 잘 보고 선택하세요. 주말에는 실험실 사용이 불가합니다.</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="date">실험 날짜 <span class="required">*</span></label>
+            <div style="display:flex; align-items:center; gap:12px;">
+              <input type="date" id="date" required onchange="showDayOfWeek();" style="max-width:250px;">
+              <span id="dayOfWeek" style="font-weight:bold; color:var(--primary);"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <div class="form-card-title">📅 날짜 캘린더</div>
+          <div class="form-card-desc">차단된 날짜는 회색·취소선, 일부 차단된 날은 노란 점으로 표시됩니다.</div>
+          <?!= include('_calendar_widget') ?>
+        </div>
+
+        <div class="form-card">
+          <div class="form-card-title">🕐 신청 시간</div>
+          <div class="form-card-desc">실험 시간대를 선택하세요. 복수 선택이 가능합니다.</div>
+
+          <div class="safety-row" style="gap:16px;">
+            <label class="safety-item" style="min-width:120px; justify-content:center;">
+              <input type="checkbox" name="timeSlot" value="ET"> ET
+            </label>
+            <label class="safety-item" style="min-width:120px; justify-content:center;">
+              <input type="checkbox" name="timeSlot" value="EP1"> EP1
+            </label>
+            <label class="safety-item" id="period7Label" style="display:none; min-width:120px; justify-content:center;">
+              <input type="checkbox" name="timeSlot" value="7교시" id="period7"> 7교시
+            </label>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <div class="form-card-title">🏠 신청 실험·실습실</div>
+          <div class="form-card-desc">사용할 실험실을 선택하세요.</div>
+
+          <div class="form-group">
+            <label class="form-label" for="lab">실험·실습실 <span class="required">*</span></label>
+            <select id="lab" onchange="handleLabChange(this)" required>
+              <option value="">선택</option>
+              <option>화학실험실</option>
+              <option>생물실험실</option>
+              <option>프로젝트실험실</option>
+              <option>첨단기기실험실</option>
+              <option>오픈랩</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== STEP 3: 실험 내용 ==================== -->
+      <div class="step-view" id="step3">
+
+        <div class="form-card">
+          <div class="form-card-title">📝 실험 정보</div>
+          <div class="form-card-desc">첨단기기실·후드 등 사용 옵션을 선택하세요.</div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="advancedLab">첨단기기실 이용 여부</label>
+              <div id="advancedLabNote" style="display:none; margin-bottom:6px; padding:8px 10px; background:var(--warning-light); border:1px solid #fde68a; border-radius:var(--radius-sm); font-size:13px; color:#7A5D00;">
+                '첨단기기실험실'을 선택하면 이 항목은 자동으로 <b>예</b>로 고정되며, <b>이용 사유</b>를 반드시 입력해야 합니다.
+              </div>
+              <select id="advancedLab" onchange="handleAdvancedLabChange(this)" required>
+                <option value="">선택</option>
+                <option>예</option>
+                <option>아니오</option>
+              </select>
+              <input type="text" id="advancedLabReason" placeholder="첨단기기실 이용 사유 입력" style="display:none; margin-top:8px;">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="hood">후드 사용 여부</label>
+              <select id="hood" onchange="handleHoodChange(this)" required>
+                <option value="">선택</option>
+                <option>예</option>
+                <option>아니오</option>
+              </select>
+              <input type="text" id="hoodReason" placeholder="후드 사용 사유 입력" style="display:none; margin-top:8px;">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="materials">실험 준비물 <span class="required">*</span> <span class="hint">시약 제외 기자재</span></label>
+            <textarea id="materials" rows="2" placeholder="실험에 사용할 시약을 제외하고 실험에 필요한 모든 장치와 도구를 입력하세요." required style="min-height:70px;"></textarea>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <div class="form-card-title">🧪 시약 정보</div>
+          <div class="form-card-desc">사용할 시약을 검색하여 추가하고, 농도와 사용량을 입력하세요.</div>
+
+          <div class="info-box">
+            <span class="icon">ℹ️</span>
+            <span>시약명 또는 화학식을 입력하고 검색하세요. 교내 구비된 시약만 검색 가능합니다. 두 글자 이상 입력해야 검색됩니다.</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">시약 검색</label>
+            <div id="chemicalSearchGroup">
+              <input type="text" id="chemicalSearch" placeholder="시약명 또는 화학식 입력 (예: NaOH, 염산...)">
+              <button type="button" onclick="searchChemical()">🔍 검색</button>
+            </div>
+          </div>
+
+          <table id="searchResults">
+            <tr>
+              <th>물질명</th><th>화학식</th><th>분류1</th><th>교사임장여부</th><th>선택</th>
+            </tr>
+          </table>
+
+          <div style="margin:16px 0 8px 0; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+            <span style="font-weight:700; font-size:15px;">추가된 시약 목록</span>
+            <button type="button" onclick="addBlankChemical()" style="padding:6px 14px; background:var(--primary-light); color:var(--primary-dark); border:1px solid #c7d2fe; border-radius:var(--radius-sm); font-weight:600; cursor:pointer;">+ 행 추가</button>
+          </div>
+          <div class="unit-hint" style="margin-bottom:12px;">
+            <strong>단위 입력 가이드</strong> — 농도: M, m, %, 질량: g, kg, mg, 부피: mL, L, cc, 방울 등 단위를 꼭 입력해주세요.
+          </div>
+
+          <div style="overflow-x:auto;">
+            <table id="chemicalList" class="chem-table">
+              <colgroup>
+                <col style="width:18%;"><col style="width:13%;"><col style="width:10%;"><col style="width:10%;"><col style="width:10%;">
+                <col style="width:11%;"><col style="width:18%;"><col style="width:6%;"><col style="width:4%;">
+              </colgroup>
+              <tr>
+                <th>시약명</th><th>화학식</th><th>상태</th><th>농도(단위를 기록하세요.)</th><th>사용량(단위를 기록하세요.)</th>
+                <th>폐기 방법</th><th>MSDS 및 취급 주의사항</th><th>교사 임장 여부</th><th>삭제</th>
+              </tr>
+            </table>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:12px; margin:12px 0; padding:12px 16px; background:#f8fafc; border-radius:var(--radius-sm); border:1px solid var(--border);">
+            <button type="button" id="btnValidateChem" onclick="onValidateChem()" style="padding:8px 16px; background:var(--primary); color:white; border:none; border-radius:var(--radius-sm); font-weight:600; cursor:pointer; font-size:13px;">시약 정보 검증</button>
+            <span id="chemValidateBadge" class="pill">미검증</span>
+            <span id="cooldownMsg" style="display:none; font-size:12px; color:#666;"></span>
+          </div>
+          <div style="font-size:12px; color:#9a3412; margin:4px 0 10px 0;">
+            ※ 시약 목록을 수정(추가/삭제/수정)하면 검증 상태가 자동으로 해제됩니다. 제출 전 다시 '시약 정보 검증'을 눌러주세요.
+          </div>
+          <div id="chemValidateReport" class="note" style="display:none;"></div>
+          <div id="submitGuard" class="danger">시약 정보 검증을 통과해야 제출할 수 있습니다.</div>
+        </div>
+      </div>
+
+      <!-- ==================== STEP 4: 안전 계획 ==================== -->
+      <div class="step-view" id="step4">
+
+        <div class="form-card">
+          <div class="form-card-title">📝 실험 과정</div>
+          <div class="form-card-desc">실험의 단계별 과정을 작성하세요.</div>
+
+          <div class="form-group">
+            <label class="form-label" for="process">실험 과정 <span class="required">*</span></label>
+            <textarea id="process" rows="6" style="min-height:140px;" placeholder="실험 과정을 기록할 때 번호를 붙여서 나열하시오." required></textarea>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <div class="form-card-title">🧹 실험 뒷정리</div>
+          <div class="form-card-desc">실험 종료 후 정리 방법을 작성하세요.</div>
+
+          <div class="form-group">
+            <label class="form-label" for="cleanup">뒷정리 방법 <span class="required">*</span></label>
+            <textarea id="cleanup" rows="4" style="min-height:100px;" placeholder="실험 후 뒷정리 방법을 기록하세요." required></textarea>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <div class="form-card-title">⚠️ 실험시 주의사항</div>
+          <div class="form-card-desc">실험 중 주의해야 할 안전 사항을 작성하세요.</div>
+
+          <div class="form-group">
+            <label class="form-label" for="precautions">주의사항 <span class="required">*</span></label>
+            <textarea id="precautions" rows="4" style="min-height:100px;" placeholder="실험시 반드시 주의해야 할 사항을 기록하세요." required></textarea>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <div class="form-card-title">🦺 안전장구 선택</div>
+          <div class="form-card-desc">실험에 필요한 안전장구를 모두 선택하세요.</div>
+
+          <div class="safety-row">
+            <label class="safety-item"><input type="checkbox" value="실험복"> 🥼 실험복</label>
+            <label class="safety-item"><input type="checkbox" value="보안경"> 🥽 보안경</label>
+            <label class="safety-item"><input type="checkbox" value="덮개신발(슬리퍼 금지)"> 👟 덮개신발(슬리퍼 금지)</label>
+            <label class="safety-item"><input type="checkbox" value="라텍스 장갑(흰색)"> 🧤 라텍스 장갑(흰색)</label>
+            <label class="safety-item"><input type="checkbox" value="내열장갑(주황색)"> 🧤 내열장갑(주황색)</label>
+            <label class="safety-item"><input type="checkbox" value="산 방호장갑(초록색)"> 🧤 산 방호장갑(초록색)</label>
+            <label class="safety-item"><input type="checkbox" id="otherSafetyCheck" onchange="handleSafetyOtherChange(this)"> 📦 기타</label>
+            <input type="text" id="otherSafety" placeholder="기타 안전장구 입력" style="display:none; width:200px;">
+          </div>
+        </div>
+
+        <div class="form-card">
+          <div class="form-card-title">👨‍🏫 지도교사 선택</div>
+          <div class="form-card-desc">실험을 지도할 교사를 선택하세요. 실험실과 목적에 따라 자동으로 필터링됩니다.</div>
+
+          <div class="form-group">
+            <label class="form-label" for="teacher">지도교사 <span class="required">*</span></label>
+            <select id="teacher" required>
+              <option value="">선택</option>
+            </select>
+            <input type="hidden" id="teacherEmail">
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== STEP 5: 확인/제출 ==================== -->
+      <div class="step-view" id="step5">
+
+        <div class="form-card">
+          <div class="form-card-title">✅ 신청 내용 최종 확인</div>
+          <div class="form-card-desc">아래 내용을 확인한 후 제출하세요. 수정이 필요하면 해당 단계로 돌아가세요.</div>
+
+          <div id="reviewContent">
+            <!-- 동적으로 채워짐 -->
+          </div>
+        </div>
+
+        <div class="form-card">
+          <div class="form-card-title">📜 실험·실습실 사용 제약 안내</div>
+          <div class="form-card-desc">사용 규정을 읽고 동의해 주세요.</div>
+
+          <div class="agreement-box">
+            <p style="color:var(--danger); font-weight:600; margin-bottom:8px;">
+              작성된 문서에 위배되거나 실험·실습실 안전 수칙에 위배될 경우(특히, 안전 장구 미착용, 사전 지도교사 협의 없이 신청한 경우 등)<br>
+              1개월간 과학 실험·실습실 사용에 제한됩니다.
+            </p>
+          </div>
+
+          <div class="radio-row" style="margin-bottom:16px;">
+            <label class="radio-item"><input type="radio" name="agreement" value="yes"> 동의합니다</label>
+            <label class="radio-item"><input type="radio" name="agreement" value="no"> 동의하지 않습니다</label>
+          </div>
+        </div>
+
+        <span id="statusMessage" aria-live="polite"></span>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- ===== Bottom Navigation ===== -->
+  <div class="bottom-nav">
+    <div class="bottom-nav-inner">
+      <button class="nav-btn draft" type="button" onclick="snapshotForm()">💾 임시저장</button>
+      <div class="step-indicator" id="stepIndicator">Step 1 / 5</div>
+      <div style="display:flex; gap:8px;">
+        <button class="nav-btn prev" type="button" id="btnPrev" onclick="prevStep()" style="display:none">← 이전</button>
+        <button class="nav-btn next" type="button" id="btnNext" onclick="nextStep()">다음 →</button>
+        <button class="nav-btn submit" type="button" id="btnSubmit" onclick="submitForm()" style="display:none">🚀 제출하기</button>
+      </div>
     </div>
+  </div>
 
-    <h3>지도교사 선택</h3>
-    <select id="teacher" required>
-      <option value="">선택</option>
-    </select>
-    <input type="hidden" id="teacherEmail">
-
-    <h3>실험실 사용 제약 안내</h3>
-    <p style="color:red;">
-      작성된 문서에 위배되거나 실험실 안전 수칙에 위배될 경우(특히, 안전 장구 미착용, 사전 지도교사 협의 없이 신청한 경우 등)<br>
-      1개월간 과학실험실 사용에 제한됩니다.
-    </p>
-    <div class="radio-row">
-      <label class="radio-item"><input type="radio" name="agreement" value="yes"> 동의합니다</label>
-      <label class="radio-item"><input type="radio" name="agreement" value="no"> 동의하지 않습니다</label>
-    </div>
-
-    <button type="button" onclick="submitForm()">신청하기</button>
-    <span id="statusMessage"></span>
-  </form>
-
-  <div id="customAlert">
+  <!-- ===== Custom Alert ===== -->
+  <div id="customAlertOverlay"></div>
+  <div id="customAlert" role="alertdialog" aria-modal="true">
     <p id="alertMessage"></p>
     <button type="button" onclick="closeCustomAlert()">확인</button>
   </div>
 
+  <!-- ===== Confirm Dialog ===== -->
   <div id="dialogOverlay"></div>
-
-  <div id="confirmDialog">
+  <div id="confirmDialog" role="dialog" aria-modal="true">
     <h3 style="text-align: center;">신청하기 전 한번 더 확인하기</h3>
     <div class="content-wrapper">
       <p style="margin-bottom: 15px; font-size: 14px;">
         아래의 내용을 읽고 정확히 입력하고 동의하지 않을 수 있으나<br>
-        동의하지 않으면 실험실 사용 신청이 거부될 수 있습니다.
+        동의하지 않으면 실험·실습실 사용 신청이 거부될 수 있습니다.
       </p>
 
       <div class="question-item">
@@ -1841,7 +2913,7 @@
       </div>
 
       <div class="question-item">
-        <strong>2. 실험할 날짜와 신청할 실험실을 정확히 입력하셨나요?</strong>
+        <strong>2. 실험할 날짜와 신청할 실험·실습실을 정확히 입력하셨나요?</strong>
         <div class="radio-group">
           <label><input type="radio" name="confirm2" value="yes" onchange="checkAllConfirms()"> 예</label>
           <label><input type="radio" name="confirm2" value="no"  onchange="handleNo(2)"> 아니오</label>
@@ -1851,7 +2923,7 @@
       <div class="question-item">
         <strong>3. 실험 과정, 실험 준비물, 실험 뒷정리, 실험시 주의사항, 폐수 및 폐시약 처리 방법을 모두 정확히 숙지하였나요?</strong>
         <p class="sub-text">
-          만약 이를 제대로 숙지하지 않고 실험을 수행하는 경우 실험실 사용 신청이 제한될 수 있습니다. 이에 동의하시나요?
+          만약 이를 제대로 숙지하지 않고 실험을 수행하는 경우 실험·실습실 사용 신청이 제한될 수 있습니다. 이에 동의하시나요?
         </p>
         <div class="radio-group">
           <label><input type="radio" name="confirm3" value="yes" onchange="checkAllConfirms()"> 예</label>
@@ -1860,7 +2932,7 @@
       </div>
 
       <div class="question-item">
-        <strong>4. 실험실 안전 수칙 위반(안전 장구 미착용 등) 시 1개월간 과학실험실 사용 제한에 동의하시나요?</strong>
+        <strong>4. 실험·실습실 안전 수칙 위반(안전 장구 미착용 등) 시 1개월간 과학 실험·실습실 사용 제한에 동의하시나요?</strong>
         <div class="radio-group">
           <label><input type="radio" name="confirm4" value="yes" onchange="checkAllConfirms()"> 예</label>
           <label><input type="radio" name="confirm4" value="no"  onchange="handleNo(4)"> 아니오</label>
@@ -1874,27 +2946,25 @@
     </div>
   </div>
 
-  <div id="noWarningDialog"
-       style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%);
-              background:white; border:2px solid #dc3545; padding:20px; z-index:10001;
-              box-shadow:0 4px 20px rgba(0,0,0,0.3); border-radius:8px; width:400px; max-width:90%;">
+  <!-- ===== No Warning Dialog ===== -->
+  <div id="noWarningDialog">
     <button type="button" onclick="closeNoWarning()"
             style="position:absolute; top:10px; right:10px; background:none; border:none;
                    font-size:20px; cursor:pointer; padding:0; width:30px; height:30px;">✕</button>
-    <h4 style="color:#dc3545; margin-top:10px;">경고</h4>
+    <h4 style="color:var(--danger); margin-top:10px;">경고</h4>
     <p style="margin: 20px 0;">
       아니오를 체크하셨습니다.<br>
-      <strong>실험실 사용 신청이 거부됩니다.</strong><br>
-      실험실 사용을 신청하려면 '예'를 체크해주세요.
+      <strong>실험·실습실 사용 신청이 거부됩니다.</strong><br>
+      실험·실습실 사용을 신청하려면 '예'를 체크해주세요.
     </p>
     <button type="button" onclick="closeNoWarning()"
-            style="width:100%; padding:10px; background:#dc3545; color:white; border:none; border-radius:4px; cursor:pointer;">
+            style="width:100%; padding:10px; background:var(--danger); color:white; border:none; border-radius:var(--radius-sm); cursor:pointer; font-weight:600;">
       확인
     </button>
   </div>
 
-  <!-- ===== 통합 불러오기 다이얼로그 ===== -->
-  <div id="loadOverlay" onclick="closeLoadDialog()"></div>
+  <!-- ===== Load Dialog ===== -->
+  <div id="loadOverlay" role="dialog" aria-modal="true" onclick="closeLoadDialog()"></div>
   <div id="loadDialog" role="dialog" aria-modal="true" aria-labelledby="loadDialogTitle">
     <div class="load-header">
       <h3 id="loadDialogTitle">📂 불러오기</h3>
@@ -1906,7 +2976,7 @@
 
     <!-- 탭 1: 임시저장 불러오기 -->
     <div class="load-panel active" id="panelDraft">
-      <p style="font-size:13px;color:#666;margin:0 0 10px;">임시저장한 신청서를 불러옵니다.</p>
+      <p style="font-size:13px;color:var(--text-muted);margin:0 0 10px;">임시저장한 신청서를 불러옵니다.</p>
       <div class="form-row">
         <div>
           <label for="loadSid">대표자 학번(5자리)</label>
@@ -1925,13 +2995,13 @@
       </div>
       <div class="btns">
         <button class="btn" type="button" onclick="closeLoadDialog()" style="background:#e0e0e0;color:#333;">취소</button>
-        <button class="btn" type="button" onclick="loadDraftSubmit()" style="background:#4285F4;color:#fff;">불러오기</button>
+        <button class="btn" type="button" onclick="loadDraftSubmit()" style="background:var(--primary);color:#fff;">불러오기</button>
       </div>
     </div>
 
     <!-- 탭 2: 승인된 신청서 불러오기 -->
     <div class="load-panel" id="panelApproved">
-      <p style="font-size:13px;color:#666;margin:0 0 10px;">이전에 최종 승인된 신청서를 불러와 새 신청서의 기본 내용으로 사용할 수 있습니다.</p>
+      <p style="font-size:13px;color:var(--text-muted);margin:0 0 10px;">이전에 최종 승인된 신청서를 불러와 새 신청서의 기본 내용으로 사용할 수 있습니다.</p>
       <div class="form-row">
         <div>
           <label for="approvedSid">대표자 학번(5자리)</label>
@@ -1944,19 +3014,11 @@
       </div>
       <div class="btns">
         <button class="btn" type="button" onclick="closeLoadDialog()" style="background:#e0e0e0;color:#333;">취소</button>
-        <button class="btn" type="button" onclick="searchApproved()" style="background:#34a853;color:#fff;">검색</button>
+        <button class="btn" type="button" onclick="searchApproved()" style="background:var(--success);color:#fff;">검색</button>
       </div>
       <div id="approvedResults" class="result-list"></div>
     </div>
   </div>
 
-  <div class="fab-container" aria-label="빠른 작업">
-    <button class="fab" onclick="snapshotForm()" type="button" title="임시저장">💾 임시저장</button>
-    <button class="fab" onclick="openLoadDialog(0)" type="button" title="불러오기">📂 불러오기</button>
-    <button class="fab secondary" onclick="scrollToTopSmooth()" type="button" title="맨 위로">⬆Top</button>
-    <button class="fab secondary" onclick="scrollToBottomSmooth()" type="button" title="맨 아래로">⬇Bottom</button>
-  </div>
-
-  <div id="customAlertOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.25); z-index:999;"></div>
 </body>
 </html>

@@ -1,0 +1,211 @@
+<!-- ===== 데스크탑 사이드바 — 목업 동일 ===== -->
+<style>
+/* 사이드바 레이아웃 */
+:root { --sidebar-w: 230px; }
+body { display: flex; min-height: 100vh; margin: 0; }
+
+.sidebar {
+  width: var(--sidebar-w); min-height: 100vh; background: var(--surface, #fff);
+  border-right: 1px solid var(--border, #e2e8f0); position: fixed; top: 0; left: 0;
+  display: flex; flex-direction: column; z-index: 100;
+  overflow-y: auto;
+  overflow-x: hidden;       /* ★ 가로 스크롤 제거 */
+  box-sizing: border-box;   /* width에 padding/border 포함 */
+}
+.sidebar-header {
+  padding: 24px 20px 20px; background: var(--primary, #2563eb); color: white;
+}
+.sidebar-logo { font-size: 28px; margin-bottom: 8px; }
+.sidebar-title { font-size: 16px; font-weight: 800; letter-spacing: -0.3px; }
+.sidebar-subtitle { font-size: 12px; opacity: 0.8; margin-top: 4px; }
+.sidebar-nav { flex: 1; padding: 12px 0; }
+.sidebar-section { padding: 12px 20px 6px; font-size: 11px; font-weight: 700; color: var(--text-muted, #64748b); text-transform: uppercase; letter-spacing: 1px; }
+.sidebar-item {
+  display: flex; align-items: center; gap: 12px; padding: 12px 20px;
+  font-size: 14px; font-weight: 600; color: var(--text, #1e293b);
+  cursor: pointer; transition: background 0.15s; text-decoration: none;
+  border: none; background: none; width: 100%; text-align: left;
+  box-sizing: border-box; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; /* 너무 긴 텍스트는 말줄임 */
+}
+.sidebar-item:hover { background: var(--bg, #f1f5f9); }
+.sidebar-item.active { background: var(--primary-light, #dbeafe); color: var(--primary, #2563eb); font-weight: 700; border-right: 3px solid var(--primary, #2563eb); }
+.sidebar-item .s-icon { font-size: 18px; width: 24px; text-align: center; }
+.sidebar-item .s-badge { margin-left: auto; background: var(--danger, #dc2626); color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; }
+.sidebar-divider { height: 1px; background: var(--border, #e2e8f0); margin: 8px 16px; }
+.sidebar-footer { padding: 12px 20px; border-top: 1px solid var(--border, #e2e8f0); }
+.sidebar-footer-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 0; font-size: 13px; font-weight: 600; color: var(--text-muted, #64748b);
+  cursor: pointer; background: none; border: none; width: 100%; text-align: left;
+}
+.sidebar-footer-item:hover { color: var(--text, #1e293b); }
+.sidebar-footer-item .s-icon { font-size: 16px; margin-right: 10px; }
+.sidebar-version { text-align: center; padding: 8px; font-size: 11px; color: var(--text-muted, #64748b); }
+
+/* 메인 콘텐츠 영역 */
+.container, .main-wrap { margin-left: var(--sidebar-w); flex: 1; min-width: 0; }
+
+/* ---- [v4.18/S2] 반응형: 태블릿 이하 — 숨김 대신 슬라이드 + 햄버거 버튼 ----
+   기존 display:none 은 아이패드 세로 모드 등에서 지도일지·통계·제한 메뉴 접근을
+   완전히 차단했음. 이제 햄버거로 열고 닫는다. */
+.sidebar-hamburger {
+  display: none; position: fixed; top: 12px; left: 12px; z-index: 102;
+  width: 42px; height: 42px; border-radius: 10px;
+  border: 1px solid var(--border, #e2e8f0); background: var(--surface, #fff);
+  color: var(--text, #1e293b); font-size: 20px; cursor: pointer;
+  align-items: center; justify-content: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+}
+.sidebar-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 99; }
+@media (max-width: 1024px) {
+  .sidebar { transform: translateX(-105%); transition: transform 0.22s ease; box-shadow: 4px 0 24px rgba(0,0,0,0.18); }
+  .sidebar.open { transform: translateX(0); }
+  .container, .main-wrap { margin-left: 0; padding-top: 52px; }
+  .sidebar-hamburger { display: flex; }
+  .sidebar-backdrop.show { display: block; }
+}
+
+/* ---- 인쇄 시 사이드바 숨김 ---- */
+@media print {
+  .sidebar { display: none !important; }
+  /* [v4.18/S2] admin_head 에는 .no-print 규칙이 없어 별도 명시 필요 */
+  .sidebar-hamburger, .sidebar-backdrop { display: none !important; }
+  .container, .main-wrap { margin-left: 0 !important; padding-top: 0 !important; }
+}
+</style>
+
+<!-- [v4.18/S2] 좁은 화면(태블릿)용 햄버거 + 배경 -->
+<button class="sidebar-hamburger no-print" aria-label="메뉴 열기" onclick="toggleDesktopSidebar();">☰</button>
+<div class="sidebar-backdrop no-print" onclick="closeDesktopSidebar();"></div>
+
+<aside class="sidebar no-print">
+  <div class="sidebar-header">
+    <div class="sidebar-title">과학 실험·실습실</div>
+    <div class="sidebar-subtitle">관리 시스템 v4.0</div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="sidebar-section">메뉴</div>
+    <a class="sidebar-item" data-view="admin" href="#" onclick="dGoToPage('admin'); return false;">
+      대시보드
+      <span class="s-badge" id="sidebar-pending-badge" style="display:none">0</span>
+    </a>
+    <a class="sidebar-item" data-view="common_list" href="#" onclick="dGoToPage('common_list'); return false;">
+      시약 목록
+    </a>
+    <a class="sidebar-item" data-view="student_list" href="#" onclick="dGoToPage('student_list'); return false;">
+      학생 명단
+    </a>
+    <a class="sidebar-item" data-view="teacher_schedule" href="#" onclick="dGoToPage('teacher_schedule'); return false;">
+      임장
+    </a>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">관리</div>
+    <!-- [v4.18/S3] 출석체크 -->
+    <a class="sidebar-item" href="#" onclick="if(typeof openTodayLab==='function') openTodayLab(); else dGoToPage('admin'); return false;">
+      오늘의 실험실 (출석)
+    </a>
+    <!-- [v4.18/S6] 서브페이지(시약·학생·임장)에는 모달이 없어 무반응이던 문제 — 대시보드로 이동 폴백 -->
+    <a class="sidebar-item" href="#" onclick="if(typeof openGuidanceModal==='function') openGuidanceModal(); else dGoToPage('admin'); return false;">
+      지도일지 작성
+    </a>
+    <a class="sidebar-item" href="#" onclick="if(typeof openWarningStats==='function') openWarningStats(); else dGoToPage('admin'); return false;">
+      지도 통계
+    </a>
+    <a class="sidebar-item" href="#" onclick="if(typeof openRestrictionModal==='function') openRestrictionModal(); else dGoToPage('admin'); return false;">
+      신청 제한 관리
+    </a>
+  </div>
+  <div class="sidebar-footer">
+    <button class="sidebar-footer-item" onclick="toggleDarkMode();">
+      <span><span class="s-icon">🌙</span> 다크모드</span>
+      <div class="toggle" id="sidebar-dark-toggle"></div>
+    </button>
+    <button class="sidebar-footer-item" onclick="location.reload();">
+      <span><span class="s-icon">↻</span> 새로고침</span>
+    </button>
+    <!-- [v3.38] 멀티 로그인 환경에서 다른 Google 계정으로 즉시 전환 -->
+    <button class="sidebar-footer-item" style="color:#b45309;" onclick="dSwitchAccount();">
+      <span><span class="s-icon">🔄</span> 다른 계정</span>
+    </button>
+    <!-- [v4.18/S2] 모바일 화면 전환 — 선택은 기기에 기억됨 -->
+    <button class="sidebar-footer-item" onclick="dSwitchPlatform('mobile');">
+      <span><span class="s-icon">📱</span> 모바일 화면으로</span>
+    </button>
+    <button class="sidebar-footer-item" style="color:var(--text-muted);" onclick="dGoToPage('logout');">
+      <span>로그아웃</span>
+    </button>
+  </div>
+  <div class="sidebar-version">v4.0 · 2026</div>
+</aside>
+
+<script>
+function dGoToPage(viewName) {
+  // [v4.18/S2] 로그아웃: 세션 토큰 폐기 + 저장소 정리 후 전용 로그아웃 페이지로
+  if (viewName === 'logout') {
+    try {
+      var s = sessionStorage.getItem('__lab_admin_session__');
+      if (s) { var o = JSON.parse(s); if (o && o.token && window.google && google.script && google.script.run) google.script.run.revokeSessionToken(o.token); }
+    } catch (_) {}
+    try { sessionStorage.removeItem('__lab_admin_session__'); } catch (_) {}
+  }
+  if (typeof APP_BASE_URL !== 'undefined') {
+    window.top.location.href = APP_BASE_URL + '?view=' + encodeURIComponent(viewName);
+  } else if (typeof goToPage === 'function') {
+    goToPage(viewName);
+  } else if (typeof goToAdmin === 'function' && viewName === 'admin') {
+    goToAdmin();
+  }
+}
+// [v3.38] 다른 Google 계정으로 변경 — AccountChooser 페이지로 이동
+function dSwitchAccount() {
+  var base = (typeof APP_BASE_URL !== 'undefined' && APP_BASE_URL) ? APP_BASE_URL : window.location.origin;
+  var chooserUrl = 'https://accounts.google.com/AccountChooser?continue=' + encodeURIComponent(base);
+  window.top.location.href = chooserUrl;
+}
+// [v4.18/S2] PC ↔ 모바일 화면 전환 — 선택을 이 기기(localStorage)에 기억
+function dSwitchPlatform(target) {
+  try { localStorage.setItem('lab-admin-platform-pref', target); } catch (_) {}
+  var base = (typeof APP_BASE_URL !== 'undefined' && APP_BASE_URL) ? APP_BASE_URL : '';
+  if (!base) return;
+  window.top.location.href = (target === 'mobile') ? (base + '?platform=mobile') : (base + '?view=admin&platform=desktop');
+}
+// [v4.18/S2] 좁은 화면 사이드바 열기/닫기
+function toggleDesktopSidebar() {
+  var sb = document.querySelector('.sidebar');
+  var bd = document.querySelector('.sidebar-backdrop');
+  if (!sb) return;
+  var open = sb.classList.toggle('open');
+  if (bd) bd.classList.toggle('show', open);
+}
+function closeDesktopSidebar() {
+  var sb = document.querySelector('.sidebar');
+  var bd = document.querySelector('.sidebar-backdrop');
+  if (sb) sb.classList.remove('open');
+  if (bd) bd.classList.remove('show');
+}
+// [v4.18/S2] 메뉴 클릭 시 슬라이드 닫기
+//   (활성 표시는 각 body 파일의 인라인 setActiveDesktopNav 호출이 담당 — GAS iframe 에서는
+//    location.search 로 ?view= 를 읽을 수 없어 여기서 덮어쓰면 오히려 잘못 표시됨)
+document.addEventListener('DOMContentLoaded', function () {
+  var items = document.querySelectorAll('.sidebar-item');
+  for (var i = 0; i < items.length; i++) {
+    items[i].addEventListener('click', function () { closeDesktopSidebar(); });
+  }
+});
+function setActiveDesktopNav(viewName) {
+  var items = document.querySelectorAll('.sidebar-item[data-view]');
+  for (var i = 0; i < items.length; i++) {
+    var el = items[i];
+    if (el.getAttribute('data-view') === viewName) {
+      el.classList.add('active');
+    } else {
+      el.classList.remove('active');
+    }
+  }
+}
+function updateSidebarPendingBadge(count) {
+  var badge = document.getElementById('sidebar-pending-badge');
+  if (badge) { badge.textContent = count; badge.style.display = count > 0 ? '' : 'none'; }
+}
+</script>

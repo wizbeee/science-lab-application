@@ -1,0 +1,391 @@
+<!--
+  ==========================================================================
+  캘린더 위젯 (공통 컴포넌트)
+  ==========================================================================
+  학생이 신청 날짜를 고를 때 그 달의 차단 정보를 한눈에 볼 수 있도록 시각화.
+  - 사용 가능 일자, 일부 차단(노란 점), 전일 차단(회색), 주말, 과거(비활성), 선택, 오늘 표시
+  - 폼별 primary 색상은 CSS 변수(--primary)에서 자동 상속
+  - 기존 <input type="date" id="date"> 와 양방향 동기화
+
+  사용법 (각 폼의 Step 2 일정 선택 안에 삽입):
+    <?!= include('_calendar_widget') ?>
+  그리고 JS init 시점에:
+    initCalendarWidget('#date');
+  ==========================================================================
+-->
+<style>
+  .cal-widget {
+    background: var(--card, #fff);
+    border: 1px solid var(--border, #ddd);
+    border-radius: var(--radius-sm, 8px);
+    padding: 14px 16px;
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--text, #222);
+  }
+  .cal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px; gap: 8px;
+  }
+  .cal-title {
+    font-size: 15px; font-weight: 700; color: var(--primary-dark, #333);
+    flex: 1; text-align: center;
+  }
+  .cal-nav, .cal-today {
+    background: var(--card, #fff); border: 1px solid var(--border, #ddd);
+    border-radius: 6px; padding: 6px 10px; cursor: pointer;
+    font-size: 14px; font-weight: 600; color: var(--text, #222);
+    transition: all 0.15s; font-family: inherit;
+  }
+  .cal-nav:hover, .cal-today:hover {
+    border-color: var(--primary, #1565c0); color: var(--primary, #1565c0);
+    background: var(--primary-light, #e3f2fd);
+  }
+  .cal-today { font-size: 12px; padding: 6px 12px; }
+
+  .cal-weekdays {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    gap: 4px; margin-bottom: 6px;
+    font-size: 11px; font-weight: 700; color: #999;
+    text-align: center; padding: 4px 0;
+  }
+  .cal-weekdays > div:first-child { color: #d32f2f; }
+  .cal-weekdays > div:last-child { color: #1565c0; }
+
+  .cal-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+  }
+  .cal-day {
+    aspect-ratio: 1 / 1;
+    background: var(--card, #fff);
+    border: 1px solid #eee;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px; font-weight: 500;
+    color: var(--text, #222);
+    position: relative;
+    transition: all 0.12s;
+    font-family: inherit;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0;
+  }
+  .cal-day:hover:not(.past):not(.blocked-all):not(.weekend) {
+    border-color: var(--primary, #1565c0);
+    background: var(--primary-light, #e3f2fd);
+  }
+  .cal-day.other-month {
+    color: #ccc; background: #fafafa;
+  }
+  .cal-day.today {
+    border: 2px solid var(--primary, #1565c0);
+    font-weight: 700;
+  }
+  .cal-day.selected {
+    background: var(--primary, #1565c0); color: #fff;
+    border-color: var(--primary, #1565c0); font-weight: 700;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  }
+  .cal-day.past {
+    color: #ccc; cursor: not-allowed; background: #fafafa;
+  }
+  .cal-day.weekend {
+    color: #d32f2f; background: #fff5f5; cursor: not-allowed;
+  }
+  .cal-day.weekend.sat { color: #1565c0; background: #f0f7ff; }
+  .cal-day.blocked-all {
+    background: #f5f5f5; color: #aaa;
+    cursor: not-allowed; text-decoration: line-through;
+  }
+  .cal-day .cal-dot {
+    position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
+    width: 5px; height: 5px; border-radius: 50%; background: #f9a825;
+  }
+  .cal-day.selected .cal-dot { background: #fff; }
+
+  .cal-legend {
+    margin-top: 10px; padding-top: 10px;
+    border-top: 1px dashed var(--border, #ddd);
+    display: flex; flex-wrap: wrap; gap: 12px;
+    font-size: 11px; color: #666;
+  }
+  .cal-legend-item { display: inline-flex; align-items: center; gap: 4px; }
+  .cal-legend .legend-swatch {
+    display: inline-block; width: 12px; height: 12px; border-radius: 3px;
+    border: 1px solid #ccc;
+  }
+  .cal-legend .legend-swatch.partial { background: #fff; position: relative; }
+  .cal-legend .legend-swatch.partial::after {
+    content: ''; position: absolute; bottom: 1px; left: 50%;
+    transform: translateX(-50%); width: 4px; height: 4px;
+    border-radius: 50%; background: #f9a825;
+  }
+  .cal-legend .legend-swatch.block { background: #f5f5f5; }
+  .cal-legend .legend-swatch.weekend { background: #fff5f5; }
+  .cal-legend .legend-swatch.selected { background: var(--primary, #1565c0); border-color: var(--primary, #1565c0); }
+
+  .cal-loading {
+    position: absolute; inset: 0; display: none;
+    align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.7); border-radius: var(--radius-sm, 8px);
+    font-size: 12px; color: #666;
+  }
+  .cal-widget.loading .cal-loading { display: flex; }
+  .cal-widget { position: relative; }
+
+  .cal-selected-date {
+    margin-top: 10px; padding: 8px 12px;
+    background: var(--primary-light, #e3f2fd);
+    border-left: 3px solid var(--primary, #1565c0);
+    border-radius: 4px;
+    font-size: 13px; color: var(--primary-dark, #1565c0);
+    display: none;
+  }
+  .cal-selected-date.show { display: block; }
+  .cal-selected-date b { font-weight: 700; }
+  .cal-selected-date .reasons {
+    margin-top: 4px; font-size: 12px; color: #b71c1c;
+  }
+</style>
+
+<div class="cal-widget" id="calWidget">
+  <div class="cal-header">
+    <button type="button" class="cal-nav" data-cal-prev aria-label="이전 달">‹</button>
+    <div class="cal-title" data-cal-title>—</div>
+    <button type="button" class="cal-nav" data-cal-next aria-label="다음 달">›</button>
+    <button type="button" class="cal-today" data-cal-today>오늘</button>
+  </div>
+  <div class="cal-weekdays">
+    <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+  </div>
+  <div class="cal-grid" data-cal-grid></div>
+  <div class="cal-loading">불러오는 중...</div>
+  <div class="cal-legend">
+    <span class="cal-legend-item"><span class="legend-swatch selected"></span>선택</span>
+    <span class="cal-legend-item"><span class="legend-swatch partial"></span>일부 차단</span>
+    <span class="cal-legend-item"><span class="legend-swatch block"></span>전일 차단</span>
+    <span class="cal-legend-item"><span class="legend-swatch weekend"></span>주말</span>
+  </div>
+  <div class="cal-selected-date" data-cal-selected-info></div>
+</div>
+
+<script>
+  /**
+   * 캘린더 위젯 초기화
+   * @param {string} dateInputSelector  '#date' 등 — 양방향 동기화할 input 셀렉터
+   * @param {Object} [opts]
+   *   - root: 캘린더 위젯 루트 셀렉터 (기본 '#calWidget')
+   */
+  function initCalendarWidget(dateInputSelector, opts) {
+    opts = opts || {};
+    var rootSelector = opts.root || '#calWidget';
+    var root = document.querySelector(rootSelector);
+    var dateInput = document.querySelector(dateInputSelector);
+    if (!root || !dateInput) return;
+
+    var monthCache = {}; // ym -> data
+    var today = new Date();
+    var todayYMD = ymd(today);
+    var todayYM = ym(today);
+    var currentYM = todayYM;
+    var selectedYMD = (dateInput.value || '').trim();
+
+    function pad(n) { return n < 10 ? '0' + n : '' + n; }
+    function ymd(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+    function ym(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1); }
+    function ymToParts(s) {
+      var p = String(s || '').split('-');
+      return { y: parseInt(p[0], 10), m: parseInt(p[1], 10) };
+    }
+    function fmtTitle(s) {
+      var p = ymToParts(s);
+      return p.y + '년 ' + p.m + '월';
+    }
+
+    function fetchMonth(ymStr, cb) {
+      if (monthCache[ymStr]) { cb(monthCache[ymStr]); return; }
+      root.classList.add('loading');
+      google.script.run
+        .withSuccessHandler(function(data) {
+          monthCache[ymStr] = data || {};
+          root.classList.remove('loading');
+          cb(monthCache[ymStr]);
+        })
+        .withFailureHandler(function(err) {
+          // [v3.58 / M-10] 실패를 빈 결과로 영구 캐시하던 문제 수정 —
+          //   캐시하지 않아 다음 렌더에서 재시도되고, 학생에게 실패를 알림.
+          root.classList.remove('loading');
+          try {
+            var box = root.querySelector('[data-cal-selected-info]');
+            if (box) {
+              box.innerHTML = '⚠ 사용 불가일 정보를 불러오지 못했습니다. 달을 이동하거나 잠시 후 다시 확인해 주세요. (제출 시 서버에서 다시 검증됩니다)';
+              box.classList.add('show');
+            }
+          } catch(_) {}
+          cb({});
+        })
+        .getMonthAvailability(ymStr);
+    }
+
+    function render() {
+      root.querySelector('[data-cal-title]').textContent = fmtTitle(currentYM);
+      fetchMonth(currentYM, function(data) {
+        var p = ymToParts(currentYM);
+        var firstOfMonth = new Date(p.y, p.m - 1, 1);
+        var firstWeekday = firstOfMonth.getDay(); // 0=일
+        var lastDay = new Date(p.y, p.m, 0).getDate();
+        var prevLastDay = new Date(p.y, p.m - 1, 0).getDate();
+
+        var cells = [];
+        // 앞달 채우기
+        for (var i = firstWeekday - 1; i >= 0; i--) {
+          var day = prevLastDay - i;
+          var d = new Date(p.y, p.m - 2, day);
+          cells.push({ ymd: ymd(d), day: day, otherMonth: true, weekday: d.getDay() });
+        }
+        // 이달
+        for (var dnum = 1; dnum <= lastDay; dnum++) {
+          var d2 = new Date(p.y, p.m - 1, dnum);
+          cells.push({ ymd: ymd(d2), day: dnum, otherMonth: false, weekday: d2.getDay() });
+        }
+        // 다음달 채우기 (총 42칸 = 6주)
+        var remain = 42 - cells.length;
+        for (var k = 1; k <= remain; k++) {
+          var d3 = new Date(p.y, p.m, k);
+          cells.push({ ymd: ymd(d3), day: k, otherMonth: true, weekday: d3.getDay() });
+        }
+
+        var html = cells.map(function(c) {
+          var classes = ['cal-day'];
+          if (c.otherMonth) classes.push('other-month');
+          if (c.ymd === todayYMD) classes.push('today');
+          if (c.ymd === selectedYMD) classes.push('selected');
+          if (c.ymd < todayYMD) classes.push('past');
+          if (c.weekday === 0) classes.push('weekend');
+          if (c.weekday === 6) classes.push('weekend', 'sat');
+
+          var info = data[c.ymd];
+          var dotHtml = '';
+          var titleAttr = '';
+          if (info) {
+            if (info.allBlocked) classes.push('blocked-all');
+            else if ((info.blockedLabs && info.blockedLabs.length) ||
+                     (info.blockedTimes && info.blockedTimes.length) ||
+                     (info.perLabTimes && Object.keys(info.perLabTimes).length)) {
+              dotHtml = '<span class="cal-dot"></span>';
+            }
+            if (info.message) {
+              titleAttr = ' title="' + escAttr(info.message) + '"';
+            }
+          }
+
+          return '<button type="button" class="' + classes.join(' ') + '" data-ymd="' + c.ymd + '"' + titleAttr + '>' +
+                   c.day + dotHtml +
+                 '</button>';
+        }).join('');
+
+        root.querySelector('[data-cal-grid]').innerHTML = html;
+        renderSelectedInfo(data);
+      });
+    }
+
+    function renderSelectedInfo(data) {
+      var box = root.querySelector('[data-cal-selected-info]');
+      if (!selectedYMD) { box.classList.remove('show'); box.innerHTML = ''; return; }
+      var info = data && data[selectedYMD];
+      var lines = ['<b>선택: ' + escHtml(selectedYMD) + '</b>'];
+      if (info) {
+        var reasons = [];
+        if (info.allBlocked) reasons.push('전일 차단');
+        if (info.blockedLabs && info.blockedLabs.length) reasons.push('차단 실험실: ' + info.blockedLabs.join(', '));
+        if (info.blockedTimes && info.blockedTimes.length) reasons.push('차단 시간: ' + info.blockedTimes.join(', '));
+        if (info.perLabTimes) {
+          var keys = Object.keys(info.perLabTimes);
+          keys.forEach(function(k) {
+            reasons.push(k + ' 차단 시간: ' + (info.perLabTimes[k] || []).join(', '));
+          });
+        }
+        if (reasons.length) {
+          lines.push('<div class="reasons">⚠ ' + reasons.map(escHtml).join(' / ') + '</div>');
+        }
+      }
+      box.innerHTML = lines.join('');
+      box.classList.add('show');
+    }
+
+    function escHtml(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+    function escAttr(s) { return escHtml(s); }
+
+    /* === 이벤트: 날짜 셀 클릭 === */
+    root.querySelector('[data-cal-grid]').addEventListener('click', function(e) {
+      var btn = e.target.closest('.cal-day');
+      if (!btn) return;
+      // 비활성화 항목 무시
+      if (btn.classList.contains('past') ||
+          btn.classList.contains('blocked-all') ||
+          btn.classList.contains('weekend')) return;
+
+      var picked = btn.dataset.ymd;
+
+      // 다른 달 클릭 시 그 달로 이동 + 데이터 확인 후 선택
+      // [v3.58 / M-10] 기존엔 그 달 차단 데이터가 없는 상태로 즉시 선택 확정되어
+      //   전일 차단일도 선택할 수 있었음 (제출 시점에야 거부).
+      if (btn.classList.contains('other-month')) {
+        var p = ymToParts(picked.substring(0, 7));
+        currentYM = p.y + '-' + pad(p.m);
+        fetchMonth(currentYM, function(data) {
+          var info = data && data[picked];
+          if (info && info.allBlocked) {
+            render(); // 이동만 하고 선택하지 않음 (셀에 차단 표시가 뜸)
+            return;
+          }
+          selectedYMD = picked;
+          dateInput.value = picked;
+          dateInput.dispatchEvent(new Event('change'));
+          render();
+        });
+        return;
+      }
+
+      selectedYMD = picked;
+      dateInput.value = picked;
+      // input 의 onchange 핸들러(폼별 onDateChange) 트리거
+      dateInput.dispatchEvent(new Event('change'));
+      render();
+    });
+
+    /* === 이벤트: 좌/우/오늘 === */
+    root.querySelector('[data-cal-prev]').addEventListener('click', function() {
+      var p = ymToParts(currentYM);
+      var d = new Date(p.y, p.m - 2, 1);
+      currentYM = ym(d);
+      render();
+    });
+    root.querySelector('[data-cal-next]').addEventListener('click', function() {
+      var p = ymToParts(currentYM);
+      var d = new Date(p.y, p.m, 1);
+      currentYM = ym(d);
+      render();
+    });
+    root.querySelector('[data-cal-today]').addEventListener('click', function() {
+      currentYM = todayYM;
+      render();
+    });
+
+    /* === input 직접 변경 시 캘린더 동기화 === */
+    dateInput.addEventListener('change', function() {
+      var v = (dateInput.value || '').trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return;
+      if (v === selectedYMD) return; // 자체 click 이 트리거한 change
+      selectedYMD = v;
+      currentYM = v.substring(0, 7);
+      render();
+    });
+
+    // 첫 렌더
+    render();
+  }
+</script>

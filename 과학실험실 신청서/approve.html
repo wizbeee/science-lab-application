@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>실험실 신청 승인</title>
+  <title>실험·실습실 신청 승인</title>
   <style>
     body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 40px; display: flex; justify-content: center; }
     #approvalForm { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); width: 1000px; max-width: 100%; box-sizing: border-box; }
@@ -17,9 +17,58 @@
     #saveBtn { margin-top: 24px; padding: 12px; width: 100%; background: #4285F4; color: #fff; border: none; font-size: 16px; border-radius: 5px; cursor: pointer; }
     #saveBtn:disabled { background: #aaa; cursor: default; }
     #statusMsg { margin-top: 12px; font-size: 14px; color: #333; }
+    .already-processed { background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; text-align: center; font-weight: bold; color: #856404; }
     .output { padding: 8px; background: #fafafa; border: 1px solid #ddd; border-radius: 4px; word-break: break-word; white-space: pre-wrap; }
     .inline-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
     .time-input { width: 120px; }
+
+    /* A-1: Accordion UI */
+    .summary-card { background: #e8f4fd; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+    .summary-card .summary-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
+    .summary-item { display: flex; gap: 8px; padding: 4px 0; }
+    .summary-label { font-weight: 600; color: #555; min-width: 80px; }
+
+    .accordion-toggle {
+      background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px;
+      padding: 12px 16px; width: 100%; text-align: left; cursor: pointer;
+      font-size: 1rem; font-weight: 600; margin-bottom: 8px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .accordion-toggle:hover { background: #e9ecef; }
+    .accordion-content { display: none; padding: 0 8px; }
+    .accordion-content.open { display: block; }
+
+    .judgment-card {
+      background: #fff; border: 2px solid #4285F4; border-radius: 10px;
+      padding: 20px; margin-top: 16px;
+    }
+    .judgment-card h3 { color: #4285F4; margin: 0 0 16px 0; }
+
+    /* A-2: Elapsed time & urgency */
+    .elapsed { font-size: 13px; font-weight: 600; margin-left: 6px; }
+    /* [A4] WCAG AA 대비 — 4.5:1 이상 보장 */
+    .urgent-high { color: #b91c1c; } /* 6.36:1 vs white */
+    .urgent-mid { color: #b45309; }  /* 4.66:1 vs white */
+    .urgent-low { color: #047857; }  /* 4.54:1 vs white */
+
+    /* A-4: Chemical hazard */
+    .chem-danger { background: #fef2f2 !important; border-left: 3px solid #dc2626; }
+
+    /* Fieldset/legend */
+    fieldset { border: none; padding: 0; margin: 0; }
+    fieldset legend { font-weight: bold; margin-bottom: 8px; }
+
+    /* Skip link */
+    .skip-link:focus { top: 0; }
+
+    /* Quick rejection chips */
+    .chip { background: #e3f2fd; border: 1px solid #90caf9; border-radius: 16px; padding: 4px 12px; cursor: pointer; font-size: 13px; color: #1565c0; }
+    .chip:hover { background: #bbdefb; }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
 
     /* 모바일 대응 */
     @media (max-width: 768px) {
@@ -36,74 +85,210 @@
       textarea { width: 100% !important; box-sizing: border-box; }
       input, select, textarea, button { font-size: 16px !important; }
     }
+
+    /* ===== 전체화면 상태 오버레이 (저장 중 / 저장 완료 / 오류) ===== */
+    #statusOverlay {
+      position: fixed; inset: 0;
+      background: rgba(255, 255, 255, 0.92);
+      -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+      display: none;
+      align-items: center; justify-content: center;
+      z-index: 9999;
+      animation: overlayFadeIn 0.18s ease-out;
+    }
+    #statusOverlay.show { display: flex; }
+    @keyframes overlayFadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes overlaySpin  { to { transform: rotate(360deg); } }
+    @keyframes overlayPop   { 0% { transform: scale(0.5); opacity: 0; } 60% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+
+    #statusOverlay .overlay-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 36px 48px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+      min-width: 280px; max-width: 92vw;
+      text-align: center;
+      border: 1px solid #e5e7eb;
+    }
+    #statusOverlay .spinner {
+      width: 56px; height: 56px;
+      border: 5px solid #e5e7eb;
+      border-top-color: #4285F4;
+      border-radius: 50%;
+      margin: 0 auto 18px;
+      animation: overlaySpin 0.9s linear infinite;
+    }
+    #statusOverlay .icon-big {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      margin: 0 auto 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px; font-weight: bold; color: #fff;
+      animation: overlayPop 0.32s ease-out;
+    }
+    #statusOverlay .icon-success { background: #15803d; } /* WCAG AA: 대비 4.54:1 vs white */
+    #statusOverlay .icon-warning { background: #b45309; } /* WCAG AA: 4.66:1 */
+    #statusOverlay .icon-error   { background: #b91c1c; } /* WCAG AA: 6.36:1 */
+    #statusOverlay .overlay-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #111827;
+      margin: 0 0 6px;
+    }
+    #statusOverlay .overlay-sub {
+      font-size: 0.95rem;
+      color: #4b5563;
+      margin: 0 0 8px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: keep-all;
+    }
+    #statusOverlay .overlay-close {
+      margin-top: 16px;
+      padding: 10px 24px;
+      background: #4285F4;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      min-height: 44px;
+      min-width: 88px;
+    }
+    #statusOverlay .overlay-close:hover { background: #3367d6; }
+    #statusOverlay .overlay-close.hidden { display: none; }
+    @media (prefers-reduced-motion: reduce) {
+      #statusOverlay, #statusOverlay .icon-big, #statusOverlay .spinner { animation: none !important; }
+    }
   </style>
+  <?!= include('_security_guard') ?>
 </head>
 <body>
+  <!-- 전체화면 상태 오버레이 -->
+  <div id="statusOverlay" role="status" aria-live="assertive" aria-hidden="true">
+    <div class="overlay-card">
+      <div id="overlayVisual"></div>
+      <div class="overlay-title" id="overlayTitle">저장 중입니다</div>
+      <div class="overlay-sub" id="overlaySub">잠시만 기다려주세요…</div>
+      <button type="button" class="overlay-close hidden" id="overlayCloseBtn" onclick="hideStatusOverlay()">닫기</button>
+    </div>
+  </div>
+
+  <a href="#judgmentSection" class="skip-link" style="position:absolute;top:-40px;left:0;background:#4285F4;color:#fff;padding:8px 16px;z-index:100;text-decoration:none;font-weight:bold;">판단 영역으로 건너뛰기</a>
   <form id="approvalForm" onsubmit="return false;">
-    <h2>실험실 신청 승인</h2>
+    <h2>실험·실습실 신청 승인</h2>
 
-    <label>신청 ID</label>
-    <div id="appId" class="output"></div>
+    <!-- Summary (always visible) -->
+    <div class="summary-card" id="summaryCard">
+      <div class="summary-item"><span class="summary-label">대표자</span><span id="student"></span></div>
+      <div class="summary-item"><span class="summary-label">실험·실습실</span><span id="labTime"></span></div>
+      <div class="summary-item"><span class="summary-label">실험 날짜</span><span id="appDateOnly"></span></div>
+      <div class="summary-item"><span class="summary-label">실험·실습 주제</span><span id="title"></span></div>
+    </div>
 
-    <label>제출 일시</label>
-    <div id="submittedAt" class="output"></div>
+    <!-- Accordion: Detail -->
+    <button type="button" class="accordion-toggle" aria-expanded="false" aria-controls="detailSection" onclick="toggleAccordion('detailSection', this)">
+      📋 상세 정보 보기 <span class="arrow">▶</span>
+    </button>
+    <div class="accordion-content" id="detailSection">
+      <label>신청 ID</label>
+      <div id="appId" class="output"></div>
 
-    <label>실험 날짜</label>
-    <div id="appDateOnly" class="output"></div>
+      <label>제출 일시</label>
+      <div id="submittedAt" class="output"></div>
 
-    <label>대표자</label>
-    <div id="student" class="output"></div>
+      <label>동반자 명단</label>
+      <div id="teamMembers" class="output"></div>
 
-    <label>동반자 명단</label>
-    <div id="teamMembers" class="output"></div>
+      <label>총 인원수</label>
+      <div id="totalParticipants" class="output"></div>
 
-    <label>총 인원수</label>
-    <div id="totalParticipants" class="output"></div>
+      <label>사용 목적</label>
+      <div id="purpose" class="output"></div>
 
-    <label>신청 실험실 / 시간</label>
-    <div id="labTime" class="output"></div>
+      <div id="otherPurposeWrap" class="hidden">
+        <label>사용 목적 (기타 상세)</label>
+        <div id="otherPurpose" class="output"></div>
+      </div>
 
-    <label>실험 제목</label>
-    <div id="title" class="output"></div>
+      <div id="newLabSection" class="hidden">
+        <label>사용 실험·실습실 목록</label>
+        <div id="usageList" class="output"></div>
 
-    <label>사용 목적</label>
-    <div id="purpose" class="output"></div>
+        <div id="itFieldsWrap" class="hidden">
+          <label>사용 컴퓨터 번호</label>
+          <div id="computerNo" class="output"></div>
 
-    <label>첨단기기실 이용 여부</label>
-    <div id="advancedLab" class="output"></div>
+          <label>납땜 사용 여부</label>
+          <div id="solderUse" class="output"></div>
+        </div>
 
-    <label>첨단기기실 이용 사유</label>
-    <div id="advancedLabReason" class="output"></div>
+        <div id="homeFieldsWrap" class="hidden">
+          <label>위험 도구</label>
+          <div id="hazardTool" class="output"></div>
 
-    <label>후드 사용 여부</label>
-    <div id="hoodUse" class="output"></div>
+          <label>사용 계획</label>
+          <div id="usagePlan" class="output"></div>
 
-    <label>후드 사용 사유</label>
-    <div id="hoodReason" class="output"></div>
+          <label>재료 (JSON)</label>
+          <div id="recipeJson" class="output"></div>
+        </div>
 
-    <label>실험 준비물</label>
-    <div id="materials" class="output"></div>
+        <div id="engFieldsWrap" class="hidden">
+          <label>신청 장비</label>
+          <div id="reqEquipment" class="output"></div>
+        </div>
 
-    <label>실험 과정</label>
-    <div id="process" class="output"></div>
+        <label>교육 — 장비 사용법</label>
+        <div id="eduEquipment" class="output"></div>
 
-    <label>실험 뒷정리</label>
-    <div id="cleanup" class="output"></div>
+        <label>교육 — 정리 방법</label>
+        <div id="eduCleanup" class="output"></div>
 
-    <label>실험시 주의사항</label>
-    <div id="precautions" class="output"></div>
+        <label>학생 입력 임장지도 시간</label>
+        <div id="studentVisitTime" class="output"></div>
+      </div>
 
-    <label>안전장구</label>
-    <div id="safety" class="output"></div>
+      <label>첨단기기실 이용 여부</label>
+      <div id="advancedLab" class="output"></div>
 
-    <label>지도교사</label>
-    <div id="teacherName" class="output"></div>
+      <label>첨단기기실 이용 사유</label>
+      <div id="advancedLabReason" class="output"></div>
 
-    <label>지도교사 이메일</label>
-    <div id="teacherEmail" class="output"></div>
+      <label>후드 사용 여부</label>
+      <div id="hoodUse" class="output"></div>
 
-    <div class="section">
-      <label>시약 목록</label>
+      <label>후드 사용 사유</label>
+      <div id="hoodReason" class="output"></div>
+
+      <label>실험 준비물</label>
+      <div id="materials" class="output"></div>
+
+      <label>실험 과정</label>
+      <div id="process" class="output"></div>
+
+      <label>실험 뒷정리</label>
+      <div id="cleanup" class="output"></div>
+
+      <label>실험시 주의사항</label>
+      <div id="precautions" class="output"></div>
+
+      <label>안전장구</label>
+      <div id="safety" class="output"></div>
+
+      <label>지도교사</label>
+      <div id="teacherName" class="output"></div>
+
+      <label>지도교사 이메일</label>
+      <div id="teacherEmail" class="output"></div>
+    </div>
+
+    <!-- Accordion: Chemicals -->
+    <button type="button" class="accordion-toggle" aria-expanded="true" aria-controls="chemSection" onclick="toggleAccordion('chemSection', this)">
+      🧪 시약 목록 <span id="chemBadge"></span> <span class="arrow">▼</span>
+    </button>
+    <div class="accordion-content open" id="chemSection">
       <table id="chemicalTable">
         <thead>
           <tr>
@@ -114,11 +299,14 @@
       </table>
     </div>
 
-    <div class="section">
+    <!-- Teacher Judgment (always visible) -->
+    <div class="judgment-card" id="judgmentSection">
+      <h3>교사 판단</h3>
+
       <label>1. 직접 실험실에 가셔서 지도해야 하나요?</label>
-      <div class="radio-group">
-        <label><input type="radio" name="guidance" value="Yes"> Yes</label>
-        <label><input type="radio" name="guidance" value="No"> No</label>
+      <div class="radio-group" role="radiogroup" aria-label="교사 임장 필요 여부">
+        <label for="guidance-yes"><input type="radio" name="guidance" value="Yes" id="guidance-yes"> Yes</label>
+        <label for="guidance-no"><input type="radio" name="guidance" value="No" id="guidance-no"> No</label>
       </div>
       <div id="entryTimeDiv" class="hidden">
         <div class="inline-row">
@@ -130,40 +318,64 @@
       </div>
 
       <label style="margin-top:16px;">2. 도구/장비와 시약/재료가 적절한가요?</label>
-      <div class="radio-group">
-        <label><input type="radio" name="toolOk" value="Yes"> Yes</label>
-        <label><input type="radio" name="toolOk" value="No"> No</label>
+      <div class="radio-group" role="radiogroup" aria-label="도구/장비 적절 여부">
+        <label for="toolOk-yes"><input type="radio" name="toolOk" value="Yes" id="toolOk-yes"> Yes</label>
+        <label for="toolOk-no"><input type="radio" name="toolOk" value="No" id="toolOk-no"> No</label>
       </div>
 
       <label style="margin-top:16px;">3. 학생의 실험과정, 뒷정리, 실험시 주의사항의 내용이 적절한가요?</label>
-      <div class="radio-group">
-        <label><input type="radio" name="processOk" value="Yes"> Yes</label>
-        <label><input type="radio" name="processOk" value="No"> No</label>
+      <div class="radio-group" role="radiogroup" aria-label="실험과정 적절 여부">
+        <label for="processOk-yes"><input type="radio" name="processOk" value="Yes" id="processOk-yes"> Yes</label>
+        <label for="processOk-no"><input type="radio" name="processOk" value="No" id="processOk-no"> No</label>
       </div>
-    </div>
 
-    <div class="section">
-      <label>승인 / 반려</label>
-      <div class="radio-group">
-        <label><input type="radio" name="decision" value="승인"> 승인</label>
-        <label><input type="radio" name="decision" value="반려"> 반려</label>
+      <div class="section">
+        <fieldset>
+          <legend>승인 / 반려</legend>
+          <div class="radio-group">
+            <label for="decision-approve"><input type="radio" name="decision" value="승인" id="decision-approve"> 승인</label>
+            <label for="decision-reject"><input type="radio" name="decision" value="반려" id="decision-reject"> 반려</label>
+          </div>
+        </fieldset>
+        <div id="commentDiv" class="hidden">
+          <label id="commentLabel">반려 사유</label>
+          <div class="quick-chips" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+            <button type="button" class="chip" onclick="appendReason('안전 규정 미준수')">안전 규정 미준수</button>
+            <button type="button" class="chip" onclick="appendReason('시약 사용 부적절')">시약 사용 부적절</button>
+            <button type="button" class="chip" onclick="appendReason('실험 계획 보완 필요')">실험 계획 보완 필요</button>
+            <button type="button" class="chip" onclick="appendReason('일정 충돌')">일정 충돌</button>
+          </div>
+          <textarea id="comment" rows="3" cols="50" style="width: 100%;" placeholder="반려 사유를 입력하세요."></textarea>
+        </div>
       </div>
-      <div id="commentDiv" class="hidden">
-        <label>반려 사유</label>
-        <textarea id="comment" rows="3" cols="50" style="width: 100%;" placeholder="반려 사유를 입력하세요."></textarea>
-      </div>
-    </div>
 
-    <button id="saveBtn" onclick="submitApproval()">저장하기</button>
-    <div id="statusMsg"></div>
+      <button id="saveBtn" onclick="submitApproval()">저장하기</button>
+      <div id="statusMsg" aria-live="polite"></div>
+    </div>
   </form>
 
   <script>
     'use strict';
 
+    // ===== Accordion toggle =====
+    function toggleAccordion(id, btn) {
+      const el = document.getElementById(id);
+      const arrow = btn.querySelector('.arrow');
+      el.classList.toggle('open');
+      const isOpen = el.classList.contains('open');
+      arrow.textContent = isOpen ? '▼' : '▶';
+      btn.setAttribute('aria-expanded', String(isOpen));
+    }
+
+    function appendReason(text) {
+      const ta = document.querySelector('.judgment-card textarea');
+      if (ta) { ta.value = ta.value ? ta.value + ', ' + text : text; }
+    }
+
     // ===== 1) 서버 주입 값 =====
-    const templateId = <?!= JSON.stringify(id || '') ?>;
-    const serverData = <?!= JSON.stringify(typeof appData === 'undefined' ? null : appData) ?>;
+    const templateId = <?!= jsonForScript_(id || '') ?>;
+    const serverData = <?!= jsonForScript_(typeof appData === 'undefined' ? null : appData) ?>;
+    const templateToken = <?!= jsonForScript_(typeof approvalToken === 'undefined' ? '' : approvalToken) ?>;
 
     // ===== 2) URL에서 id 파싱 =====
     function getIdFromLocation() {
@@ -198,7 +410,38 @@
       } catch(e){ return String(iso); }
     }
 
+    // [H1] accordion toggle과 overlay close 버튼은 살려둔다 (검토 계속 가능 / 오버레이 닫기 가능)
+    function disableAllInputs_() {
+      document.querySelectorAll(
+        '#approvalForm input, #approvalForm textarea, #approvalForm select,' +
+        ' #approvalForm button:not(.accordion-toggle):not(.chip):not(.overlay-close)'
+      ).forEach(el => { el.disabled = true; });
+    }
+
+    // 화면에 이미 처리됨 배너 표시 + 즉시 (race 없이) 입력 잠금
+    function __markProcessedUI(existingDecision) {
+      const banner = document.createElement('div');
+      banner.className = 'already-processed';
+      banner.textContent = '\u26a0\ufe0f 이미 1차 처리된 신청입니다 (' + existingDecision + ')';
+      const form = document.getElementById('approvalForm');
+      form.insertBefore(banner, form.querySelector('h2').nextSibling);
+      const saveBtn = document.getElementById('saveBtn');
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = '\u2705 처리 완료 (' + existingDecision + ')';
+      }
+      // [H2] setTimeout 제거 — 즉시 실행
+      disableAllInputs_();
+    }
+
     function fillForm(data) {
+      // [H3] 이미 처리된 건은 요약만 보여주고 early return
+      const existingDecision = String(data['지도승인여부'] || '').trim();
+      const alreadyProcessed = (existingDecision === '승인' || existingDecision === '반려');
+      if (alreadyProcessed) {
+        __markProcessedUI(existingDecision);
+      }
+
       document.getElementById('appId').innerText       = data['신청ID'] || '';
       if (data['제출일시']) document.getElementById('submittedAt').innerText = formatDateTime(data['제출일시']);
       if (data['실험할날짜']) document.getElementById('appDateOnly').innerText = formatDateOnly(data['실험할날짜']);
@@ -208,6 +451,51 @@
       document.getElementById('labTime').innerText     = `${data['신청실험실'] || ''} / ${data['신청시간'] || ''}`;
       document.getElementById('title').innerText       = data['실험제목'] || '';
       document.getElementById('purpose').innerText     = data['사용목적'] || '';
+
+      // 사용목적 기타 — 값이 있을 때만 표시
+      const otherPurposeVal = String(data['사용목적 기타'] || '').trim();
+      if (otherPurposeVal) {
+        document.getElementById('otherPurposeWrap').classList.remove('hidden');
+        document.getElementById('otherPurpose').innerText = otherPurposeVal;
+      }
+
+      // 신규 양식 (IT/가정/공학) 전용 필드 — 해당 카테고리일 때만 표시
+      const usageListVal = String(data['사용실험실목록'] || '').trim();
+      const eduEqVal     = String(data['교육_장비사용법'] || '').trim();
+      const eduClVal     = String(data['교육_정리방법']   || '').trim();
+      const computerNo   = String(data['사용컴퓨터번호'] || '').trim();
+      const solderUse    = String(data['납땜여부']       || '').trim();
+      const hazardTool   = String(data['위험도구']       || '').trim();
+      const usagePlan    = String(data['사용계획']       || '').trim();
+      const recipeJson   = String(data['재료JSON']       || '').trim();
+      const reqEquip     = String(data['신청장비']       || '').trim();
+      const visitStart   = String(data['임장지도 시작시간'] || '').trim();
+      const visitEnd     = String(data['임장지도 종료시간'] || '').trim();
+      const isNewLabForm = !!(usageListVal || eduEqVal || eduClVal || computerNo || solderUse || hazardTool || usagePlan || recipeJson || reqEquip);
+      if (isNewLabForm) {
+        document.getElementById('newLabSection').classList.remove('hidden');
+        document.getElementById('usageList').innerText    = usageListVal || '-';
+        document.getElementById('eduEquipment').innerText = eduEqVal || '-';
+        document.getElementById('eduCleanup').innerText   = eduClVal || '-';
+        if (computerNo || solderUse) {
+          document.getElementById('itFieldsWrap').classList.remove('hidden');
+          document.getElementById('computerNo').innerText = computerNo || '-';
+          document.getElementById('solderUse').innerText  = solderUse  || '-';
+        }
+        if (hazardTool || usagePlan || recipeJson) {
+          document.getElementById('homeFieldsWrap').classList.remove('hidden');
+          document.getElementById('hazardTool').innerText = hazardTool || '-';
+          document.getElementById('usagePlan').innerText  = usagePlan  || '-';
+          document.getElementById('recipeJson').innerText = recipeJson || '-';
+        }
+        if (reqEquip) {
+          document.getElementById('engFieldsWrap').classList.remove('hidden');
+          document.getElementById('reqEquipment').innerText = reqEquip;
+        }
+        document.getElementById('studentVisitTime').innerText =
+          (visitStart || visitEnd) ? `${visitStart || '-'} ~ ${visitEnd || '-'}` : '미입력';
+      }
+
       document.getElementById('advancedLab').innerText       = data['첨단기기실 이용 여부'] || '';
       document.getElementById('advancedLabReason').innerText = data['첨단기기실 이용 사유'] || '';
       document.getElementById('hoodUse').innerText          = data['후드 사용 여부'] || '';
@@ -220,6 +508,37 @@
       document.getElementById('teacherName').innerText      = data['지도교사이름'] || '';
       document.getElementById('teacherEmail').innerText     = data['지도교사이메일'] || '';
 
+      // A-2: 경과 시간 표시
+      const now = new Date();
+      if (data['제출일시']) {
+        const submitted = new Date(data['제출일시']);
+        if (!isNaN(submitted.getTime())) {
+          const diffMs = now - submitted;
+          const diffDays = Math.floor(diffMs / (1000*60*60*24));
+          const diffHours = Math.floor(diffMs / (1000*60*60));
+          let elapsed = '';
+          let elapsedClass = '';
+          if (diffDays > 0) { elapsed = diffDays + '일 전'; }
+          else { elapsed = diffHours + '시간 전'; }
+          if (diffDays >= 3) elapsedClass = 'urgent-high';
+          else if (diffDays >= 1) elapsedClass = 'urgent-mid';
+          else elapsedClass = 'urgent-low';
+          document.getElementById('submittedAt').innerHTML += ' <span class="elapsed ' + elapsedClass + '">(' + elapsed + ')</span>';
+        }
+      }
+
+      if (data['실험할날짜']) {
+        const expDate = new Date(data['실험할날짜']);
+        if (!isNaN(expDate.getTime())) {
+          const dDay = Math.ceil((expDate - now) / (1000*60*60*24));
+          let ddayText = 'D' + (dDay >= 0 ? '-' + dDay : '+' + Math.abs(dDay));
+          let ddayClass = dDay <= 2 ? 'urgent-high' : (dDay <= 5 ? 'urgent-mid' : 'urgent-low');
+          if (dDay <= 2) ddayText += ', 긴급!';
+          document.getElementById('appDateOnly').innerHTML += ' <span class="elapsed ' + ddayClass + '">(' + ddayText + ')</span>';
+        }
+      }
+
+      // 시약 목록 렌더링
       const tbody = document.querySelector('#chemicalTable tbody');
       tbody.innerHTML = '';
       let hasGuidanceRequired = false;
@@ -240,11 +559,20 @@
         tdGuid.innerText = need;
         if (need === '필요') {
           hasGuidanceRequired = true;
+          tr.classList.add('chem-danger');
         }
         tr.appendChild(tdGuid);
 
         tbody.appendChild(tr);
       });
+
+      // A-4: Chemical hazard badge
+      if (hasGuidanceRequired) {
+        const count = (data.chemicals || []).filter(c => (c['교사임장여부']||'').trim() === '필요').length;
+        document.getElementById('chemBadge').innerHTML = '<span style="background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600;">🔴 임장 필요 ' + count + '건</span>';
+      } else {
+        document.getElementById('chemBadge').innerHTML = '<span style="background:#dcfce7;color:#16a34a;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600;">✅ 모두 안전</span>';
+      }
 
       // 시약 중 하나라도 '필요'면 1번을 Yes로 고정
       const yesRadio = document.querySelector('input[name="guidance"][value="Yes"]');
@@ -260,7 +588,13 @@
         noRadio.disabled = false;
       }
 
-      setupEventListeners();
+      // [H3] 이미 처리된 건은 이벤트 리스너를 부착하지 않음 (입력은 잠금됨)
+      if (!alreadyProcessed) {
+        setupEventListeners();
+      } else {
+        // 처리 완료 상태를 한 번 더 강제 적용 (시약 렌더링 후 입력이 enable되는 것을 방지)
+        disableAllInputs_();
+      }
     }
 
     function setupEventListeners() {
@@ -289,71 +623,113 @@
     }
 
     function updateDecision() {
+      // [v3.58 / 6-1] 자동 결정 제거.
+      //   기존엔 2·3번 라디오를 바꿀 때마다 승인/반려 선택을 강제로 재설정해서,
+      //   교사가 "반려"+사유까지 입력한 뒤 2·3번을 Yes로 바꾸면 소리 없이 "승인"으로
+      //   뒤집히고 반려 사유가 승인 의견으로 학생 메일에 나가는 문제가 있었음.
+      //   → 승인/반려는 교사가 직접 선택한 값만 사용. 아직 미선택 상태일 때만 참고 안내.
       const t = document.querySelector('input[name="toolOk"]:checked');
       const p = document.querySelector('input[name="processOk"]:checked');
-      if (t && p) {
-        if (t.value === 'Yes' && p.value === 'Yes') {
-          const approveRadio = document.querySelector('input[name="decision"][value="승인"]');
-          if (approveRadio) approveRadio.checked = true;
-        } else {
-          const rejectRadio = document.querySelector('input[name="decision"][value="반려"]');
-          if (rejectRadio) rejectRadio.checked = true;
-        }
-        toggleComment();
+      const chosen = document.querySelector('input[name="decision"]:checked');
+      const status = document.getElementById('statusMsg');
+      if (t && p && !chosen && status && !status.innerText) {
+        status.innerText = (t.value === 'Yes' && p.value === 'Yes')
+          ? '' : '※ 2·3번에 "아니오"가 있으면 일반적으로 반려 대상입니다. 아래에서 승인/반려를 직접 선택해 주세요.';
       }
     }
 
     function toggleComment() {
       const decision = document.querySelector('input[name="decision"]:checked');
       const commentDiv = document.getElementById('commentDiv');
-      if (decision && decision.value === '반려') commentDiv.classList.remove('hidden');
-      else commentDiv.classList.add('hidden');
+      const commentLabel = document.getElementById('commentLabel');
+      const comment = document.getElementById('comment');
+      if (!decision) { commentDiv.classList.add('hidden'); return; }
+      commentDiv.classList.remove('hidden');
+      if (decision.value === '반려') {
+        commentLabel.textContent = '반려 사유';
+        comment.placeholder = '반려 사유를 입력하세요.';
+      } else {
+        commentLabel.textContent = '승인 의견 (선택)';
+        comment.placeholder = '학생에게 전달할 의견이 있으면 입력하세요.';
+      }
     }
 
-    // 시약 테이블에서 '필요'가 있는지 다시 검사 (현재는 셀 텍스트만 본다)
-    function checkGuidanceFromChemicals() {
-      const tbody = document.querySelector('#chemicalTable tbody');
-      const rows = Array.from(tbody.rows);
+    /**
+     * 신규 양식(IT실/가정실습실/N동 공학 Zone)은 1차 승인 단계가 없으므로
+     * approve 페이지에 잘못 접근한 경우 자동으로 finalApprove(?stage=final)로 리다이렉트.
+     * 이미 stage=final이 URL에 포함된 상태면 무한 루프 방지를 위해 아무 동작 안 함.
+     * 리다이렉트 시작 시 true 반환 → 호출부는 후속 fillForm 등을 건너뜀.
+     */
+    function maybeRedirectToFinalIfNewLab_(data) {
+      // [v3.58] 자동 리다이렉트 제거 — GAS 샌드박스 iframe에서는 location.href에
+      //   원본 /exec URL·토큰이 없어 이동하면 반드시 깨진 페이지가 됐음.
+      //   대신 명확한 안내만 표시 (신규 양식은 메일의 최종 승인 링크로만 접근).
+      if (!data) return false;
+      var cat = String(data['양식종류'] || '').trim();
+      if (cat !== 'IT실' &&
+          cat !== '가정실습실' &&
+          cat !== 'N동 공학 Zone' &&
+          cat !== 'N동 공학 ZONE, Tech & Art LAB') return false;
+      try {
+        var status = document.getElementById('statusMsg');
+        if (status) status.innerText =
+          '이 신청은 단일 승인 양식(' + cat + ')이라 1차 승인 화면에서 처리할 수 없습니다.\n' +
+          '메일로 받으신 "승인 처리하기(최종 승인)" 링크로 접속해 주세요.';
+        var btn = document.getElementById('saveBtn');
+        if (btn) { btn.disabled = true; btn.textContent = '이 화면에서는 처리 불가'; }
+      } catch (_) {}
+      return true;
+    }
 
-      let mustGuide = false;
+    // [v3.58 / 6-3] 데이터를 못 불러온 상태에서 깜깜이 승인을 막음 — 저장 버튼 잠금
+    function lockForLoadError_(reason) {
+      try {
+        const btn = document.getElementById('saveBtn');
+        if (btn) { btn.disabled = true; btn.textContent = '데이터 로딩 실패 — 저장 불가'; }
+      } catch (_) {}
+      try { if (typeof disableAllInputs_ === 'function') disableAllInputs_(); } catch (_) {}
+    }
 
-      rows.forEach(r => {
-        const lastCell = r.cells[r.cells.length - 1];
-        const v = (lastCell.innerText || '').trim();
-        if (v === '필요') mustGuide = true;
-      });
-
-      const yesRadio = document.querySelector('input[name="guidance"][value="Yes"]');
-      const noRadio  = document.querySelector('input[name="guidance"][value="No"]');
-
-      if (mustGuide) {
-        yesRadio.checked = true;
-        noRadio.checked = false;
-        yesRadio.disabled = false;
-        noRadio.disabled = true;
-        document.getElementById('entryTimeDiv').classList.remove('hidden');
-      } else {
-        yesRadio.disabled = false;
-        noRadio.disabled = false;
-      }
+    // [v3.58 / 6-5] 같은 시간대 기승인 경고 배너
+    function showCapacityWarning_(data) {
+      try {
+        if (!data || !data.__sameSlotApproved) return;
+        if (document.getElementById('__capacityWarn__')) return;
+        const el = document.createElement('div');
+        el.id = '__capacityWarn__';
+        el.style.cssText = 'margin:12px 0;padding:12px 16px;border-radius:8px;background:#fef3c7;border-left:4px solid #f59e0b;color:#92400e;font-size:14px;line-height:1.6;';
+        el.innerHTML = '⚠️ <b>같은 날짜·실험실·시간대에 이미 최종 승인된 신청이 ' +
+          data.__sameSlotApproved + '건 있습니다.</b>' +
+          (data.__sameSlotApprovedDetail ? '<br>기승인: ' + data.__sameSlotApprovedDetail : '') +
+          '<br>공간·지도 인원이 겹쳐도 괜찮은지 확인 후 처리해 주세요.';
+        const status = document.getElementById('statusMsg');
+        if (status && status.parentNode) status.parentNode.insertBefore(el, status);
+        else document.body.insertBefore(el, document.body.firstChild);
+      } catch (_) {}
     }
 
     function loadApplicationData() {
       const status = document.getElementById('statusMsg');
 
       if (serverData && !serverData.__error) {
+        if (maybeRedirectToFinalIfNewLab_(serverData)) {
+          return;
+        }
         fillForm(serverData);
+        showCapacityWarning_(serverData);
         status.innerText = '';
         return;
       }
       if (serverData && serverData.__error) {
         alert('데이터 로딩 오류: ' + serverData.__error);
         status.innerText = '로딩 실패: ' + serverData.__error;
+        lockForLoadError_();
         return;
       }
       if (!id) {
         alert('신청 ID가 제공되지 않았습니다.');
         status.innerText = '신청 ID가 없습니다.';
+        lockForLoadError_();
         return;
       }
 
@@ -363,16 +739,22 @@
           if (!data) {
             alert('신청 데이터를 찾을 수 없습니다.');
             status.innerText = '데이터 없음';
+            lockForLoadError_();
+            return;
+          }
+          if (maybeRedirectToFinalIfNewLab_(data)) {
             return;
           }
           fillForm(data);
+          showCapacityWarning_(data);
           status.innerText = '';
         })
         .withFailureHandler(function(error) {
           alert('데이터 로딩 오류: ' + (error.message || error));
           status.innerText = '로딩 실패: ' + (error.message || error);
+          lockForLoadError_();
         })
-        .getApplication(id);
+        .getApplication(id, templateToken); // [v3.58 / 3-3] 토큰 동봉 — 교사 시트 일시 오류에도 열람 가능
     }
 
     // 시약 테이블에서 선택한 임장여부 수집 (이제는 텍스트만 회수)
@@ -390,6 +772,57 @@
       });
 
       return result;
+    }
+
+    // ===== 전체화면 상태 오버레이 제어 =====
+    // state: 'loading' | 'success' | 'warning' | 'error'
+    function showStatusOverlay(state, title, sub) {
+      const overlay = document.getElementById('statusOverlay');
+      const visual  = document.getElementById('overlayVisual');
+      const tEl     = document.getElementById('overlayTitle');
+      const sEl     = document.getElementById('overlaySub');
+      const closeBtn = document.getElementById('overlayCloseBtn');
+      if (!overlay) return;
+
+      // [v3.58 / 6-4] 로딩 30초 초과 시 닫기 버튼 노출 — 영구 스피너 방지
+      if (window.__overlayTimeout__) { clearTimeout(window.__overlayTimeout__); window.__overlayTimeout__ = null; }
+      if (state === 'loading') {
+        visual.innerHTML = '<div class="spinner" aria-hidden="true"></div>';
+        tEl.textContent  = title || '저장 중입니다';
+        sEl.textContent  = sub   || '잠시만 기다려주세요…';
+        closeBtn.classList.add('hidden');
+        window.__overlayTimeout__ = setTimeout(function() {
+          try {
+            sEl.textContent = '응답이 지연되고 있습니다. 잠시 후 페이지를 새로고침해 처리 상태를 확인해 주세요.\n(이미 저장됐다면 "이미 처리된 신청" 안내가 표시됩니다.)';
+            closeBtn.classList.remove('hidden');
+          } catch (_) {}
+        }, 30000);
+      } else if (state === 'success') {
+        visual.innerHTML = '<div class="icon-big icon-success" aria-hidden="true">✓</div>';
+        tEl.textContent  = title || '저장되었습니다';
+        sEl.textContent  = sub   || '처리가 완료되었습니다.';
+        closeBtn.classList.add('hidden');
+      } else if (state === 'warning') {
+        // 저장은 성공했으나 메일 자동 발송 실패 등 추가 조치가 필요한 경우
+        visual.innerHTML = '<div class="icon-big icon-warning" aria-hidden="true">!</div>';
+        tEl.textContent  = title || '저장되었으나 수동 조치가 필요합니다';
+        sEl.textContent  = sub   || '학과 사무실에서 직접 연락해 주세요.';
+        closeBtn.classList.remove('hidden');  // 수동 닫기
+      } else if (state === 'error') {
+        visual.innerHTML = '<div class="icon-big icon-error" aria-hidden="true">!</div>';
+        tEl.textContent  = title || '오류가 발생했습니다';
+        sEl.textContent  = sub   || '다시 시도해 주세요.';
+        closeBtn.classList.remove('hidden');
+      }
+      overlay.classList.add('show');
+      overlay.setAttribute('aria-hidden', 'false');
+    }
+
+    function hideStatusOverlay() {
+      const overlay = document.getElementById('statusOverlay');
+      if (!overlay) return;
+      overlay.classList.remove('show');
+      overlay.setAttribute('aria-hidden', 'true');
     }
 
     function submitApproval() {
@@ -411,32 +844,71 @@
       if (!decision) { alert('승인/반려를 선택하세요.'); return; }
       if (decision === '반려' && !comment) { alert('반려 사유를 입력하세요.'); return; }
 
+      // A-3: Confirmation dialog before save
+      const confirmMsg = decision === '승인'
+        ? '승인 처리하시겠습니까?\n학생에게 승인 안내 메일이 발송되고,\n담당교사에게 최종 승인 요청 메일이 발송됩니다.'
+        : '반려 처리하시겠습니까?\n학생에게 반려 안내 메일이 발송됩니다.\n\n반려 사유: ' + comment;
+      if (!confirm(confirmMsg)) {
+        // confirm 취소 시 상태 완전 복구
+        btn.disabled = false;
+        btn.textContent = '저장하기';
+        status.innerText = '';
+        return;
+      }
+
       const chemicalsGuidance = collectChemicalsGuidance();
 
       btn.disabled = true;
-      status.innerText = '저장 중입니다…';
+      btn.textContent = '저장 중…';
+      status.innerText = '';
+      showStatusOverlay('loading', '저장 중입니다', '잠시만 기다려주세요…');
 
       const info = {
         id: id,
         decision: decision,
         comment: comment,
         guidanceRequired: guidance,
-        entryTime: guidance === 'Yes' ? `${fromTime}~${toTime}` : '',
+        entryTime: (guidance === 'Yes' && fromTime && toTime) ? `${fromTime}~${toTime}` : '',
         toolOk: toolOk,
         processOk: processOk,
-        chemicalsGuidance: chemicalsGuidance   // 프론트에서 만든 시약별 임장여부 (이제 텍스트만)
+        chemicalsGuidance: chemicalsGuidance,   // 프론트에서 만든 시약별 임장여부 (이제 텍스트만)
+        token: templateToken                     // [v3.58 / 3-3] 메일 토큰 — 교사 시트 일시 오류 대비
       };
 
       google.script.run
         .withSuccessHandler(function(msg) {
-          status.innerText = msg;
-          btn.disabled = false;
-          alert(msg);
+          // [C4] 서버가 '[수동조치필요]' prefix를 붙이면 노란 경고 오버레이, 그 외엔 성공
+          const text = String(msg || '');
+          const needsManual = /^\[수동조치필요\]/.test(text) || text.indexOf('⚠️') !== -1;
+          // 본문 요약 추출: 첫 줄은 주 메시지, 나머지는 상세
+          const cleaned = text.replace(/^\[수동조치필요\]\s*/, '');
+          const firstLine = cleaned.split('\n')[0].trim();
+          const restLines = cleaned.split('\n').slice(1).join('\n').trim();
+
+          btn.disabled = true;
+          btn.textContent = '\u2705 처리 완료';
+          disableAllInputs_();
+          status.innerText = text;
+
+          if (needsManual) {
+            // 저장은 됐지만 수동 조치 필요 — 닫기 버튼 있는 상태로 유지
+            showStatusOverlay(
+              'warning',
+              '저장되었습니다 · 수동 조치 필요',
+              (restLines || firstLine) + '\n\n학과 사무실에서 확인 후 직접 연락해 주세요.'
+            );
+          } else {
+            const subText = decision === '승인' ? '승인 처리가 완료되었습니다.' : '반려 처리가 완료되었습니다.';
+            showStatusOverlay('success', '저장되었습니다', subText);
+            setTimeout(hideStatusOverlay, 2500);
+          }
         })
         .withFailureHandler(function(error) {
-          status.innerText = '오류: ' + (error.message || error);
+          const errMsg = (error && (error.message || error.toString())) || '알 수 없는 오류';
+          showStatusOverlay('error', '오류가 발생했습니다', errMsg);
+          status.innerText = '오류: ' + errMsg;
           btn.disabled = false;
-          alert('오류: ' + (error.message || error));
+          btn.textContent = '저장하기';
         })
         .submitApproval(info);
     }

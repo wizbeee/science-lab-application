@@ -2467,7 +2467,12 @@ const NEW_LAB_SHEET_COLUMNS = [
   '신청장비',
   '재료JSON',
   '교육_장비사용법',
-  '교육_정리방법'
+  '교육_정리방법',
+  // [2026-08] 1차 승인 검토 항목 — 지도교사가 승인 화면에서 반드시 고르는 두 값.
+  //   그동안 검증만 하고 어디에도 기록하지 않아, 관리자 화면이 표시하려 해도
+  //   보여줄 데이터가 없었다(사고 시 책임 추적 불가). 저장 대상으로 추가한다.
+  '도구장비_적절성',
+  '실험내용_적절성'
 ];
 
 function migrateAddNewLabColumns() {
@@ -4896,6 +4901,11 @@ function submitApproval_(info) {
   };
   put('지도승인여부', decision);
   put('지도승인의견', comment || '');
+  // [2026-08] 1차 검토 답변 기록 — 폼에서 필수로 받아 놓고 저장하지 않던 값.
+  //   컬럼이 아직 없는 시트에서는 put 이 자동으로 건너뛰므로 안전하다.
+  //   (컬럼 추가는 migrateAddNewLabColumns() 1회 실행)
+  put('도구장비_적절성', toolOk === 'Yes' ? '예' : (toolOk === 'No' ? '아니오' : ''));
+  put('실험내용_적절성', processOk === 'Yes' ? '예' : (processOk === 'No' ? '아니오' : ''));
 
   if (entryTime && entryTime.includes('~')) {
     const [fromRaw, toRaw] = entryTime.split('~').map(s => s.trim());

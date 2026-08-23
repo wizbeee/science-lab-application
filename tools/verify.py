@@ -318,6 +318,58 @@ for fn, cat in FORM_CAT.items():
                 fail("승인화면", f"{fn}: '{k}'({col}) 이 최종 승인 화면에 표시되지 않음 "
                                  f"(표시 카테고리: {', '.join(sorted(cats))} / 이 폼: {cat})")
 
+
+# ---------- 18. 코드가 쓰는 시트 컬럼이 실제 시트에 있는가 ----------
+HDR_PATH = os.path.join(ROOT, "tools", "sheet_headers.json")
+if os.path.exists(HDR_PATH):
+    hdrs = json.load(open(HDR_PATH, encoding="utf-8"))
+    main_cols = set(hdrs["신청기록"]) | set(hdrs.get("추가예정", []))
+    chem_cols = set(hdrs["시약기록"])
+    # 신청서가 put() 으로 쓰는 컬럼
+    for col, _ in put_calls:
+        if col not in main_cols:
+            fail("시트컬럼", f"신청서 submitApplication_ 이 쓰는 '{col}' 컬럼이 신청 기록 시트에 없음")
+    # submitApproval_ / submitFinalApproval_ 의 put
+    for fname in ("submitApproval_", "submitFinalApproval_"):
+        seg = fsrc[fsrc.index(f"function {fname}("):]
+        seg = seg[:seg.index("\nfunction ", 10)]
+        for col in re.findall(r"put\(\s*'([^']+)'", seg):
+            if col not in main_cols:
+                fail("시트컬럼", f"신청서 {fname} 이 쓰는 '{col}' 컬럼이 신청 기록 시트에 없음")
+    # 관리자가 편집 대상으로 삼는 컬럼
+    for m in re.finditer(r"(?:EDITABLE_FIELDS|EDITABLE)\s*=\s*\[(.*?)\]", asrc, re.S):
+        for col in re.findall(r"'([^']+)'", m.group(1)):
+            if col not in main_cols:
+                fail("시트컬럼", f"관리자 편집 대상 '{col}' 컬럼이 신청 기록 시트에 없음")
+    # 관리자 화면이 읽는 컬럼
+    COMPUTED = {"chemicals", "시약목록"}      # 서버가 만들어 붙이는 값 (시트 컬럼 아님)
+    for fn in files(ADMIN, ".html"):
+        for ln, line in enumerate(read(ADMIN, fn).splitlines(), 1):
+            cols = re.findall(r"app\['([^']+)'\]", line)
+            if not cols: continue
+            valid = [c for c in cols if c in main_cols or c in chem_cols or c in COMPUTED
+                     or c.startswith("_")]
+            # 같은 줄에 올바른 컬럼이 함께 있으면 폴백 표기로 보고 넘어간다
+            if valid: continue
+            for c in cols:
+                warn("시트컬럼", f"관리자/{fn}:{ln}: 화면이 읽는 '{c}' 컬럼이 어느 시트에도 없음")
+    if hdrs.get("_main_a1_observed") and hdrs["_main_a1_observed"] != "신청ID":
+        fail("시트데이터", f"신청 기록 시트 A1 이 '신청ID' 가 아니라 '{hdrs['_main_a1_observed']}' 임 "
+                          f"— 신청·승인·관리자 조회가 모두 멈춥니다. 시트에서 직접 고쳐야 합니다")
+
+
+# ---------- 19. 지도교사 선택기가 참조하는 요소가 실제로 있는가 ----------
+for fn in FORMS:
+    t = closure(FORM, fn[:-5])
+    for m in re.finditer(r"loadEligibleTeachers\(\s*\{(.*?)\}\s*\)", read(FORM, fn), re.S):
+        body = m.group(1)
+        for opt in ("selectId", "emailId", "hintId"):
+            mm = re.search(opt + r"\s*:\s*'([^']+)'", body)
+            if not mm: continue
+            eid = mm.group(1)
+            if not re.search(r'id="%s"' % re.escape(eid), t):
+                fail("요소참조", f"{fn}: loadEligibleTeachers 의 {opt}='{eid}' 요소가 페이지에 없음")
+
 # ---------- 결과 ----------
 print("=" * 78)
 print(f"검증 결과 — 실패 {len(fails)}건 / 경고 {len(warns)}건")

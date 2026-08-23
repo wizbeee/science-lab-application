@@ -69,6 +69,124 @@ function normalizeSlot_(s) {
   return raw;
 }
 
+
+/* ==================================================================
+ * ✅ [2026-08] 시트 해석기 — 첫 번째 탭 고정 참조 제거
+ * ------------------------------------------------------------------
+ * 기존에는 모든 스프레드시트를 getSheets()[0] 으로 열었다. 반면 관리자
+ * 페이지는 "이름 제외 + 헤더 판별" 이중 필터로 대상 시트를 찾는다.
+ *   → 스프레드시트 탭 순서가 바뀌거나 로그/보고서 탭이 앞으로 오면
+ *     관리자는 정상인데 신청서만 엉뚱한 탭에 기록하게 된다.
+ *     조회 오류는 화면에 드러나지만 기록 오류는 조용히 쌓이므로 더 위험하다.
+ *
+ * 아래 해석기는 관리자와 같은 방식으로 시트를 찾되, 기록용이라는 점을 고려해
+ * "못 찾으면 조용히 넘어가지 않고 명확히 실패"한다.
+ * 찾은 시트 이름은 6시간 캐시하며, 캐시가 가리키는 시트가 사라지거나 헤더가
+ * 달라지면 즉시 재탐색한다.
+ * ================================================================== */
+
+/** 신청서가 절대 기록 대상으로 삼으면 안 되는 보조 탭 이름 */
+const NON_DATA_SHEET_NAMES_ = [
+  '신청제한명단', '신청제한정책', '경고누적', '지도일지', '제한누적',
+  '관리자로그', '백업설정', '접속로그', '접속로그_관리자', '차단명단',
+  '차단명단_관리자', '이메일발송로그', '출석기록'
+];
+
+/**
+ * 스프레드시트에서 필수 헤더를 모두 가진 시트를 찾는다.
+ * @param {string} ssid            스프레드시트 ID
+ * @param {string[]} requiredHeaders 반드시 존재해야 하는 헤더 이름
+ * @param {string} label           오류 메시지에 쓸 사람이 읽는 이름
+ * @param {number} [headerRow=1]   헤더가 있는 행 번호
+ */
+function resolveSheetByHeaders_(ssid, requiredHeaders, label, headerRow) {
+  const hRow = headerRow || 1;
+  const ss = SpreadsheetApp.openById(ssid);
+  const cache = CacheService.getScriptCache();
+  const ckey = 'sheetname:' + ssid + ':' + requiredHeaders.join('|') + ':' + hRow;
+
+  const hasHeaders = (sh) => {
+    try {
+      if (!sh || sh.getLastRow() < hRow) return false;
+      const lastCol = sh.getLastColumn();
+      if (lastCol === 0) return false;
+      const hdr = sh.getRange(hRow, 1, 1, lastCol).getValues()[0]
+        .map(v => String(v || '').trim());
+      return requiredHeaders.every(h => hdr.indexOf(h) !== -1);
+    } catch (_) { return false; }
+  };
+
+  // 1) 캐시된 시트 이름 재사용 (헤더 재확인 후에만 신뢰)
+  try {
+    const cached = cache.get(ckey);
+    if (cached) {
+      const sh = ss.getSheetByName(cached);
+      if (sh && hasHeaders(sh)) return sh;
+      cache.remove(ckey);
+    }
+  } catch (_) {}
+
+  // 2) 이름 제외 + 헤더 판별 (관리자 getTargetSheets_ 와 동일한 원칙)
+  const excluded = {};
+  NON_DATA_SHEET_NAMES_.forEach(n => { excluded[n] = true; });
+  const sheets = ss.getSheets();
+  const match = sheets.filter(sh => !excluded[sh.getName()] && hasHeaders(sh));
+
+  if (match.length === 1) {
+    try { cache.put(ckey, match[0].getName(), 21600); } catch (_) {}
+    return match[0];
+  }
+  if (match.length > 1) {
+    // 후보가 여럿이면 가장 앞 탭을 쓰되 로그를 남긴다 (분할 기록 방지)
+    Logger.log('[resolveSheetByHeaders_] ' + label + ' 후보 시트 ' + match.length +
+      '개: ' + match.map(s => s.getName()).join(', ') + ' → 첫 번째 사용');
+    try { cache.put(ckey, match[0].getName(), 21600); } catch (_) {}
+    return match[0];
+  }
+
+  // 3) 못 찾으면 명확히 실패 — 엉뚱한 탭에 기록하는 것보다 낫다
+  throw new Error(
+    label + ' 시트를 찾을 수 없습니다.\n' +
+    '필요한 헤더: ' + requiredHeaders.join(', ') + '\n' +
+    '현재 탭: ' + sheets.map(s => s.getName()).join(', ') + '\n' +
+    '학과 사무실에 문의해 주세요.'
+  );
+}
+
+/** 신청 기록 시트 (관리자 isApplicationSheet_ 와 동일 기준) */
+function getMainSheet_() {
+  return resolveSheetByHeaders_(MAIN_SSID, ['신청ID', '실험할날짜'], '신청 기록');
+}
+/** 시약 기록 시트 */
+function getChemRecordSheet_() {
+  return resolveSheetByHeaders_(CHEM_RECORD_SSID, ['신청ID', '시약명'], '시약 기록');
+}
+/** 임시저장 시트 */
+function getDraftSheet_() {
+  return resolveSheetByHeaders_(DRAFT_SSID, ['대표자학번', 'JSON'], '임시저장');
+}
+/** 지도교사 목록 시트 */
+function getTeacherListSheet_() {
+  return resolveSheetByHeaders_(TEACHER_LIST_SSID, ['교사이름'], '지도교사 목록');
+}
+/** 실험실 담당교사 목록 시트 */
+function getLabTeacherSheet_() {
+  const ss = SpreadsheetApp.openById(LAB_TEACHER_SSID);
+  // '담당 실험실' / '담당실험실' 두 표기를 모두 허용해야 하므로 개별 탐색
+  const sheets = ss.getSheets();
+  for (let i = 0; i < sheets.length; i++) {
+    const sh = sheets[i];
+    try {
+      if (sh.getLastRow() < 1 || sh.getLastColumn() === 0) continue;
+      const hdr = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0]
+        .map(v => String(v || '').trim());
+      if (hdr.indexOf('담당 실험실') !== -1 || hdr.indexOf('담당실험실') !== -1) return sh;
+    } catch (_) {}
+  }
+  throw new Error('실험실 담당교사 목록 시트를 찾을 수 없습니다. ("담당 실험실" 열 필요)\n' +
+    '현재 탭: ' + sheets.map(s => s.getName()).join(', '));
+}
+
 /* ------------------------- 공통 유틸 ------------------------- */
 /** HTML 특수문자 이스케이프 (이메일 XSS 방지) */
 function escapeHtml_(s) {
@@ -644,7 +762,7 @@ function getSessionTeacher_() {
     if (hit) {
       try { const obj = JSON.parse(hit); return obj || null; } catch (_) {}
     }
-    const rows = SpreadsheetApp.openById(TEACHER_LIST_SSID).getSheets()[0].getDataRange().getValues();
+    const rows = getTeacherListSheet_().getDataRange().getValues();
     const [hdr, ...data] = rows;
     const nameIdx = hdr.indexOf('교사이름');
     const emailIdx = hdr.indexOf('이메일주소') !== -1 ? hdr.indexOf('이메일주소') : hdr.indexOf('이메일 주소');
@@ -692,7 +810,7 @@ function getLabTeacherEmailSet_() {
     if (hit) {
       try { return new Set(JSON.parse(hit)); } catch (_) {}
     }
-    const rows = SpreadsheetApp.openById(LAB_TEACHER_SSID).getSheets()[0].getDataRange().getValues();
+    const rows = getLabTeacherSheet_().getDataRange().getValues();
     const [hdr, ...data] = rows;
     const mailIdx = hdr.findIndex(h => {
       const t = String(h).trim();
@@ -1545,7 +1663,7 @@ function sendStudentRejectEmail_(rec, comment) {
  *   호출부에서 try/catch와 r.ok 분기 둘 다 안전하게 처리되도록 catch 내부도 동일 형식 반환 권장.
  */
 function sendLabTeacherFinalEmail_(rec, appId) {
-  const labData = SpreadsheetApp.openById(LAB_TEACHER_SSID).getSheets()[0].getDataRange().getValues();
+  const labData = getLabTeacherSheet_().getDataRange().getValues();
   const [labHdr, ...labRows] = labData;
 
   const labIdx = labHdr.findIndex(h => {
@@ -1572,10 +1690,10 @@ function sendLabTeacherFinalEmail_(rec, appId) {
   const wantCanon = normalizeLabName_(labName) || labName;
 
   // 룸 → 그룹 매핑 (LAB_TEACHER에 그룹명 한 줄로만 등록된 경우의 fallback)
-  const ENGINEERING_ROOMS = ['융합기술실', '창의공학실', '공작기계실', 'FAB Lab', 'Tech & Art LAB'];
+  const ENGINEERING_ROOMS = ['융합기술실', '창의공학실', '공작기계실', 'FAB Lab'];
   const groupCanons = [];
   if (ENGINEERING_ROOMS.indexOf(wantCanon) >= 0) groupCanons.push('공학ZONE', '공학Zone', '공학존');
-  if (wantCanon === '코딩실') groupCanons.push('컴퓨터실', 'IT실', 'IT 실험실');
+  if (wantCanon === '코딩실') groupCanons.push('IT 공학실', '컴퓨터실', 'IT실', 'IT 실험실');
 
   const toRow = labRows.find(r => {
     const cell = String(r[labIdx] || '').trim();
@@ -2132,7 +2250,7 @@ function getTeacherList() {
   // ★ SEC-P1: rate limit + 학생 호출 시 이메일 마스킹
   assertCallRateLimit_('getTeacherList', 30, 60);
 
-  const rows = SpreadsheetApp.openById(TEACHER_LIST_SSID).getSheets()[0].getDataRange().getValues();
+  const rows = getTeacherListSheet_().getDataRange().getValues();
   const [hdr, ...data] = rows;
   const nameIdx = hdr.indexOf('교사이름');
   const emailIdx = hdr.indexOf('이메일주소') !== -1 ? hdr.indexOf('이메일주소') : hdr.indexOf('이메일 주소');
@@ -2171,7 +2289,7 @@ function resolveTeacherEmail_(teacherName, claimedEmail) {
   const name = String(teacherName || '').trim();
   if (!name) return '';
   try {
-    const rows = SpreadsheetApp.openById(TEACHER_LIST_SSID).getSheets()[0].getDataRange().getValues();
+    const rows = getTeacherListSheet_().getDataRange().getValues();
     const [hdr, ...data] = rows;
     const nameIdx = hdr.indexOf('교사이름');
     const emailIdx = hdr.indexOf('이메일주소') !== -1 ? hdr.indexOf('이메일주소') : hdr.indexOf('이메일 주소');
@@ -2188,7 +2306,7 @@ function resolveTeacherEmail_(teacherName, claimedEmail) {
 function _verifyTeacherEmailBelongs_(teacherName, teacherEmail) {
   if (!teacherName || !teacherEmail) return false;
   try {
-    const rows = SpreadsheetApp.openById(TEACHER_LIST_SSID).getSheets()[0].getDataRange().getValues();
+    const rows = getTeacherListSheet_().getDataRange().getValues();
     const [hdr, ...data] = rows;
     const nameIdx = hdr.indexOf('교사이름');
     const emailIdx = hdr.indexOf('이메일주소') !== -1 ? hdr.indexOf('이메일주소') : hdr.indexOf('이메일 주소');
@@ -2269,8 +2387,8 @@ const NEW_LAB_SHEET_COLUMNS = [
 ];
 
 function migrateAddNewLabColumns() {
-  const ss = SpreadsheetApp.openById(MAIN_SSID);
-  const sh = ss.getSheets()[0];
+  const sh = getMainSheet_();
+  const ss = sh.getParent();
   const lastCol = sh.getLastColumn();
   if (lastCol === 0) {
     throw new Error('첫 시트가 비어 있습니다. 먼저 기본 헤더를 구성한 뒤 다시 실행하세요.');
@@ -2306,7 +2424,7 @@ const CANONICAL_LABS_ = [
   //   ※ [2026-08-19] 멀티미디어실은 **신청 접수 중단**(NEW_LAB_CONFIG.it.rooms에서 제외).
   //     이름 정규화·캘린더 차단·담당교사 시트 키(LAB_TEACHER에 '멀티미디어실'로 등록)
   //     용도로만 남겨둔다 — 제거하면 컴퓨터실·코딩실의 담당 안내 조회가 깨진다.
-  '컴퓨터실', '코딩실', '멀티미디어실',
+  'IT 공학실', '코딩실', '멀티미디어실',
   // N동 가정실습실 (신규)
   '가정실습실',
   // N동 공학 Zone (신규)
@@ -2350,8 +2468,11 @@ const LAB_ALIASES_ = {
   '테크앤아트실험실':  'Tech & Art LAB',
 
   // 신규 — S동 2층 IT실
-  '컴퓨터':            '컴퓨터실',
-  'computer':          '컴퓨터실',
+  '컴퓨터':            'IT 공학실',
+  '컴퓨터실':          'IT 공학실',   // [2026-08] 옛 이름 → 신 이름 호환
+  'computer':          'IT 공학실',
+  'it공학실':          'IT 공학실',
+  'it 공학실':         'IT 공학실',
   // [2026-08-19] 멀티미디어실은 컴퓨터실의 옛 이름이 아니라 별개의 독립 실습실.
   //   기존의 '멀티미디어실 → 컴퓨터실' 별칭을 제거하고 자체 실로 정규화한다.
   //   (별칭이 남아 있으면 두 실의 중복 예약 검사·담당교사 매칭이 서로 뒤섞임)
@@ -2378,6 +2499,209 @@ const LAB_ALIASES_ = {
   '팹랩':              'FAB Lab'
 };
 
+/* ==================================================================
+ * ✅ [2026-08] 승인 정책 단일 소스 (Single Source of Truth)
+ * ------------------------------------------------------------------
+ * 그동안 "어떤 실습실을 어떤 과목 교사가 지도/승인하는가"가 각 폼 HTML에
+ * 흩어져 하드코딩돼 있었다. 그 결과
+ *   - 1·2층은 과목 완전일치(===), 신규 폼은 부분일치로 규칙이 서로 달랐고
+ *     ('물리(테크)' 김원우 선생님이 2층 폼에서만 누락)
+ *   - NEW_LAB_CONFIG.subjectFilter 는 어느 폼도 읽지 않는 죽은 설정이었으며
+ *   - 서버는 "명단에 있는 교사인가"만 볼 뿐 과목·실습실 정합성은 검사하지 않아
+ *     드롭다운이 유일한 관문이었다.
+ *
+ * 아래 표가 유일한 기준이며, 폼은 getEligibleTeachers() 로 후보를 받아 오고
+ * 서버는 제출 시 assertTeacherEligible_() 로 같은 표를 다시 대조한다.
+ *
+ *   stage 2 = 지도교사 1차 승인 → 실습실 담당 계정 최종 승인
+ *   stage 1 = 지도교사 단독 승인 (1차 단계 없음)
+ *   clubSubjects = 사용목적이 '동아리 활동'일 때 대체 적용할 과목 (없으면 목적 무관)
+ * ================================================================== */
+const LAB_APPROVAL_POLICY_ = {
+  /* S동 1층 — 2단 승인. 동아리 활동이면 화학·생명과학 공통 */
+  '화학실험실':      { stage: 2, subjects: ['화학'],              clubSubjects: ['화학', '생명과학'] },
+  '생물실험실':      { stage: 2, subjects: ['생명과학'],          clubSubjects: ['화학', '생명과학'] },
+  '프로젝트실험실':  { stage: 2, subjects: ['화학', '생명과학'] },
+  '첨단기기실험실':  { stage: 2, subjects: ['화학', '생명과학'] },
+  '오픈랩':          { stage: 2, subjects: ['화학', '생명과학'] },
+
+  /* S동 2층 물리 계열 — 2단 승인. 동아리 여부와 무관하게 물리 교사만.
+     '물리(테크)'(김원우 선생님)는 SUBJECT_ALIASES_ 로 '물리'를 함께 갖는다. */
+  '물리실험실':      { stage: 2, subjects: ['물리'] },
+  '파동광학실험실':  { stage: 2, subjects: ['물리'] },
+  'AP Lab':          { stage: 2, subjects: ['물리'] },
+
+  /* S동 2층 IT 계열 — 1단 승인 (정보 교사 단독) */
+  'IT 공학실':       { stage: 1, subjects: ['정보'] },
+  '코딩실':          { stage: 1, subjects: ['정보'] },
+  '멀티미디어실':    { stage: 1, subjects: ['정보'] },   // 신청 접수 중단 상태이나 정책은 유지
+
+  /* S동 3층 — 1단 승인. 교사 이름을 코드에 박지 않고 과목 '물리(테크)'로 지정.
+     담당 교사가 바뀌거나 휴직하면 지도교사 목록 시트의 과목만 옮기면 된다. */
+  'Tech & Art LAB':  { stage: 1, subjects: ['물리(테크)'] },
+
+  /* N동 지하 — 1단 승인 */
+  '가정실습실':      { stage: 1, subjects: ['가정'] },
+
+  /* N동 공학 ZONE — 1단 승인 (기술 교사 단독) */
+  '융합기술실':      { stage: 1, subjects: ['기술'] },
+  '창의공학실':      { stage: 1, subjects: ['기술'] },
+  '공작기계실':      { stage: 1, subjects: ['기술'] },
+  'FAB Lab':         { stage: 1, subjects: ['기술'] }
+};
+
+/**
+ * 과목 토큰 확장표. 시트의 '과목' 칸 한 값이 여러 자격을 겸하는 경우를 표현한다.
+ *   '물리(테크)' → 물리 계열 실험실(2층)에도, Tech & Art LAB 에도 자격이 있다.
+ *   반대로 그냥 '물리'인 교사는 Tech & Art LAB 자격이 없다(확장은 단방향).
+ */
+const SUBJECT_ALIASES_ = {
+  '물리(테크)': ['물리(테크)', '물리']
+};
+
+/** 과목 비교용 정규화 — 공백 제거 + 소문자화 */
+function normSubject_(s) {
+  return String(s || '').trim().toLowerCase().replace(/\s+/g, '');
+}
+
+/**
+ * 지도교사 목록 시트의 '과목' 칸 → 자격 토큰 Set.
+ *   - 콤마/슬래시/가운뎃점으로 복수 과목 기재 가능 ('물리, 공학')
+ *   - 앞뒤 공백은 무시 (기존에 공백 하나로 교사가 통째로 사라지던 문제 차단)
+ *   - SUBJECT_ALIASES_ 로 상위 자격까지 확장
+ */
+function parseSubjectTokens_(subjectCell) {
+  const out = {};
+  String(subjectCell || '')
+    .split(/[,\/·]/)
+    .map(t => t.trim())
+    .filter(Boolean)
+    .forEach(tok => {
+      out[normSubject_(tok)] = true;
+      const expanded = SUBJECT_ALIASES_[tok] || SUBJECT_ALIASES_[tok.replace(/\s+/g, '')];
+      if (Array.isArray(expanded)) expanded.forEach(e => { out[normSubject_(e)] = true; });
+    });
+  return out;
+}
+
+/** 교사의 과목 칸이 요구 과목 중 하나라도 만족하는가 */
+function teacherMatchesSubjects_(subjectCell, wantedSubjects) {
+  if (!Array.isArray(wantedSubjects) || !wantedSubjects.length) return false;
+  const have = parseSubjectTokens_(subjectCell);
+  return wantedSubjects.some(w => have[normSubject_(w)] === true);
+}
+
+/** 실습실 이름(별칭 허용) → 승인 정책. 미등록이면 null */
+function getLabPolicy_(labName) {
+  const raw = String(labName || '').trim();
+  if (!raw) return null;
+  if (LAB_APPROVAL_POLICY_[raw]) return LAB_APPROVAL_POLICY_[raw];
+  const canon = normalizeLabName_(raw);
+  return (canon && LAB_APPROVAL_POLICY_[canon]) ? LAB_APPROVAL_POLICY_[canon] : null;
+}
+
+/** 사용목적 문자열이 '동아리 활동'인가 */
+function isClubPurpose_(purpose) {
+  return String(purpose || '').indexOf('동아리') !== -1;
+}
+
+/**
+ * 실습실 + 사용목적으로 요구 과목 목록을 계산한다.
+ * 복수 실습실이면 각 실의 요구 과목을 모두 만족해야 하므로 교집합을 쓴다.
+ *   (예: 코딩실 + IT 공학실 → 둘 다 '정보' → 정보)
+ * 교집합이 비면 [] 를 돌려주고, 호출부가 "함께 신청할 수 없는 조합"으로 처리한다.
+ */
+function requiredSubjectsFor_(labNames, purpose) {
+  const labs = (Array.isArray(labNames) ? labNames : [labNames])
+    .map(s => String(s || '').trim()).filter(Boolean);
+  if (!labs.length) return { ok: false, subjects: [], unknown: [], stage: 0 };
+
+  const club = isClubPurpose_(purpose);
+  const unknown = [];
+  let acc = null;
+  let stage = 0;
+
+  labs.forEach(lab => {
+    const p = getLabPolicy_(lab);
+    if (!p) { unknown.push(lab); return; }
+    stage = Math.max(stage, p.stage);
+    const wanted = (club && Array.isArray(p.clubSubjects)) ? p.clubSubjects : p.subjects;
+    if (acc === null) {
+      acc = wanted.slice();
+    } else {
+      acc = acc.filter(s => wanted.indexOf(s) !== -1);
+    }
+  });
+
+  return { ok: unknown.length === 0 && acc !== null, subjects: acc || [], unknown: unknown, stage: stage };
+}
+
+/**
+ * ✅ [클라이언트 API] 선택한 실습실·사용목적에 지도교사가 될 수 있는 교사 목록.
+ *   모든 신청 폼(1층/2층/IT/가정/공학/Tech&Art)이 이 함수 하나만 호출한다.
+ *
+ * @param {string|string[]} labNames 실습실 이름(복수 가능)
+ * @param {string} purpose 사용목적 (1층에서만 '동아리 활동' 분기에 사용)
+ * @return {{ok:boolean, teachers:Array, subjects:Array, stage:number, message:string}}
+ */
+function getEligibleTeachers(labNames, purpose) {
+  assertCallRateLimit_('getEligibleTeachers', 60, 60);
+
+  const req = requiredSubjectsFor_(labNames, purpose);
+  if (req.unknown.length) {
+    return { ok: false, teachers: [], subjects: [], stage: 0,
+             message: '승인 정책이 등록되지 않은 실습실입니다: ' + req.unknown.join(', ') };
+  }
+  if (!req.subjects.length) {
+    return { ok: false, teachers: [], subjects: [], stage: req.stage,
+             message: '함께 신청할 수 없는 실습실 조합입니다. 지도교사 자격이 서로 다릅니다.' };
+  }
+
+  const all = getTeacherList();
+  const teachers = all.filter(t => teacherMatchesSubjects_(t.subject, req.subjects));
+
+  return {
+    ok: true,
+    teachers: teachers,
+    subjects: req.subjects,
+    stage: req.stage,
+    message: teachers.length ? '' :
+      '해당 실습실의 지도교사(' + req.subjects.join('·') + ')가 교사 명단에 없습니다. 학과에 문의해 주세요.'
+  };
+}
+
+/**
+ * ✅ [서버 강제 검증] 제출된 지도교사가 해당 실습실·목적의 자격을 갖췄는지 대조.
+ *   드롭다운(클라이언트)이 유일한 관문이던 구조를 서버로 옮긴다.
+ *   조작된 요청이나 폼 캐시로 옛 목록이 남은 경우를 모두 차단.
+ */
+function assertTeacherEligible_(teacherName, labNames, purpose) {
+  const req = requiredSubjectsFor_(labNames, purpose);
+  if (req.unknown.length) {
+    throw new Error('승인 정책이 등록되지 않은 실습실입니다: ' + req.unknown.join(', ') +
+      '\n학과에 문의해 주세요.');
+  }
+  if (!req.subjects.length) {
+    throw new Error('함께 신청할 수 없는 실습실 조합입니다. 지도교사 자격이 서로 다릅니다.');
+  }
+
+  const name = String(teacherName || '').trim();
+  const rows = getTeacherList().filter(t => String(t.name || '').trim() === name);
+  if (!rows.length) {
+    throw new Error('지도교사 "' + name + '" 를 교사 명단에서 찾을 수 없습니다.');
+  }
+  const eligible = rows.some(t => teacherMatchesSubjects_(t.subject, req.subjects));
+  if (!eligible) {
+    throw new Error(
+      '"' + name + '" 선생님은 선택하신 실습실의 지도교사가 될 수 없습니다.\n' +
+      '필요 과목: ' + req.subjects.join(' 또는 ') +
+      ' / 등록 과목: ' + (rows[0].subject || '(없음)') +
+      '\n지도교사를 목록에서 다시 선택해 주세요.'
+    );
+  }
+  return req;
+}
+
 /* ------------------------------------------------------------------
  * 신규 양식 카탈로그 (S동 2층 IT실 / 가정실습실 / N동 공학 Zone)
  * ------------------------------------------------------------------
@@ -2402,13 +2726,14 @@ const NEW_LAB_CONFIG = {
   it: {
     sheetCategory: 'IT실',
     title: 'S동 2층 IT 관련 실습실',
-    rooms: ['컴퓨터실', '코딩실'],   // [2026-08-19] 멀티미디어실 신청 접수 중단 — 목록에서 제외
+    rooms: ['IT 공학실', '코딩실'],  // [2026-08-19] 멀티미디어실 신청 접수 중단 — 목록에서 제외
+                                     // [2026-08] '컴퓨터실' → 'IT 공학실' 로 명칭 변경 (옛 이름은 LAB_ALIASES_ 로 호환)
     paperConfirmTeachers: [
       { name: '윤용철', location: 'C201' },
       { name: '이정석', location: 'C201' }
     ],
-    subjectFilter: '정보',
-    labTeacherSheetKey: '컴퓨터실',
+    // 지도교사 자격은 LAB_APPROVAL_POLICY_ 가 유일한 기준 (여기에 중복 정의하지 않는다)
+    labTeacherSheetKey: 'IT 공학실',
     formPage: 'form_it',
     // 종이 양식의 "지도 선생님 확인 사항" — 학생 폼에서는 받지 않고
     // 최종 승인자 메일에 체크리스트로 표시되어, 지도교사가 종이 양식에 직접 표기.
@@ -2426,7 +2751,7 @@ const NEW_LAB_CONFIG = {
       { name: '박연서', location: 'C401' },
       { name: '최승아', location: 'N305' }
     ],
-    subjectFilter: '가정',
+    // 지도교사 자격은 LAB_APPROVAL_POLICY_ 참조
     labTeacherSheetKey: '가정실',
     formPage: 'form_home',
     confirmItems: [
@@ -2437,17 +2762,36 @@ const NEW_LAB_CONFIG = {
     ]
   },
   engineering: {
-    sheetCategory: 'N동 공학 ZONE, Tech & Art LAB',  // ※ 시트 저장값(데이터 키) — 변경 금지
-    // [2026-08-19] Tech & Art LAB 은 N동이 아니라 S동 3층. 화면 표기만 정정(데이터 키는 유지).
-    title: 'N동 공학 ZONE · S동 3층 Tech & Art LAB',
-    rooms: ['융합기술실', '창의공학실', '공작기계실', 'FAB Lab', 'Tech & Art LAB'],
+    // [2026-08] Tech & Art LAB 을 별도 양식(techart)으로 분리.
+    //   두 곳의 지도교사 자격이 서로 다르기 때문(공학 ZONE=기술 / Tech & Art LAB=물리(테크)).
+    //   ※ 시트 저장값 변경 — 관리자의 SHEET_CAT_MAP_ 에 신·구 값이 모두 등록돼 있어
+    //     기존 신청 기록('N동 공학 ZONE, Tech & Art LAB')도 계속 공학으로 조회된다.
+    sheetCategory: 'N동 공학 ZONE',
+    title: 'N동 공학 ZONE',
+    rooms: ['융합기술실', '창의공학실', '공작기계실', 'FAB Lab'],
     paperConfirmTeachers: [
-      { name: '이대석', location: 'N503' },
-      { name: '김원우', location: 'N202' }
+      { name: '이대석', location: 'N503' }
     ],
-    subjectFilter: '공학·기술·물리',
     labTeacherSheetKey: '공학존',
     formPage: 'form_engineering',
+    confirmItems: [
+      '직접 실습실에 가서 지도해야 하는 과정 여부 (필요 시 임장 시간 함께 기재)',
+      '실습에 필요한 장비와 도구 적절성',
+      '실습 장비 사용법에 대한 사전 교육 완료 여부',
+      '실습 후 정리 방법에 대한 사전 교육 완료 여부'
+    ]
+  },
+  techart: {
+    // [2026-08] S동 3층 Tech & Art LAB — 공학 ZONE 에서 분리된 단독 양식.
+    //   지도교사 자격은 과목 '물리(테크)' (LAB_APPROVAL_POLICY_ 참조).
+    //   담당 교사가 바뀌거나 휴직하면 지도교사 목록 시트의 과목만 옮기면 되며,
+    //   코드에 교사 이름을 남기지 않는다.
+    sheetCategory: 'Tech & Art LAB',
+    title: 'S동 3층 Tech & Art LAB',
+    rooms: ['Tech & Art LAB'],
+    paperConfirmTeachers: [],
+    labTeacherSheetKey: 'Tech & Art LAB',
+    formPage: 'form_techart',
     confirmItems: [
       '직접 실습실에 가서 지도해야 하는 과정 여부 (필요 시 임장 시간 함께 기재)',
       '실습에 필요한 장비와 도구 적절성',
@@ -2457,7 +2801,7 @@ const NEW_LAB_CONFIG = {
   }
 };
 
-/** 룸명(단일) → 카테고리(it/home/engineering). 매칭 실패 시 빈 문자열. */
+/** 룸명(단일) → 카테고리(it/home/engineering/techart). 매칭 실패 시 빈 문자열. */
 function getNewLabCategory_(roomName) {
   const s = String(roomName || '').trim();
   if (!s) return '';
@@ -2497,7 +2841,7 @@ function getLabRoomOwnerEmails_(rooms) {
   const out = [];
   const seenEmail = {};
   try {
-    const labData = SpreadsheetApp.openById(LAB_TEACHER_SSID).getSheets()[0].getDataRange().getValues();
+    const labData = getLabTeacherSheet_().getDataRange().getValues();
     const [labHdr, ...labRows] = labData;
     const labIdx = labHdr.findIndex(h => {
       const t = String(h).trim();
@@ -2515,15 +2859,15 @@ function getLabRoomOwnerEmails_(rooms) {
     // 그룹 한 줄 등록 폴백 (담당교사 시트가 실별이 아니라 그룹 한 줄로만 등록된 경우).
     //   예: '공학ZONE' 한 행이 5개 실을 대표 / IT 그룹은 현재 '멀티미디어실' 한 행뿐이라
     //       컴퓨터실·코딩실 신청도 이 행으로 폴백해야 안내가 나간다.
-    const ENGINEERING_ROOMS = ['융합기술실', '창의공학실', '공작기계실', 'FAB Lab', 'Tech & Art LAB'];
-    const IT_ROOMS = ['컴퓨터실', '코딩실', '멀티미디어실'];
+    const ENGINEERING_ROOMS = ['융합기술실', '창의공학실', '공작기계실', 'FAB Lab'];
+    const IT_ROOMS = ['IT 공학실', '코딩실', '멀티미디어실'];
     const norm = s => String(s || '').trim().toLowerCase().replace(/\s+/g, '');
 
     list.forEach(room => {
       const wantCanon = normalizeLabName_(room) || room;
       const groupCanons = [];
       if (ENGINEERING_ROOMS.indexOf(wantCanon) >= 0) groupCanons.push('공학zone', '공학존');
-      if (IT_ROOMS.indexOf(wantCanon) >= 0) groupCanons.push('컴퓨터실', '코딩실', '멀티미디어실', 'it실');
+      if (IT_ROOMS.indexOf(wantCanon) >= 0) groupCanons.push('it공학실', '컴퓨터실', '코딩실', '멀티미디어실', 'it실');
 
       // [2-pass] 1차: 실 이름 정확/정규화 일치 (시트 행 순서와 무관하게 정확 매칭 우선)
       let row = labRows.find(r => {
@@ -2598,20 +2942,38 @@ function normalizeLabName_(raw) {
  *   관리자가 "1층 차단"처럼 층 단위로 적으면 해당 층 실험실 전체로 확장.
  *   폼 구성과 일치: form.html=S동 1층 / form2f.html=S동 2·3층 / form_it=IT실 / form_home=가정 / form_engineering=공학Zone.
  *   ⚠️ 실험실 배치가 바뀌면 이 매핑도 함께 갱신할 것. */
+/* [2026-08] 층 그룹을 실제 건물 배치와 일치시켰다.
+ *   변경 전에는 '3층'이 물리 계열(실제 2층)까지 포함해, "3층 차단"이 2층 물리
+ *   실험실까지 막았다. 신규 교원이 규칙을 읽고 예측할 수 있도록 층=물리적 위치로 정리한다.
+ *   2·3층을 한꺼번에 막던 기존 표기('2·3층')는 두 층의 합집합으로 계속 동작한다.
+ *
+ * ⚠️ 그룹 키는 "공백 제거·소문자화한 본문에 포함되면 매칭"이다. 따라서 개별 실습실
+ *    이름의 일부가 되는 키(예: '공학' → '창의공학실')를 넣으면 실 하나만 막으려던
+ *    입력이 그룹 전체로 번진다. 키를 추가할 때 반드시 확인할 것. */
 const FLOOR_GROUPS_ = [
   { keys: ['s동1층', '1층'],
     labs: ['화학실험실', '생물실험실', '프로젝트실험실', '첨단기기실험실', '오픈랩'] },
-  // [v3.58 / 5-8] 2층 그룹에 같은 층의 IT실(컴퓨터실·코딩실) 포함,
-  //   3층은 Tech & Art LAB 포함, N동 그룹 신설 (가정·공학 Zone).
-  { keys: ['s동2·3층', 's동2,3층', 's동2.3층', '2·3층', '2,3층', '2.3층', 's동2층', '2층'],
-    // [2026-08-19] 멀티미디어실(S동 2층 IT) 추가 — 빠지면 '2층 차단'이 이 실만 못 막음
-    labs: ['물리실험실', '파동광학실험실', 'AP Lab', '컴퓨터실', '코딩실', '멀티미디어실'] },
+
+  // S동 2층 — 물리 계열 3실 + IT 계열 3실
+  { keys: ['s동2층', '2층'],
+    labs: ['물리실험실', '파동광학실험실', 'AP Lab', 'IT 공학실', '코딩실', '멀티미디어실'] },
+
+  // S동 3층 — Tech & Art LAB 전용
   { keys: ['s동3층', '3층'],
-    // Tech & Art LAB 은 S동 3층 (N동 아님) — 공학 양식으로 신청하지만 위치는 3층.
-    //   물리 계열은 2·3층 표기 혼용 이력이 있어 기존 구성 유지.
-    labs: ['물리실험실', '파동광학실험실', 'AP Lab', 'Tech & Art LAB'] },
+    labs: ['Tech & Art LAB'] },
+
+  // 2·3층 동시 표기(기존 운영 표기 호환) — 두 층의 합집합
+  { keys: ['s동2·3층', 's동2,3층', 's동2.3층', '2·3층', '2,3층', '2.3층'],
+    labs: ['물리실험실', '파동광학실험실', 'AP Lab', 'IT 공학실', '코딩실', '멀티미디어실',
+           'Tech & Art LAB'] },
+
+  // N동 — 가정실습실(지하) + 공학 ZONE 4실
   { keys: ['n동'],
-    labs: ['가정실습실', '융합기술실', '창의공학실', '공작기계실', 'FAB Lab'] }
+    labs: ['가정실습실', '융합기술실', '창의공학실', '공작기계실', 'FAB Lab'] },
+
+  // 공학 ZONE 4실만 (키가 개별 실 이름의 부분문자열이 아닌지 확인 완료)
+  { keys: ['공학존', '공학zone'],
+    labs: ['융합기술실', '창의공학실', '공작기계실', 'FAB Lab'] }
 ];
 
 /**
@@ -3617,16 +3979,35 @@ function submitApplication_(data) {
   //   기존엔 cfg.rooms가 '이름→카테고리' 매핑에만 쓰이고 검증에는 쓰이지 않아,
   //   화면에서 체크박스를 지워도 조작된 요청으로는 접수될 수 있었다.
   //   (멀티미디어실 접수 중단처럼 운영상 실을 닫을 때 실효성이 생김)
-  if (isNewLab && Array.isArray(data.labRooms) && data.labRooms.length) {
+  //   [2026-08] labRooms 가 비었을 때 검증이 통째로 건너뛰던 구멍을 막는다.
+  //   (조작된 요청이 labRooms 를 빼면 허용목록 검사 자체가 실행되지 않았음)
+  if (isNewLab) {
     const _allowed = (NEW_LAB_CONFIG[formCategory] && NEW_LAB_CONFIG[formCategory].rooms) || [];
-    const _bad = data.labRooms
+    const _rooms = (Array.isArray(data.labRooms) ? data.labRooms : [])
       .map(r => String(r || '').trim())
-      .filter(Boolean)
-      .filter(r => _allowed.indexOf(r) === -1);
+      .filter(Boolean);
+    if (!_rooms.length) {
+      throw new Error('사용할 실습실을 하나 이상 선택해 주세요.');
+    }
+    const _bad = _rooms.filter(r => _allowed.indexOf(r) === -1);
     if (_bad.length) {
       throw new Error('현재 신청할 수 없는 실습실이 포함되어 있습니다: ' + _bad.join(', ') +
         '\n신청 가능한 실습실: ' + (_allowed.join(', ') || '(없음)'));
     }
+  }
+
+  // ===== ✅ [2026-08] 지도교사 자격 서버 검증 =====
+  //   기존엔 "어떤 과목 교사가 어떤 실습실을 지도할 수 있는가"를 각 폼 HTML 의
+  //   드롭다운 필터만 판단했다. 즉 클라이언트가 유일한 관문이었고, 조작된 요청이나
+  //   옛 목록이 캐시된 폼에서는 자격 없는 교사가 승인자로 지정될 수 있었다.
+  //   이제 LAB_APPROVAL_POLICY_ 를 서버가 다시 대조한다.
+  //   ※ 1·2층 경로도 여기서 함께 검사되므로, 목록에 없는 실험실 이름이 들어오면
+  //     (기존에는 무검증 통과) 정책 미등록으로 거부된다.
+  {
+    const _policyRooms = (isNewLab && Array.isArray(data.labRooms) && data.labRooms.length)
+      ? data.labRooms.map(r => String(r || '').trim()).filter(Boolean)
+      : [labName];
+    assertTeacherEligible_(data.teacher, _policyRooms, data.purpose);
   }
 
   // ===== [H8] 시약 배열 크기 제한 =====
@@ -3803,8 +4184,8 @@ function submitApplication_(data) {
     }
   }
 
-  const ss = SpreadsheetApp.openById(MAIN_SSID);
-  const sh = ss.getSheets()[0];
+  const sh = getMainSheet_();
+  const ss = sh.getParent();
   const { header, map } = getHeaderMap_(sh);
 
   // ====== 중복 신청 방지 ======
@@ -3999,8 +4380,8 @@ function submitApplication_(data) {
 
   // ====== 시약 기록 (1층 폼만) — header-keyed write로 시트 컬럼 순서 변경에도 안전 ======
   if (!is2F && !isNewLab && chemsArray.length > 0) {
-    const chemSS = SpreadsheetApp.openById(CHEM_RECORD_SSID);
-    const chemSh = chemSS.getSheets()[0];
+    const chemSh = getChemRecordSheet_();
+    const chemSS = chemSh.getParent();
     const chemHdr = chemSh.getRange(1, 1, 1, chemSh.getLastColumn()).getValues()[0]
       .map(v => String(v || '').trim());
     // 헤더가 비어 있으면 부족한 자리에 폴백 이름 부여 (예: N열이 빈 상태면 '폐기 방법' 자동 매핑)
@@ -4152,8 +4533,8 @@ function getApplication(id, arg2) {
     assertCallRateLimit_('getApplication', 60, 60); // 분당 60회
   }
 
-  const ss = SpreadsheetApp.openById(MAIN_SSID);
-  const sh = ss.getSheets()[0];
+  const sh = getMainSheet_();
+  const ss = sh.getParent();
   const vals = sh.getDataRange().getValues();
   if (vals.length < 2) throw new Error('신청 데이터 시트가 비어있습니다.');
   const [hdr, ...rows] = vals;
@@ -4241,8 +4622,8 @@ function getApplication(id, arg2) {
     }
   } catch (_) { /* 집계 실패해도 본 조회에는 영향 없음 */ }
 
-  const chemSS = SpreadsheetApp.openById(CHEM_RECORD_SSID);
-  const chemSh = chemSS.getSheets()[0];
+  const chemSh = getChemRecordSheet_();
+  const chemSS = chemSh.getParent();
   const chemVals = chemSh.getDataRange().getValues();
   if (chemVals.length < 2) {
     rec.chemicals = [];
@@ -4262,8 +4643,8 @@ function applyTeacherGuidanceToChemicals_(appId, guidanceList) {
   if (!appId) return;
   if (!Array.isArray(guidanceList) || guidanceList.length === 0) return;
 
-  const ss = SpreadsheetApp.openById(CHEM_RECORD_SSID);
-  const sh = ss.getSheets()[0];
+  const sh = getChemRecordSheet_();
+  const ss = sh.getParent();
   const vals = sh.getDataRange().getValues();
   if (vals.length < 2) return;
 
@@ -4362,8 +4743,8 @@ function submitApproval_(info) {
   if (processOk !== 'Yes' && processOk !== 'No') throw new Error('실험과정, 뒷정리, 주의사항의 내용 적절 여부를 선택하세요.');
   if (decision === '반려' && !String(comment || '').trim()) throw new Error('반려 사유를 입력해주세요.');
 
-  const ss = SpreadsheetApp.openById(MAIN_SSID);
-  const sh = ss.getSheets()[0];
+  const sh = getMainSheet_();
+  const ss = sh.getParent();
   const { header, map } = getHeaderMap_(sh);
   const idCol = map['신청ID'];
   if (idCol == null) throw new Error('시트 헤더에 "신청ID" 열이 없습니다.');
@@ -4526,8 +4907,8 @@ function submitFinalApproval_(info) {
   if (decision !== '승인' && decision !== '반려') throw new Error('승인 또는 반려를 선택하세요.');
   if (decision === '반려' && !String(comment || '').trim()) throw new Error('반려 사유를 입력해주세요.');
 
-  const ss = SpreadsheetApp.openById(MAIN_SSID);
-  const sh = ss.getSheets()[0];
+  const sh = getMainSheet_();
+  const ss = sh.getParent();
   const { header, map } = getHeaderMap_(sh);
   const idCol = map['신청ID'];
   if (idCol == null) throw new Error('시트 헤더에 "신청ID" 열이 없습니다.');
@@ -4652,8 +5033,8 @@ function saveDraft(formData) {
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(10000)) throw new Error('임시저장 서버가 바쁩니다. 잠시 후 다시 시도해주세요.');
   try {
-    const ss = SpreadsheetApp.openById(DRAFT_SSID);
-    const sh = ss.getSheets()[0];
+    const sh = getDraftSheet_();
+    const ss = sh.getParent();
     const hdr = sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0];
     const idx = {
       id:   hdr.indexOf('초안ID'),
@@ -4729,8 +5110,8 @@ function loadDraft(studentId, studentName, dateYMD, formKey) {
   //   구버전 클라이언트(4번째 인자 없음)는 필터 없이 기존 동작 유지.
   const _wantKey = String(formKey || '').trim();
 
-  const ss = SpreadsheetApp.openById(DRAFT_SSID);
-  const sh = ss.getSheets()[0];
+  const sh = getDraftSheet_();
+  const ss = sh.getParent();
   const vals = sh.getDataRange().getValues();
   if (vals.length < 2) throw new Error('임시저장 데이터가 없습니다.');
   const hdr = vals[0];
@@ -4775,8 +5156,8 @@ function loadDraft(studentId, studentName, dateYMD, formKey) {
 function purgeOldDrafts() {
   const now = new Date();
   const threshold = new Date(now.getTime() - 30*24*60*60*1000);
-  const ss = SpreadsheetApp.openById(DRAFT_SSID);
-  const sh = ss.getSheets()[0];
+  const sh = getDraftSheet_();
+  const ss = sh.getParent();
   const vals = sh.getDataRange().getValues();
   if (vals.length < 2) return;
   const hdr = vals[0];
@@ -4827,8 +5208,8 @@ function getApprovedApplications(studentId, studentName) {
 
   assertOwnerOrStaff_(sid, 'getApprovedApplications');
 
-  const ss = SpreadsheetApp.openById(MAIN_SSID);
-  const sh = ss.getSheets()[0];
+  const sh = getMainSheet_();
+  const ss = sh.getParent();
   const vals = sh.getDataRange().getValues();
   const [hdr, ...rows] = vals;
 
@@ -5279,8 +5660,8 @@ function diagnosePendingFinalApproval_(labFilter) {
   const fmt = function(d) { return d instanceof Date ? Utilities.formatDate(d, tz, 'MM-dd HH:mm') : String(d || '-'); };
 
   // 1) MAIN 시트에서 1차 승인 완료 + 최종 대기 건 추출
-  const ss = SpreadsheetApp.openById(MAIN_SSID);
-  const sh = ss.getSheets()[0];
+  const sh = getMainSheet_();
+  const ss = sh.getParent();
   const vals = sh.getDataRange().getValues();
   const hdr = vals[0];
   const idxId = hdr.indexOf('신청ID');

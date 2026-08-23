@@ -4,7 +4,7 @@
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>과학 실험·실습실 사용 신청서(공학 Zone · Tech &amp; Art LAB)</title>
+  <title>과학 실험·실습실 사용 신청서(N동 공학 ZONE)</title>
   <style>
     :root {
       --primary: #e65100;
@@ -209,13 +209,14 @@
     .alert-info  { background: #e3f2fd; border-left: 4px solid #1565c0; color: #0d47a1; }
   </style>
   <?!= include('_security_guard') ?>
+<?!= include('_teacher_picker') ?>
 </head>
 <body>
 
   <div class="topbar">
     <div>
       <div class="topbar-title">🔬 과학 실험·실습실 사용 신청서</div>
-      <div class="topbar-subtitle">N동 공학 Zone · S동 3층 Tech &amp; Art LAB</div>
+      <div class="topbar-subtitle">N동 공학 ZONE (융합기술실 · 창의공학실 · 공작기계실 · FAB Lab)</div>
     </div>
     <div class="topbar-actions">
       <button type="button" class="topbar-btn" onclick="goBackToGateway()">🏠 홈</button>
@@ -324,14 +325,13 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label">사용 실습실 <span class="required">*</span> <span class="hint">복수 선택 가능</span></label>
+            <label class="form-label">사용 실습실 <span class="required">*</span> <span class="hint">1~4개 선택 가능</span></label>
             <div class="lab-rooms">
               <!-- [v3.58 / 5-1] 전 실습실 활성화 -->
               <label class="check-item"><input type="checkbox" name="labRoom" value="융합기술실" onchange="onLabRoomChange()"> 융합기술실</label>
               <label class="check-item"><input type="checkbox" name="labRoom" value="창의공학실" onchange="onLabRoomChange()"> 창의공학실</label>
               <label class="check-item"><input type="checkbox" name="labRoom" value="공작기계실" onchange="onLabRoomChange()"> 공작기계실</label>
               <label class="check-item"><input type="checkbox" name="labRoom" value="FAB Lab" onchange="onLabRoomChange()"> FAB Lab</label>
-              <label class="check-item"><input type="checkbox" name="labRoom" value="Tech &amp; Art LAB" onchange="onLabRoomChange()"> Tech &amp; Art LAB</label>
             </div>
           </div>
         </div>
@@ -373,7 +373,7 @@
 
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label" for="teacher">지도 선생님 <span class="required">*</span> <span class="hint" id="teacherHint">기술 선생님만 (Tech & Art LAB 선택 시 김원우 선생님)</span></label>
+              <label class="form-label" for="teacher">지도 선생님 <span class="required">*</span> <span class="hint" id="teacherHint">기술 선생님만</span></label>
               <select id="teacher" required onchange="onTeacherChange()">
                 <option value="">불러오는 중...</option>
               </select>
@@ -566,83 +566,28 @@
       onDateChange();
     }
 
-    /* ============== 지도교사 — 룸 선택에 따라 동적 필터 ============== */
-    //   • Tech & Art LAB 포함 선택 → 김원우 선생님만
-    //   • 그 외 공학존 룸만 선택   → 기술 선생님만
+    /* ============== 지도교사 ============== */
     var allTeachers = [];       // 서버에서 받은 전체 교사 목록 (필터 전)
     var teacherCache = [];      // 현재 룸 선택 기준으로 필터된 목록 (onTeacherChange 등 호환)
+    /* [2026-08] 지도교사 후보 판단은 서버 LAB_APPROVAL_POLICY_ 가 담당한다.
+         공학 ZONE 4실(융합기술실·창의공학실·공작기계실·FAB Lab) = 과목 '기술'.
+         Tech & Art LAB 은 지도교사 자격이 달라(과목 '물리(테크)') 별도 양식으로 분리됐다. */
     function loadTeachers() {
-      google.script.run
-        .withSuccessHandler(function(list) {
-          allTeachers = list || [];
-          renderTeacherOptions();
-        })
-        .withFailureHandler(function() {
-          // [v3.58] 실패 시 자동 재시도 (최대 3회) — 기존엔 학생이 원인도 모른 채 진행 불가였음
-          window.__teacherRetry__ = (window.__teacherRetry__ || 0) + 1;
-          if (window.__teacherRetry__ <= 3) {
-            document.getElementById('teacher').innerHTML = '<option value="">교사 목록 로드 실패 — 잠시 후 자동 재시도</option>';
-            setTimeout(loadTeachers, 3000);
-          } else {
-            document.getElementById('teacher').innerHTML = '<option value="">로드 실패 — 페이지를 새로고침해 주세요</option>';
-          }
-        })
-        .getTeacherList();
-    }
-    function renderTeacherOptions() {
-      var sel = document.getElementById('teacher');
-      if (!sel) return;
-      var labRooms = Array.from(document.querySelectorAll('input[name="labRoom"]:checked')).map(function(c){return c.value;});
-      var includesTechArt = labRooms.indexOf('Tech & Art LAB') !== -1;
-
-      var filtered;
-      var hintText;
-      if (includesTechArt) {
-        filtered = allTeachers.filter(function(t) {
-          return String(t.name || '').indexOf('김원우') !== -1;
-        });
-        hintText = 'Tech & Art LAB은 김원우 선생님만 지정 가능';
-      } else {
-        filtered = allTeachers.filter(function(t) {
-          // [검토반영] NEW_LAB_CONFIG.engineering.subjectFilter = '공학·기술·물리'
-          //   기존엔 '기술'만 걸러 물리·공학 교사를 지도교사로 선택할 수 없었음.
-          return /(공학|기술|물리)/.test(String(t.subject || ''));
-        });
-        hintText = '공학·기술·물리 선생님만 (Tech & Art LAB 선택 시 김원우 선생님)';
-      }
-      // [v3.58 / 7-5] 테스트용 '홍권능 항상 포함' 블록 제거 —
-      //   학생이 실습실·과목과 무관한 교사를 지도교사로 선택할 수 있던 문제.
-      teacherCache = filtered;
-
-      var prev = sel.value;
-      sel.innerHTML = '<option value="">선택</option>';
-      filtered.forEach(function(t) {
-        var opt = document.createElement('option');
-        opt.value = t.name;
-        opt.textContent = t.name + (t.subject ? ' (' + t.subject + ')' : '');
-        sel.appendChild(opt);
-      });
-      // 기존 선택이 필터 후에도 유효하면 유지, 아니면 초기화
-      if (prev && filtered.some(function(t){ return t.name === prev; })) {
-        sel.value = prev;
-      } else {
-        sel.value = '';
-        var emailEl = document.getElementById('teacherEmail');
-        if (emailEl) emailEl.value = '';
-      }
-
-      var hintEl = document.getElementById('teacherHint');
-      if (hintEl) hintEl.textContent = hintText;
-
-      // [v3.58 / 7-7] 불러오기가 목록 로드보다 먼저 실행된 경우 지도교사 재적용
-      if (window.__pendingTeacher__ && !sel.value) {
-        sel.value = window.__pendingTeacher__;
-        if (sel.value) {
-          window.__pendingTeacher__ = '';
+      var rooms = Array.from(document.querySelectorAll('input[name="labRoom"]:checked'))
+        .map(function(c){ return c.value; });
+      loadEligibleTeachers({
+        selectId: 'teacher',
+        emailId: 'teacherEmail',
+        hintId: 'teacherHint',
+        labs: rooms,
+        showSubject: true,
+        onLoaded: function (list) {
+          teacherCache = list;
           if (typeof onTeacherChange === 'function') onTeacherChange();
         }
-      }
+      });
     }
+    function renderTeacherOptions() { loadTeachers(); }
     function onLabRoomChange() {
       renderTeacherOptions();
     }

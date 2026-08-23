@@ -526,7 +526,10 @@ var SHEET_CAT_MAP = {
   'IT실': 'it',
   '가정실습실': 'home',
   'N동 공학 Zone': 'engineering',
+  'N동 공학 ZONE': 'engineering',
+  // [2026-08] Tech & Art LAB 분리 전 기존 기록도 계속 공학으로 조회
   'N동 공학 ZONE, Tech & Art LAB': 'engineering',
+  'Tech & Art LAB': 'techart',
   'S동 1층': 'floor1',
   'S동 2층': 'floor2'
 };
@@ -534,14 +537,14 @@ function formCategoryOf(app) {
   var raw = String(app && app['양식종류'] || '').trim();
   if (SHEET_CAT_MAP[raw]) return SHEET_CAT_MAP[raw];
   var lower = raw.toLowerCase();
-  if (lower === 'it' || lower === 'home' || lower === 'engineering' || lower === 'floor1' || lower === 'floor2') return lower;
+  if (lower === 'it' || lower === 'home' || lower === 'engineering' || lower === 'techart' || lower === 'floor1' || lower === 'floor2') return lower;
   var lab = String(app && app['신청실험실'] || '');
   if (/물리|파동|AP\s?Lab/i.test(lab)) return 'floor2';
   return 'floor1';
 }
 function isNewLabApp(app) {
   var c = formCategoryOf(app);
-  return c === 'it' || c === 'home' || c === 'engineering';
+  return c === 'it' || c === 'home' || c === 'engineering' || c === 'techart';
 }
 function hasChemSection(app) {
   var c = formCategoryOf(app);
@@ -554,7 +557,8 @@ function mLabBadge(app) {
     floor2:      { label: '2층', bg: '#e8f5e9', fg: '#2e7d32' },
     it:          { label: 'IT',   bg: '#f3e5f5', fg: '#7b1fa2' },
     home:        { label: '가정', bg: '#fce4ec', fg: '#c2185b' },
-    engineering: { label: '공학', bg: '#fff3e0', fg: '#e65100' }
+    engineering: { label: '공학', bg: '#fff3e0', fg: '#e65100' },
+    techart:     { label: 'Tech&Art', bg: '#ede7f6', fg: '#4527a0' }
   };
   var c = styles[cat] || styles.floor1;
   return '<span style="display:inline-block;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700;background:' +
@@ -879,7 +883,7 @@ if (typeof SPA_MODE === 'undefined') window.addEventListener('load', adminInit);
 // [v4] 신청서 NEW_LAB_CONFIG 와 일치하는 표준 16개 룸 (지도일지 모달용)
 var M_LAB_OPTIONS = ['화학실험실','생물실험실','프로젝트실험실','첨단기기실험실','오픈랩',
   '물리실험실','파동광학실험실','AP Lab',
-  '컴퓨터실','코딩실','멀티미디어실',
+  'IT 공학실','컴퓨터실','코딩실','멀티미디어실',
   '가정실습실',
   '융합기술실','창의공학실','공작기계실','FAB Lab','Tech & Art LAB'];
 

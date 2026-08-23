@@ -109,6 +109,11 @@
       background: #fff3e0;
       color: #e65100;
     }
+    /* [2026-08] Tech & Art LAB — 공학 ZONE 에서 분리된 별도 카드 */
+    .card.techart .floor-badge {
+      background: #ede7f6;
+      color: #4527a0;
+    }
     /* (legacy 호환 — 더 이상 사용하지 않지만 빠른 롤백을 위해 보존) */
     .card.coming-soon .floor-badge {
       background: #f3e5f5;
@@ -192,6 +197,9 @@
     }
     .card.engineering .btn {
       background: linear-gradient(135deg, #e65100, #ff9800);
+    }
+    .card.techart .btn {
+      background: linear-gradient(135deg, #4527a0, #7e57c2);
     }
     /* (legacy 호환) */
     .card.coming-soon .btn {
@@ -364,28 +372,45 @@
       <div class="card-header">
         <div class="floor-badge">S동 2층</div>
         <h2>IT 관련 실습실</h2>
-        <div class="subtitle">컴퓨터 · 코딩 계열 실습실</div>
+        <div class="subtitle">IT 공학 · 코딩 계열 실습실</div>
       </div>
       <div class="lab-list">
         <div class="lab-label">신청 가능 실습실</div>
-        <div class="lab-names"><span class="lab-name">컴퓨터실</span><span class="separator"> · </span><span class="lab-name">코딩실</span></div>
+        <div class="lab-names"><span class="lab-name">IT 공학실</span><span class="separator"> · </span><span class="lab-name">코딩실</span></div>
       </div>
       <div class="card-action">
         <div class="btn">신청하기 →</div>
       </div>
     </div>
 
-    <!-- N동 공학 ZONE + Tech & Art LAB -->
-    <!-- [v3.58 / 5-1] 전 실습실 활성화 (기존: Tech & Art LAB만 선택 가능) -->
-    <div class="card engineering" role="button" tabindex="0" aria-label="N동 공학 Zone 및 Tech &amp; Art LAB 신청 페이지로 이동" onclick="goToForm('form_engineering', event)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
+    <!-- N동 공학 ZONE -->
+    <!-- [2026-08] Tech & Art LAB 을 별도 카드로 분리 — 지도교사 자격이 서로 다름
+         (공학 ZONE = 기술 / Tech & Art LAB = 물리(테크)) -->
+    <div class="card engineering" role="button" tabindex="0" aria-label="N동 공학 ZONE 신청 페이지로 이동" onclick="goToForm('form_engineering', event)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
       <div class="card-header">
-        <div class="floor-badge">N동 · S동 3층</div>
-        <h2>공학 Zone · Tech &amp; Art LAB</h2>
+        <div class="floor-badge">N동</div>
+        <h2>공학 ZONE</h2>
         <div class="subtitle">공학 · 기술 계열 실습실</div>
       </div>
       <div class="lab-list">
+        <div class="lab-label">신청 가능 실습실 <span style="font-weight:400">(1~4개 선택)</span></div>
+        <div class="lab-names"><span class="lab-name">융합기술실</span><span class="separator"> · </span><span class="lab-name">창의공학실</span><span class="separator"> · </span><span class="lab-name">공작기계실</span><span class="separator"> · </span><span class="lab-name">FAB Lab</span></div>
+      </div>
+      <div class="card-action">
+        <div class="btn">신청하기 →</div>
+      </div>
+    </div>
+
+    <!-- S동 3층 Tech & Art LAB -->
+    <div class="card techart" role="button" tabindex="0" aria-label="Tech &amp; Art LAB 신청 페이지로 이동" onclick="goToForm('form_techart', event)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
+      <div class="card-header">
+        <div class="floor-badge">S동 3층</div>
+        <h2>Tech &amp; Art LAB</h2>
+        <div class="subtitle">기술 · 예술 융합 실습실</div>
+      </div>
+      <div class="lab-list">
         <div class="lab-label">신청 가능 실습실</div>
-        <div class="lab-names"><span class="lab-name">융합기술실</span><span class="separator"> · </span><span class="lab-name">창의공학실</span><span class="separator"> · </span><span class="lab-name">공작기계실</span><span class="separator"> · </span><span class="lab-name">FAB Lab</span><span class="separator"> · </span><span class="lab-name">Tech &amp; Art LAB</span></div>
+        <div class="lab-names"><span class="lab-name">Tech &amp; Art LAB</span></div>
       </div>
       <div class="card-action">
         <div class="btn">신청하기 →</div>

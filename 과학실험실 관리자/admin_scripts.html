@@ -41,7 +41,7 @@ const filters = {
 // [v4] 신규 양식(IT/가정/공학) 룸 7개 추가 — 신청서 NEW_LAB_CONFIG 와 일치
 const LAB_OPTIONS = ['화학실험실','생물실험실','프로젝트실험실','첨단기기실험실','오픈랩',
                      '물리실험실','파동광학실험실','AP Lab',
-                     '컴퓨터실','코딩실','멀티미디어실',
+                     'IT 공학실','컴퓨터실','코딩실','멀티미디어실',
                      '가정실습실',
                      '융합기술실','창의공학실','공작기계실','FAB Lab','Tech & Art LAB'];
 
@@ -617,7 +617,10 @@ const SHEET_CAT_MAP = {
   'IT실': 'it',
   '가정실습실': 'home',
   'N동 공학 Zone': 'engineering',
+  'N동 공학 ZONE': 'engineering',
+  // [2026-08] Tech & Art LAB 분리 전 기존 기록도 계속 공학으로 조회
   'N동 공학 ZONE, Tech & Art LAB': 'engineering',
+  'Tech & Art LAB': 'techart',
   'S동 1층': 'floor1',
   'S동 2층': 'floor2'
 };
@@ -626,7 +629,7 @@ function formCategoryOf(app) {
   if (SHEET_CAT_MAP[raw]) return SHEET_CAT_MAP[raw];
   // 옛 데이터 호환 — 직접 영문 코드가 들어있는 경우
   const lower = raw.toLowerCase();
-  if (lower === 'it' || lower === 'home' || lower === 'engineering' || lower === 'floor1' || lower === 'floor2') return lower;
+  if (lower === 'it' || lower === 'home' || lower === 'engineering' || lower === 'techart' || lower === 'floor1' || lower === 'floor2') return lower;
   // 양식종류 빈 값(마이그레이션 미실행 v1 데이터) — 신청실험실 이름으로 추정
   const lab = String(app && app['신청실험실'] || '');
   if (/물리|파동|AP\s?Lab/i.test(lab)) return 'floor2';
@@ -634,7 +637,7 @@ function formCategoryOf(app) {
 }
 function isNewLabApp(app) {
   const c = formCategoryOf(app);
-  return c === 'it' || c === 'home' || c === 'engineering';
+  return c === 'it' || c === 'home' || c === 'engineering' || c === 'techart';
 }
 function hasChemSection(app) {
   const c = formCategoryOf(app);
@@ -647,14 +650,15 @@ function labCategoryBadge(app) {
     floor2:      { label: '2층', bg: '#e8f5e9', fg: '#2e7d32' },
     it:          { label: 'IT',   bg: '#f3e5f5', fg: '#7b1fa2' },
     home:        { label: '가정', bg: '#fce4ec', fg: '#c2185b' },
-    engineering: { label: '공학', bg: '#fff3e0', fg: '#e65100' }
+    engineering: { label: '공학', bg: '#fff3e0', fg: '#e65100' },
+    techart:     { label: 'Tech&Art', bg: '#ede7f6', fg: '#4527a0' }
   };
   const c = map[cat] || map.floor1;
   return `<span style="display:inline-block;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700;background:${c.bg};color:${c.fg};margin-right:6px;vertical-align:middle">${c.label}</span>`;
 }
 // [v2] 검색·필터에서 사용자가 입력하는 한글 라벨로 양식 종류 매핑 (예: "IT", "가정", "공학", "1층", "2층")
 function labelOfFormCategory(app) {
-  const KO = { floor1: '1층', floor2: '2층', it: 'IT', home: '가정', engineering: '공학' };
+  const KO = { floor1: '1층', floor2: '2층', it: 'IT', home: '가정', engineering: '공학', techart: 'Tech&Art' };
   return KO[formCategoryOf(app)] || '';
 }
 function parseRecipeJson(raw) {

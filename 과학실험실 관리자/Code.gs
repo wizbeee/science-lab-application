@@ -1260,7 +1260,11 @@ const SHEET_CAT_MAP_ = {
   'IT실': 'it',
   '가정실습실': 'home',
   'N동 공학 Zone': 'engineering',
+  'N동 공학 ZONE': 'engineering',
+  // [2026-08] Tech & Art LAB 을 별도 양식으로 분리하기 전의 기존 신청 기록.
+  //   옛 저장값도 계속 공학으로 조회되도록 남겨 둔다.
   'N동 공학 ZONE, Tech & Art LAB': 'engineering',
+  'Tech & Art LAB': 'techart',
   'S동 1층': 'floor1',
   'S동 2층': 'floor2'
 };
@@ -1269,7 +1273,8 @@ function categoryOf_(app) {
   const raw = String(app['양식종류'] || '').trim();
   if (SHEET_CAT_MAP_[raw]) return SHEET_CAT_MAP_[raw];
   const lower = raw.toLowerCase();
-  if (lower === 'it' || lower === 'home' || lower === 'engineering' || lower === 'floor1' || lower === 'floor2') return lower;
+  if (lower === 'it' || lower === 'home' || lower === 'engineering' || lower === 'techart' ||
+      lower === 'floor1' || lower === 'floor2') return lower;
   if (/물리|파동|AP\s?Lab/i.test(String(app['신청실험실'] || ''))) return 'floor2';
   return 'floor1';
 }
@@ -1280,14 +1285,14 @@ function categoryOf_(app) {
  */
 function isNewLab_(app) {
   const c = categoryOf_(app);
-  return c === 'it' || c === 'home' || c === 'engineering';
+  return c === 'it' || c === 'home' || c === 'engineering' || c === 'techart';
 }
 
 /**
  * 신청을 사용자가 인지하는 한글 양식 라벨로 변환 (검색·필터·표시용).
  */
 function labelForFormCategory_(app) {
-  const KO = { it: 'IT', home: '가정', engineering: '공학', floor1: '1층', floor2: '2층' };
+  const KO = { it: 'IT', home: '가정', engineering: '공학', techart: 'Tech&Art', floor1: '1층', floor2: '2층' };
   return KO[categoryOf_(app)] || '';
 }
 
@@ -2078,6 +2083,18 @@ function approveWithDuplicateCheck(appId, approvalType) {
       '지도승인여부': String(app['지도승인여부'] || ''),
       '최종승인여부': String(app['최종승인여부'] || '')
     };
+
+    // ★ [2026-08] 단일 승인 양식 승격 가드 — forceApprove 에만 있고 여기엔 빠져 있었다.
+    //   IT·가정·공학·Tech & Art 양식은 1차 승인 단계 자체가 없다. 그런데도 '1차승인'
+    //   요청이 들어오면 존재하지 않는 상태가 기록되고, 메일 발송기의 신규 양식 가드가
+    //   1차 메일을 막아 학생·교사 누구도 통지를 받지 못한 채 미승인으로 방치됐다.
+    //   지금은 PC·모바일 화면이 1차승인 선택지를 주지 않아 발생하지 않지만,
+    //   화면 두 곳이 유일한 방어선이었으므로 서버에서도 동일하게 승격한다.
+    if (approvalType === '1차승인' && isNewLab_(app)) {
+      Logger.log('[approveWithDuplicateCheck] 단일 승인 양식 — 1차승인 요청을 최종승인으로 승격: ' + appId);
+      approvalType = '최종승인';
+    }
+
     const updates = {};
     if (approvalType === '1차승인') {
       updates['지도승인여부'] = '승인';
@@ -4094,7 +4111,7 @@ function _adm_normalizeDateYMD_(v) {
 const _ADM_CANONICAL_LABS = [
   '화학실험실', '생물실험실', '프로젝트실험실', '첨단기기실험실', '오픈랩',
   '물리실험실', '파동광학실험실', 'AP Lab', 'Tech & Art LAB',
-  '컴퓨터실', '코딩실', '멀티미디어실', '가정실습실',
+  'IT 공학실', '컴퓨터실', '코딩실', '멀티미디어실', '가정실습실',   // '컴퓨터실'은 개명 전 기록 조회용으로 유지
   '융합기술실', '창의공학실', '공작기계실', 'FAB Lab'
 ];
 const _ADM_LAB_ALIASES = {
@@ -4111,7 +4128,10 @@ const _ADM_LAB_ALIASES = {
   '테크아트':'Tech & Art LAB','테크앤아트':'Tech & Art LAB',
   'techart실험실':'Tech & Art LAB','tech&art실험실':'Tech & Art LAB',
   '테크아트실험실':'Tech & Art LAB','테크앤아트실험실':'Tech & Art LAB',
-  '컴퓨터':'컴퓨터실','computer':'컴퓨터실',
+  // [2026-08] '컴퓨터실' → 'IT 공학실' 개명. 옛 이름·약칭 모두 신 이름으로 정규화해
+  //   신청서 GAS 와 키 집합을 맞춘다(담당교사 매칭·캘린더 차단이 어긋나지 않도록).
+  '컴퓨터':'IT 공학실','computer':'IT 공학실','컴퓨터실':'IT 공학실',
+  'it공학실':'IT 공학실','it 공학실':'IT 공학실','it공학':'IT 공학실',
   // [v4.18/S8] 멀티미디어실은 컴퓨터실의 옛 이름이 아니라 별개의 독립 실습실 —
   //   기존 '멀티미디어실→컴퓨터실' 별칭 제거(두 실의 중복 예약·담당 매칭이 섞이던 문제)
   '멀티미디어':'멀티미디어실','멀티':'멀티미디어실','multimedia':'멀티미디어실',

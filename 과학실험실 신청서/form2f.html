@@ -617,9 +617,7 @@
       return !!(p7 && p7.checked) && onlySeventh && purpose==='동아리 활동' && isTuesday(dateStr);
     }
 
-    let allTeachers = [];
-    function teachersBySubject(subj){ return (allTeachers||[]).filter(t=>t.subject===subj); }
-    function dedupeTeachers(list){ const seen=new Map(); list.forEach(t=>{ const key=`${t.name}||${t.email||''}`; if(!seen.has(key)) seen.set(key,t); }); return Array.from(seen.values()); }
+    /* [2026-08] 과목 완전일치 필터 제거 — 서버 LAB_APPROVAL_POLICY_ 로 일원화. */
     function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
     function initApp(){
@@ -631,23 +629,9 @@
         });
       }
 
-      // [v3.58 / 7-7] 교사 목록 실패 시 자동 재시도 (최대 3회)
-      function fetchTeachers_() {
-        google.script.run.withSuccessHandler(list => {
-          allTeachers = list;
-          loadTeachers(teachersBySubject('물리'));
-        }).withFailureHandler(function() {
-          window.__teacherRetry__ = (window.__teacherRetry__ || 0) + 1;
-          const sel = document.getElementById('teacher');
-          if (window.__teacherRetry__ <= 3) {
-            if (sel) sel.innerHTML = '<option value="">교사 목록 로드 실패 — 잠시 후 자동 재시도</option>';
-            setTimeout(fetchTeachers_, 3000);
-          } else {
-            if (sel) sel.innerHTML = '<option value="">로드 실패 — 페이지를 새로고침해 주세요</option>';
-          }
-        }).getTeacherList();
-      }
-      fetchTeachers_();
+      // [2026-08] 지도교사 후보는 서버 정책(LAB_APPROVAL_POLICY_)이 판단한다.
+      recomputeTeacherOptions();
+      bindTeacherEmailSync('teacher', 'teacherEmail');
 
       google.script.run.withSuccessHandler(list => { restrictedIds = Array.isArray(list) ? list.slice() : []; }).getRestrictedList();
 
@@ -690,42 +674,20 @@
       if (typeof initCalendarWidget === 'function') initCalendarWidget('#date');
     });
 
-    function loadTeachers(list) {
-      // ★ TEST: 테스트용 — 본인(홍권능)을 모든 호출에 항상 포함. 테스트 끝나면 이 블록만 제거.
-      const TEST_ALWAYS_NAME = '홍권능';
-      if (Array.isArray(allTeachers) && allTeachers.length) {
-        const me = allTeachers.find(t => t && t.name === TEST_ALWAYS_NAME);
-        if (me && !(list || []).some(t => t && t.name === TEST_ALWAYS_NAME)) {
-          list = [...(list || []), me];
-        }
-      }
-      // ★ END TEST
 
-      const sel = document.getElementById('teacher');
-      sel.innerHTML = '<option value="">선택</option>';
-      list.forEach(item => {
-        const o = document.createElement('option');
-        o.value = item.name; o.textContent = item.name; o.dataset.email = item.email || '';
-        sel.appendChild(o);
-      });
-      sel.selectedIndex = 0;
-      sel.onchange = e => {
-        document.getElementById('teacherEmail').value = e.target.selectedOptions[0]?.dataset.email || '';
-      };
-    }
-
+    /* [2026-08] S동 2층(물리실험실·파동광학실험실·AP Lab)은 사용목적과 무관하게
+         물리 교사만 지도교사가 된다. 과목이 '물리(테크)'인 교사도 포함된다
+         (서버 SUBJECT_ALIASES_ 가 '물리(테크)' → 물리 자격까지 확장).
+       기존에는 동아리 활동이면 화학·생명과학까지 열려 있었으나 정책상 제외한다. */
     function recomputeTeacherOptions() {
-      const purpose = (document.getElementById('purpose')?.value || '').trim();
-      const labVal  = (document.getElementById('lab')?.value  || '').trim();
-
-      const physics = teachersBySubject('물리');
-      const chem    = teachersBySubject('화학');
-      const bio     = teachersBySubject('생명과학');
-
-      const isClubPurpose = (purpose === '동아리' || purpose === '동아리 활동' || purpose.includes('동아리'));
-      if (isClubPurpose) { loadTeachers(dedupeTeachers([...physics, ...chem, ...bio])); return; }
-
-      loadTeachers(physics);
+      const labVal = (document.getElementById('lab')?.value || '').trim();
+      loadEligibleTeachers({
+        selectId: 'teacher',
+        emailId: 'teacherEmail',
+        hintId: 'teacherHint',
+        labs: labVal ? [labVal] : [],
+        purpose: ''
+      });
     }
 
     function resetTimeLabelsOnly() {
@@ -1642,6 +1604,7 @@
     }
   </script>
   <?!= include('_security_guard') ?>
+<?!= include('_teacher_picker') ?>
 </head>
 <body>
   <div id="overlayBlock">

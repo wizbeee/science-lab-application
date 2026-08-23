@@ -671,13 +671,13 @@
       return !!(p7 && p7.checked) && onlySeventh && purpose==='동아리 활동' && isTuesday(dateStr);
     }
 
-    let chemicalDB = [], allTeachers = [];
+    let chemicalDB = [];
     const MAX_CHEMICALS = 20;
 
     let validatedOk = false, cooldownTimer = null, cooldownRemain = 0;
 
-    function teachersBySubject(subj){ return (allTeachers||[]).filter(t=>t.subject===subj); }
-    function dedupeTeachers(list){ const seen=new Map(); list.forEach(t=>{ const key=`${t.name}||${t.email||''}`; if(!seen.has(key)) seen.set(key,t); }); return Array.from(seen.values()); }
+    /* [2026-08] 과목 완전일치 필터(teachersBySubject)·중복 제거(dedupeTeachers) 제거.
+       지도교사 후보 판단은 서버 LAB_APPROVAL_POLICY_ 로 일원화됐다. */
     function getC1(obj){ return (obj.class1 || obj['분류1'] || obj.state || '').trim(); }
     /* === 통일된 시약 상태 판별 함수 === */
     const RE_SOLID = /고체|분말|결정|시약병|pellet|powder/i;
@@ -865,22 +865,12 @@ if (document.readyState === 'loading') {
 
       // [v3.58 / 7-7] 교사 목록 실패 시 자동 재시도 (최대 3회) — 기존엔 실패 핸들러가
       // 없어 드롭다운이 빈 채로 남고 학생이 원인도 모른 채 진행 불가였음.
-      function fetchTeachers_() {
-        google.script.run.withSuccessHandler(list => {
-          allTeachers = list;
-          loadTeachers([]); recomputeTeacherOptions(); enforceAdvancedLabByLab(document.getElementById('lab')?.value);
-        }).withFailureHandler(function() {
-          window.__teacherRetry__ = (window.__teacherRetry__ || 0) + 1;
-          const sel = document.getElementById('teacher');
-          if (window.__teacherRetry__ <= 3) {
-            if (sel) sel.innerHTML = '<option value="">교사 목록 로드 실패 — 잠시 후 자동 재시도</option>';
-            setTimeout(fetchTeachers_, 3000);
-          } else {
-            if (sel) sel.innerHTML = '<option value="">로드 실패 — 페이지를 새로고침해 주세요</option>';
-          }
-        }).getTeacherList();
-      }
-      fetchTeachers_();
+      // [2026-08] 지도교사 후보 판단은 서버 LAB_APPROVAL_POLICY_ 가 담당한다.
+      //   실습실·사용목적이 바뀔 때마다 recomputeTeacherOptions() 가 다시 조회하므로
+      //   여기서 전체 교사 목록을 미리 받아둘 필요가 없다.
+      recomputeTeacherOptions();
+      enforceAdvancedLabByLab(document.getElementById('lab')?.value);
+      bindTeacherEmailSync('teacher', 'teacherEmail');
 
       google.script.run.withSuccessHandler(list => { restrictedIds = Array.isArray(list) ? list.slice() : []; }).getRestrictedList();
 
@@ -931,21 +921,6 @@ if (document.readyState === 'loading') {
       if (typeof initCalendarWidget === 'function') initCalendarWidget('#date');
     });
 
-    function loadTeachers(list) {
-      // [v3.58 / 7-5] 테스트용 '홍권능 항상 포함' 블록 제거
-
-      const sel = document.getElementById('teacher');
-      sel.innerHTML = '<option value="">선택</option>';
-      list.forEach(item => {
-        const o = document.createElement('option');
-        o.value = item.name; o.textContent = item.name; o.dataset.email = item.email || '';
-        sel.appendChild(o);
-      });
-      sel.selectedIndex = 0;
-      sel.onchange = e => {
-        document.getElementById('teacherEmail').value = e.target.selectedOptions[0]?.dataset.email || '';
-      };
-    }
 
     function enforceAdvancedLabByLab(labVal) {
       const advSel   = document.getElementById('advancedLab');
@@ -964,23 +939,20 @@ if (document.readyState === 'loading') {
       }
     }
 
+    /* [2026-08] 실습실·사용목적 → 지도교사 후보. 판단 기준은 서버 한 곳에만 있다.
+         화학실험실=화학 / 생물실험실=생명과학 / 프로젝트·첨단기기·오픈랩=화학+생명과학,
+         사용목적이 '동아리 활동'이면 화학+생명과학 공통.
+       규칙을 바꾸려면 Code.gs 의 LAB_APPROVAL_POLICY_ 만 고치면 된다. */
     function recomputeTeacherOptions() {
       const purpose = (document.getElementById('purpose')?.value || '').trim();
       const labVal  = (document.getElementById('lab')?.value  || '').trim();
-
-      const chem = teachersBySubject('화학');
-      const bio  = teachersBySubject('생명과학');
-
-      const isClubPurpose = (purpose === '동아리' || purpose === '동아리 활동' || purpose.includes('동아리'));
-      if (isClubPurpose) { loadTeachers(dedupeTeachers([...chem, ...bio])); return; }
-
-      const isOpenGroupLab = (labVal === '프로젝트실험실' || labVal === '첨단기기실험실' || labVal === '오픈랩');
-      if (isOpenGroupLab) { loadTeachers(dedupeTeachers([...chem, ...bio])); return; }
-
-      if (!labVal) { loadTeachers([]); return; }
-      if (labVal === '화학실험실')      loadTeachers(chem);
-      else if (labVal === '생물실험실') loadTeachers(bio);
-      else loadTeachers([]);
+      loadEligibleTeachers({
+        selectId: 'teacher',
+        emailId: 'teacherEmail',
+        hintId: 'teacherHint',
+        labs: labVal ? [labVal] : [],
+        purpose: purpose
+      });
     }
 
     function resetTimeLabelsOnly() {
@@ -2501,6 +2473,7 @@ if (document.readyState === 'loading') {
     }
   </script>
   <?!= include('_security_guard') ?>
+<?!= include('_teacher_picker') ?>
 </head>
 <body>
   <div id="overlayBlock">

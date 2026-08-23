@@ -245,6 +245,7 @@
     .alert-info  { background: #e3f2fd; border-left: 4px solid #1565c0; color: #0d47a1; }
   </style>
   <?!= include('_security_guard') ?>
+<?!= include('_teacher_picker') ?>
 </head>
 <body>
 
@@ -428,7 +429,7 @@
 
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label" for="teacher">지도 선생님 <span class="required">*</span> <span class="hint">가정 선생님만</span></label>
+              <label class="form-label" for="teacher">지도 선생님 <span class="required">*</span> <span class="hint" id="teacherHint">가정 선생님만</span></label>
               <select id="teacher" required onchange="onTeacherChange()">
                 <option value="">불러오는 중...</option>
               </select>
@@ -651,43 +652,20 @@
 
     /* ============== 지도교사 ============== */
     var teacherCache = [];
+    /* [2026-08] 지도교사 후보 판단은 서버 LAB_APPROVAL_POLICY_ 가 담당한다.
+         가정실습실 = 과목 '가정'. 규칙은 Code.gs 한 곳에만 있다. */
     function loadTeachers() {
-      google.script.run
-        .withSuccessHandler(function(list) {
-          var rawList = list || [];
-          teacherCache = rawList.filter(function(t) {
-            var subj = String(t.subject || '');
-            return subj.indexOf('가정') !== -1;
-          });
-          // [v3.58 / 7-5] 테스트용 '홍권능 항상 포함' 블록 제거
-          var sel = document.getElementById('teacher');
-          sel.innerHTML = '<option value="">선택</option>';
-          teacherCache.forEach(function(t) {
-            var opt = document.createElement('option');
-            opt.value = t.name;
-            opt.textContent = t.name + (t.subject ? ' (' + t.subject + ')' : '');
-            sel.appendChild(opt);
-          });
-          // [v3.58 / 7-7] 불러오기가 목록 로드보다 먼저 실행된 경우 지도교사 재적용
-          if (window.__pendingTeacher__) {
-            sel.value = window.__pendingTeacher__;
-            if (sel.value) {
-              window.__pendingTeacher__ = '';
-              if (typeof onTeacherChange === 'function') onTeacherChange();
-            }
-          }
-        })
-        .withFailureHandler(function() {
-          // [v3.58] 실패 시 자동 재시도 (최대 3회)
-          window.__teacherRetry__ = (window.__teacherRetry__ || 0) + 1;
-          if (window.__teacherRetry__ <= 3) {
-            document.getElementById('teacher').innerHTML = '<option value="">교사 목록 로드 실패 — 잠시 후 자동 재시도</option>';
-            setTimeout(loadTeachers, 3000);
-          } else {
-            document.getElementById('teacher').innerHTML = '<option value="">로드 실패 — 페이지를 새로고침해 주세요</option>';
-          }
-        })
-        .getTeacherList();
+      loadEligibleTeachers({
+        selectId: 'teacher',
+        emailId: 'teacherEmail',
+        hintId: 'teacherHint',
+        labs: ['가정실습실'],
+        showSubject: true,
+        onLoaded: function (list) {
+          teacherCache = list;
+          if (typeof onTeacherChange === 'function') onTeacherChange();
+        }
+      });
     }
     function onTeacherChange() {
       var name = document.getElementById('teacher').value;

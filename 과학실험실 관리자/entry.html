@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>과학 실험·실습실 사용 신청 관리 시스템</title>
+  <script>
+  // 모바일 기기 감지 (관리자 진입 시 ?platform=mobile 부착용)
+  window.__IS_MOBILE_UA = (function(){
+    try {
+      var params = new URLSearchParams(window.location.search);
+      var forced = (params.get('platform') || '').toLowerCase();
+      if (forced === 'desktop') return false;
+      if (forced === 'mobile')  return true;
+      var ua = navigator.userAgent || '';
+      var isPhoneUA  = /Mobi|iPhone|iPod|Android.*Mobile|IEMobile|Opera Mini|BlackBerry|Windows Phone/i.test(ua);
+      var isTabletUA = /iPad|Tablet|Nexus 7|Nexus 10|Kindle|Silk|PlayBook/i.test(ua);
+      var isiPadLike = !!(navigator.maxTouchPoints && navigator.maxTouchPoints > 1 && /Macintosh/i.test(ua));
+      if (isTabletUA || isiPadLike) return false;
+      if (isPhoneUA) return true;
+      var smallScreen = typeof window.innerWidth === 'number' && window.innerWidth > 0 && window.innerWidth < 768;
+      return smallScreen;
+    } catch (e) { return false; }
+  })();
+  </script>
+  <style>
+    :root{
+      --bg:#f6f7fb; --fg:#111; --muted:#6b7280; --card:#ffffff;
+      --primary:#2563eb; --primary-600:#1d4ed8; --danger:#dc2626;
+      --success:#16a34a;
+      --border:#e5e7eb;
+    }
+    [data-theme="dark"]{
+      --bg:#1a1a2e; --fg:#e4e4e7; --muted:#a1a1aa; --card:#16213e;
+      --primary:#3b82f6; --primary-600:#2563eb; --danger:#ef4444;
+      --success:#22c55e;
+      --border:#374151;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:var(--bg); color:var(--fg); padding:20px;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,Noto Sans KR,sans-serif;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .card{
+      width:min(560px, 92vw); background:var(--card); border:1px solid var(--border);
+      border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.06);
+      padding:36px 28px; text-align:center; position:relative;
+    }
+    h1{margin:0 0 8px; font-size:1.55rem;}
+    .sub{margin:0 0 24px; color:var(--muted); font-size:0.95rem;}
+    .status-icon{font-size:64px; margin:8px 0 14px;}
+    .status-title{font-size:1.3rem; font-weight:700; margin:0 0 8px;}
+    .status-detail{color:var(--muted); font-size:0.95rem; line-height:1.6; margin:0 0 16px;}
+    .role-badge{
+      display:inline-block; padding:5px 14px; border-radius:999px;
+      background:#dcfce7; color:#166534; font-size:0.85rem; font-weight:700;
+      margin:6px 0 14px;
+    }
+    [data-theme="dark"] .role-badge{ background:#14532d; color:#86efac; }
+    .progress-msg{ color:var(--muted); font-size:0.9rem; margin-top:14px; }
+    .spinner{
+      display:inline-block; width:32px; height:32px; border:3px solid var(--border);
+      border-top-color:var(--primary); border-radius:50%;
+      animation:spin 0.9s linear infinite; margin:16px 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .denied{ color:var(--danger); }
+    .denied-detail{
+      background:#fee2e2; border-left:4px solid #dc2626;
+      padding:12px 16px; border-radius:8px; text-align:left;
+      font-size:0.88rem; color:#7f1d1d; line-height:1.6;
+      margin:14px 0; white-space:pre-line;
+    }
+    [data-theme="dark"] .denied-detail{ background:#7f1d1d33; color:#fca5a5; }
+    .theme-toggle{
+      position:absolute; bottom:14px; right:14px;
+      width:34px; height:34px; border:none; border-radius:50%;
+      background:#f1f5f9; cursor:pointer; font-size:1rem;
+    }
+    [data-theme="dark"] .theme-toggle{ background:#0f3460; color:#e4e4e7; }
+    .small{ font-size:0.82rem; color:var(--muted); margin-top:12px; }
+    .btn{
+      display:inline-block; padding:10px 22px; border-radius:10px;
+      background:var(--primary); color:#fff; border:none; font-weight:700;
+      cursor:pointer; font-size:0.95rem; margin-top:8px;
+    }
+    .btn:hover{ background:var(--primary-600); }
+  </style>
+  <?!= include('_adm_security_guard'); ?>
+</head>
+<body>
+  <div class="card" id="card">
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="다크모드 전환">🌓</button>
+
+    <h1>과학 실험·실습실 관리 시스템</h1>
+    <p class="sub">Google 학교 계정으로 자동 인증합니다.</p>
+
+    <!-- 1) 로딩 상태 -->
+    <div id="state-loading">
+      <div class="spinner"></div>
+      <div class="status-title">로그인 정보 확인 중...</div>
+      <p class="status-detail">잠시만 기다려 주세요.</p>
+    </div>
+
+    <!-- 2) 통과 상태 -->
+    <div id="state-allow" style="display:none;">
+      <div class="status-icon" style="color:var(--success);">✅</div>
+      <div class="status-title" id="welcomeTitle">환영합니다</div>
+      <div class="role-badge" id="userRole">교사</div>
+      <p class="status-detail">관리자 페이지로 이동 중입니다...</p>
+      <div class="spinner"></div>
+    </div>
+
+    <!-- 3) 거부 상태 -->
+    <div id="state-deny" style="display:none;">
+      <div class="status-icon denied">⛔</div>
+      <div class="status-title denied">접근 권한이 없습니다</div>
+      <div class="denied-detail" id="denyMessage"></div>
+      <p class="small">본인이 교사이신데 거부되었다면 학과 관리자에게 문의해 주세요.<br>모든 무단 접근 시도는 자동 기록·추적됩니다.</p>
+      <!-- [v3.38] 멀티 로그인 환경에서 잘못된 계정으로 진입한 경우 즉시 변경 -->
+      <button type="button" class="btn" id="switchAccountBtnDeny" style="background:#f59e0b;margin-top:14px;">🔄 다른 Google 계정으로 변경</button>
+    </div>
+
+    <p class="small">
+      현재 로그인: <span id="currentAccount" style="font-weight:700;">확인 중...</span>
+      <a href="#" id="switchAccountLink" style="margin-left:8px;color:var(--primary);font-weight:600;text-decoration:none;">[다른 계정 ↗]</a>
+    </p>
+  </div>
+
+  <script>
+    // 다크모드
+    (function(){
+      var saved = localStorage.getItem('lab-system-theme') || 'light';
+      document.documentElement.setAttribute('data-theme', saved);
+    })();
+    function toggleTheme(){
+      var cur = document.documentElement.getAttribute('data-theme');
+      var nxt = cur === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', nxt);
+      localStorage.setItem('lab-system-theme', nxt);
+    }
+
+    var APP_BASE_URL = <?!= JSON.stringify(ScriptApp.getService().getUrl()) ?>;
+
+    // [v3.38] AccountChooser URL — Google 계정 선택 화면을 거쳐 본 페이지로 돌아옴
+    var ACCOUNT_CHOOSER_URL = 'https://accounts.google.com/AccountChooser?continue=' + encodeURIComponent(APP_BASE_URL);
+    function goAccountChooser() {
+      window.top.location.href = ACCOUNT_CHOOSER_URL;
+    }
+    // 버튼·링크 핸들러 연결 (DOM 준비 후)
+    document.addEventListener('DOMContentLoaded', function() {
+      var b = document.getElementById('switchAccountBtnDeny');
+      var l = document.getElementById('switchAccountLink');
+      if (b) b.addEventListener('click', goAccountChooser);
+      if (l) l.addEventListener('click', function(e){ e.preventDefault(); goAccountChooser(); });
+    });
+
+    function $(id){ return document.getElementById(id); }
+    function showState(name){
+      $('state-loading').style.display = name === 'loading' ? '' : 'none';
+      $('state-allow').style.display   = name === 'allow'   ? '' : 'none';
+      $('state-deny').style.display    = name === 'deny'    ? '' : 'none';
+    }
+
+    function goAdmin(overrideUrl){
+      var baseUrl = overrideUrl || APP_BASE_URL || '';
+      if (!baseUrl) return;
+      // [v4.18/S2] 화면 선호 기억 — 전환 버튼으로 선택한 화면(localStorage)을 우선 적용.
+      //   URL 로 platform 을 강제한 경우가 최우선, 그다음 저장된 선호, 마지막으로 기기 감지.
+      var useMobile = window.__IS_MOBILE_UA;
+      try {
+        var pref = localStorage.getItem('lab-admin-platform-pref') || '';
+        if (pref === 'mobile') useMobile = true;
+        else if (pref === 'desktop') useMobile = false;
+      } catch (e) {}
+      var prefDesktop = false;
+      try { prefDesktop = (localStorage.getItem('lab-admin-platform-pref') === 'desktop'); } catch (e) {}
+      try {
+        var forced = (new URLSearchParams(window.location.search).get('platform') || '').toLowerCase();
+        if (forced === 'mobile') { useMobile = true; prefDesktop = false; }
+        else if (forced === 'desktop') { useMobile = false; prefDesktop = true; }
+      } catch (e) {}
+      // PC 선호가 저장된 경우 platform=desktop 을 명시해야 admin.html 의
+      // 모바일 자동 리다이렉트(태블릿→모바일)를 통과한다.
+      var target;
+      if (useMobile) target = baseUrl + '?platform=mobile';
+      else if (prefDesktop) target = baseUrl + '?view=admin&platform=desktop';
+      else target = baseUrl + '?view=admin';
+      window.location.href = target;
+    }
+
+    // ★ Google 세션 자동 인증
+    google.script.run
+      .withSuccessHandler(function(res){
+        // 현재 계정 표시 (서버에서 응답 받은 후 표시할 수도 있으나, 우선 빠르게 표시)
+        if (res && res.sessionToken) {
+          // 통과 — sessionStorage에 토큰 저장 (다음 페이지에서 사용)
+          try {
+            sessionStorage.setItem('__lab_admin_session__', JSON.stringify({
+              token: res.sessionToken,
+              role: res.role,
+              displayName: res.displayName,
+              issuedAt: Date.now()
+            }));
+          } catch(_) {}
+
+          // 역할별 자연스러운 호칭
+          //  - admin: "환영합니다, 과학기술과 관리자님" (학과 메일) 또는 "관리자님" (ADMIN_EMAILS)
+          //  - teacher: "환영합니다, ○○○ 선생님"
+          var name = res.displayName || '';
+          var welcomeText;
+          if (res.role === 'admin') {
+            welcomeText = '환영합니다, ' + (name || '관리자') + ' 관리자님';
+          } else {
+            welcomeText = '환영합니다, ' + (name || '선생') + ' 선생님';
+          }
+          $('welcomeTitle').textContent = welcomeText;
+          $('userRole').textContent = res.role === 'admin' ? '학과 관리자' : '교사';
+          // [v4.18/S6] 실제 로그인 계정 표시 — 멀티 로그인 환경에서 계정 전환 판단 근거
+          $('currentAccount').textContent = res.email || '(확인 불가)';
+          showState('allow');
+          // 잠시 보여준 뒤 이동
+          setTimeout(function(){ goAdmin(res.appUrl); }, 1000);
+        } else {
+          // 거부
+          var msg = (res && res.message) || '접근 권한이 없습니다.';
+          $('denyMessage').textContent = msg;
+          // [v4.18/S6] 어느 계정으로 거부됐는지 표시 — 계정 전환 버튼 사용 판단 근거
+          $('currentAccount').textContent = '(거부됨)';
+          try {
+            google.script.run
+              .withSuccessHandler(function(info){
+                if (info && info.email) $('currentAccount').textContent = info.email + ' (거부됨)';
+              })
+              .withFailureHandler(function(){})
+              .getMyAccountInfo();
+          } catch (_) {}
+          showState('deny');
+        }
+      })
+      .withFailureHandler(function(err){
+        $('denyMessage').textContent = '인증 중 오류가 발생했습니다.\n\n' + (err && (err.message || err) || '');
+        showState('deny');
+      })
+      .verifyTeacherBySession();
+  </script>
+</body>
+</html>

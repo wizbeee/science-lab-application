@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>과학 실험·실습실 사용 신청서(N동 공학 ZONE)</title>
+  <style>
+    :root {
+      --primary: #e65100;
+      --primary-light: #fff3e0;
+      --primary-dark: #bf360c;
+      --primary-grad: linear-gradient(135deg, #e65100, #ff9800);
+      --success: #2e7d32;
+      --danger: #d32f2f;
+      --text: #222;
+      --text-muted: #666;
+      --text-light: #999;
+      --border: #ddd;
+      --card: #fff;
+      --bg: #fafafa;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 4px 16px rgba(0,0,0,0.06);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', 'Apple SD Gothic Neo', Arial, sans-serif;
+      background: linear-gradient(135deg, #fff3e0 0%, #f5f5f5 50%, #ffe0b2 100%);
+      min-height: 100vh;
+      color: var(--text);
+      padding-bottom: 80px;
+    }
+
+    .topbar {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      position: sticky; top: 0; z-index: 100;
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 12px;
+    }
+    .topbar-title { font-size: 15px; font-weight: 700; color: var(--primary); }
+    .topbar-subtitle { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .topbar-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .topbar-btn {
+      padding: 7px 12px; border: 1px solid var(--border); border-radius: 6px;
+      background: var(--card); color: var(--text-muted); font-size: 12px;
+      font-weight: 600; cursor: pointer; transition: all 0.15s; font-family: inherit;
+      white-space: nowrap;
+    }
+    .topbar-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+    @media (max-width: 600px) {
+      .topbar-btn { padding: 6px 8px; font-size: 11px; }
+    }
+
+    .progress-section {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 0;
+      position: sticky; top: 56px; z-index: 99;
+    }
+    .progress-inner { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+    .progress-steps { display: flex; align-items: center; justify-content: space-between; position: relative; }
+    .progress-steps::before {
+      content: ''; position: absolute; top: 20px; left: 40px; right: 40px;
+      height: 3px; background: var(--border); z-index: 0;
+    }
+    .progress-steps::after {
+      content: ''; position: absolute; top: 20px; left: 40px;
+      height: 3px; background: var(--primary); z-index: 1; transition: width 0.3s;
+    }
+    .progress-steps.step-1::after { width: 0%; }
+    .progress-steps.step-2::after { width: 25%; }
+    .progress-steps.step-3::after { width: 50%; }
+    .progress-steps.step-4::after { width: 75%; }
+    .progress-steps.step-5::after { width: calc(100% - 80px); }
+    .step-item {
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      z-index: 2; position: relative; cursor: pointer;
+    }
+    .step-circle {
+      width: 40px; height: 40px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 14px;
+      background: var(--card); border: 3px solid var(--border); color: var(--text-muted);
+      transition: all 0.2s;
+    }
+    .step-item.active .step-circle { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .step-item.done .step-circle { background: var(--success); border-color: var(--success); color: #fff; }
+    .step-label { font-size: 12px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+    .step-item.active .step-label { color: var(--primary); }
+    .step-item.done .step-label { color: var(--success); }
+    @media (max-width: 600px) { .step-label { display: none; } }
+
+    .main { max-width: 900px; margin: 0 auto; padding: 28px 24px 100px; }
+    .form-card {
+      background: var(--card); border-radius: var(--radius);
+      border: 1px solid var(--border); padding: 28px; margin-bottom: 18px;
+      box-shadow: var(--shadow);
+    }
+    .form-card-title {
+      font-size: 18px; font-weight: 700; color: var(--primary-dark);
+      margin-bottom: 4px; display: flex; align-items: center; gap: 8px;
+    }
+    .form-card-desc { font-size: 13px; color: var(--text-muted); margin-bottom: 22px; }
+    .form-group { margin-bottom: 18px; }
+    .form-label {
+      display: block; font-size: 13px; font-weight: 600;
+      color: var(--text); margin-bottom: 6px;
+    }
+    .form-label .required { color: var(--danger); margin-left: 2px; }
+    .form-label .hint {
+      font-weight: 400; color: var(--text-muted); margin-left: 6px; font-size: 12px;
+    }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+    input[type=text], input[type=number], input[type=date], select, textarea {
+      width: 100%; padding: 10px 12px;
+      border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      font-size: 14px; color: var(--text); background: var(--card);
+      transition: border-color 0.15s, box-shadow 0.15s;
+      outline: none; box-sizing: border-box; font-family: inherit;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--primary); box-shadow: 0 0 0 3px rgba(230,81,0,0.12);
+    }
+    textarea { min-height: 100px; resize: vertical; }
+
+    .step-view { display: none; }
+    .step-view.active { display: block; }
+
+    .check-group, .radio-group { display: flex; flex-wrap: wrap; gap: 8px; }
+    .check-item, .radio-item {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 14px; border: 1px solid var(--border);
+      border-radius: 20px; background: var(--card);
+      cursor: pointer; font-size: 13px; transition: all 0.15s;
+    }
+    .check-item:hover, .radio-item:hover {
+      border-color: var(--primary); background: var(--primary-light);
+    }
+
+    .lab-rooms {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 6px;
+    }
+    @media (max-width: 600px) { .lab-rooms { grid-template-columns: 1fr; } }
+    .lab-rooms .check-item { justify-content: flex-start; }
+
+    .info-box {
+      background: var(--primary-light); border: 1px solid #ffcc80;
+      border-radius: var(--radius-sm); padding: 14px 16px;
+      font-size: 13px; color: var(--primary-dark);
+      line-height: 1.7; margin-bottom: 18px;
+    }
+    .agreement-box {
+      background: #fff3e0; border: 1px solid #ffb74d;
+      border-radius: var(--radius-sm); padding: 14px;
+      font-size: 13px; color: #5d4037; line-height: 1.6;
+    }
+    .agreement-box b { color: #d84315; }
+    .danger-note {
+      margin-top: 6px; font-size: 12px; color: #b71c1c;
+    }
+
+    .review-block {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 14px 18px; margin-bottom: 12px;
+    }
+    .review-block-title {
+      font-size: 13px; font-weight: 700; color: var(--primary-dark); margin-bottom: 8px;
+    }
+    .review-row {
+      display: grid; grid-template-columns: 140px 1fr; gap: 10px;
+      padding: 4px 0; font-size: 13px;
+    }
+    @media (max-width: 600px) { .review-row { grid-template-columns: 110px 1fr; } }
+    .review-row .key { color: var(--text-muted); font-weight: 600; }
+    .review-row .val { color: var(--text); word-break: break-word; }
+    .review-row .val pre { white-space: pre-wrap; font-family: inherit; margin: 0; font-size: 13px; }
+
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--card); border-top: 1px solid var(--border);
+      padding: 12px 24px; box-shadow: 0 -2px 8px rgba(0,0,0,0.04);
+      display: flex; justify-content: space-between; align-items: center;
+      z-index: 100;
+    }
+    .step-indicator { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+    .nav-btns { display: flex; gap: 10px; }
+    .btn {
+      padding: 10px 22px; border: none; border-radius: var(--radius-sm);
+      font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.15s;
+      font-family: inherit;
+    }
+    .btn-primary { background: var(--primary-grad); color: #fff; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(230,81,0,0.3); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn-secondary {
+      background: var(--card); color: var(--text); border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { background: var(--bg); }
+
+    .alert {
+      padding: 12px 16px; border-radius: var(--radius-sm);
+      margin: 12px 0; font-size: 13px;
+    }
+    .alert-error { background: #ffebee; border-left: 4px solid #c62828; color: #b71c1c; }
+    .alert-info  { background: #e3f2fd; border-left: 4px solid #1565c0; color: #0d47a1; }
+  </style>
+  <?!= include('_security_guard') ?>
+<?!= include('_teacher_picker') ?>
+</head>
+<body>
+
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">🔬 과학 실험·실습실 사용 신청서</div>
+      <div class="topbar-subtitle">N동 공학 ZONE (융합기술실 · 창의공학실 · 공작기계실 · FAB Lab)</div>
+    </div>
+    <div class="topbar-actions">
+      <button type="button" class="topbar-btn" onclick="goBackToGateway()">🏠 홈</button>
+      <button type="button" class="topbar-btn" onclick="openLoadDialog()">📂 불러오기</button>
+      <button type="button" class="topbar-btn" onclick="snapshotForm()">💾 임시저장</button>
+    </div>
+  </div>
+
+  <div class="progress-section">
+    <div class="progress-inner">
+      <div class="progress-steps step-1" id="progressSteps">
+        <div class="step-item active" id="si1" onclick="clickStep(1)">
+          <div class="step-circle">1</div><div class="step-label">기본 정보</div>
+        </div>
+        <div class="step-item" id="si2" onclick="clickStep(2)">
+          <div class="step-circle">2</div><div class="step-label">일정 선택</div>
+        </div>
+        <div class="step-item" id="si3" onclick="clickStep(3)">
+          <div class="step-circle">3</div><div class="step-label">실습 내용</div>
+        </div>
+        <div class="step-item" id="si4" onclick="clickStep(4)">
+          <div class="step-circle">4</div><div class="step-label">안전 계획</div>
+        </div>
+        <div class="step-item" id="si5" onclick="clickStep(5)">
+          <div class="step-circle">5</div><div class="step-label">확인/제출</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <form id="appForm" autocomplete="off" novalidate>
+
+      <!-- Step 1 -->
+      <div class="step-view active" id="step1">
+        <div class="form-card">
+          <div class="form-card-title">📝 기본 정보</div>
+          <div class="form-card-desc">대표자·동반자 정보, 사용 목적과 실습 주제를 입력하세요.</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="studentId">학번 <span class="required">*</span></label>
+              <input type="text" id="studentId" inputmode="numeric" pattern="\d{5}" maxlength="5" required placeholder="5자리 숫자">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="studentName">이름 <span class="required">*</span></label>
+              <input type="text" id="studentName" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="teamMembers">동반자 명단 <span class="hint">대표자 제외 / 쉼표 구분</span></label>
+              <input type="text" id="teamMembers" placeholder="예) 10101 김철수, 10102 이영희">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="totalParticipants">총 참여 인원 <span class="required">*</span> <span class="hint">대표자 포함</span></label>
+              <input type="number" id="totalParticipants" min="1" max="20" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="purpose">사용 목적 <span class="required">*</span></label>
+              <select id="purpose" required onchange="onPurposeChange()">
+                <option value="">선택</option>
+                <option>과제연구</option>
+                <option>학급활동</option>
+                <option>동아리 활동</option>
+                <option>기타</option>
+              </select>
+            </div>
+            <div class="form-group" id="purposeDetailWrap" style="display:none;">
+              <label class="form-label" id="purposeDetailLabel" for="otherPurpose">상세</label>
+              <input type="text" id="otherPurpose" placeholder="동아리명 또는 기타 사유">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="title">실험·실습 주제 <span class="required">*</span> <span class="hint">한 줄로 간단히</span></label>
+            <input type="text" id="title" required placeholder="실험·실습 주제를 입력하세요.">
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="step-view" id="step2">
+        <div class="form-card">
+          <div class="form-card-title">📅 일정 선택</div>
+          <div class="form-card-desc">사용 날짜·시간과 실습실을 선택하세요. 4개 실습실 중 복수 선택이 가능합니다.</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="date">사용 날짜 <span class="required">*</span></label>
+              <input type="date" id="date" required onchange="onDateChange()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">시간 <span class="required">*</span> <span class="hint">복수 가능 / 7교시는 화요일 동아리만</span></label>
+              <div class="check-group">
+                <label class="check-item"><input type="checkbox" name="timeSlot" value="ET"> ET (8교시)</label>
+                <label class="check-item"><input type="checkbox" name="timeSlot" value="EP1"> EP1 (9교시)</label>
+                <label class="check-item" id="period7Label" style="display:none;">
+                  <input type="checkbox" name="timeSlot" value="7교시" id="period7"> 7교시
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">날짜 캘린더 <span class="hint">차단된 날짜는 회색·취소선, 일부 차단된 날은 노란 점으로 표시</span></label>
+            <?!= include('_calendar_widget') ?>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">사용 실습실 <span class="required">*</span> <span class="hint">1~4개 선택 가능</span></label>
+            <div class="lab-rooms">
+              <!-- [v3.58 / 5-1] 전 실습실 활성화 -->
+              <label class="check-item"><input type="checkbox" name="labRoom" value="융합기술실" onchange="onLabRoomChange()"> 융합기술실</label>
+              <label class="check-item"><input type="checkbox" name="labRoom" value="창의공학실" onchange="onLabRoomChange()"> 창의공학실</label>
+              <label class="check-item"><input type="checkbox" name="labRoom" value="공작기계실" onchange="onLabRoomChange()"> 공작기계실</label>
+              <label class="check-item"><input type="checkbox" name="labRoom" value="FAB Lab" onchange="onLabRoomChange()"> FAB Lab</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="step-view" id="step3">
+        <div class="form-card">
+          <div class="form-card-title">🛠️ 실습 내용</div>
+          <div class="form-card-desc">사용 계획·신청 장비를 입력하세요.</div>
+
+          <div class="form-group">
+            <label class="form-label" for="usagePlan">사용 계획 <span class="required">*</span> <span class="hint">실습에 사용하는 주요 장비 및 도구를 반드시 포함하여 번호 붙여 작성</span></label>
+            <textarea id="usagePlan" required placeholder="1. ..&#10;2. ..&#10;3. .."></textarea>
+            <div class="danger-note">★ 실습에 사용한 모든 장비 및 도구를 깨끗이 정리한 후 퇴실합니다.</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="requestedEquipment">신청 장비 <span class="hint">학교 비치 장비 외 별도 신청이 필요한 장비/공구/재료</span></label>
+            <textarea id="requestedEquipment"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="step-view" id="step4">
+        <div class="form-card">
+          <div class="form-card-title">⚠️ 안전 계획</div>
+          <div class="form-card-desc">지도 선생님께 교육받은 내용·지도교사 선택·안전수칙 동의를 진행해 주세요.</div>
+
+          <div class="form-group">
+            <label class="form-label" for="eduEquipment">지도 선생님께 교육받은 내용 — 장비 및 도구 사용법 <span class="required">*</span></label>
+            <textarea id="eduEquipment" required placeholder="사용 시 주의 사항 포함하여 작성"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="eduCleanup">지도 선생님께 교육받은 내용 — 실습 후 정리 방법 <span class="required">*</span></label>
+            <textarea id="eduCleanup" required></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="teacher">지도 선생님 <span class="required">*</span> <span class="hint" id="teacherHint">기술 선생님만</span></label>
+              <select id="teacher" required onchange="onTeacherChange()">
+                <option value="">불러오는 중...</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="teacherEmail">지도 선생님 이메일</label>
+              <input type="text" id="teacherEmail" readonly>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">안전 수칙 동의 <span class="required">*</span></label>
+            <div class="agreement-box">
+              작성된 문서에 위배되거나 실험실 안전 수칙에 위배되는 행동을 할 경우
+              <b>1개월간 과학기술과의 모든 실험·실습실 사용에 제약</b>을 받게 됩니다.
+            </div>
+            <div class="radio-group" style="margin-top:10px;">
+              <label class="radio-item"><input type="radio" name="agreement" value="yes" required> 위 내용에 동의합니다</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 5 -->
+      <div class="step-view" id="step5">
+        <div class="form-card">
+          <div class="form-card-title">✅ 입력 내용 확인</div>
+          <div class="form-card-desc">아래 내용이 맞으면 "신청하기" 버튼을 눌러주세요.</div>
+          <div id="reviewContent"></div>
+          <div id="resultMsg"></div>
+        </div>
+      </div>
+
+    </form>
+  </div>
+
+  <div class="bottom-nav">
+    <span class="step-indicator" id="stepIndicator">Step 1 / 5</span>
+    <div class="nav-btns">
+      <button type="button" class="btn btn-secondary" id="btnPrev" onclick="prevStep()" style="display:none;">이전</button>
+      <button type="button" class="btn btn-primary" id="btnNext" onclick="nextStep()">다음</button>
+      <button type="button" class="btn btn-primary" id="btnSubmit" onclick="submitForm()" style="display:none;">신청하기</button>
+    </div>
+  </div>
+
+  <script>
+    /* ============== 서버 주입 ============== */
+    const webAppUrl = <?!= JSON.stringify(webAppUrl || '') ?>;
+    const CATEGORY  = <?!= JSON.stringify(category || 'engineering') ?>;
+
+    /* ============== Step Navigation ============== */
+    var currentStep = 1;
+    var highestStep = 1;
+
+    function goStep(n) {
+      currentStep = n;
+      highestStep = Math.max(highestStep, n);
+      for (var i = 1; i <= 5; i++) {
+        document.getElementById('step' + i).classList.toggle('active', i === n);
+        var si = document.getElementById('si' + i);
+        si.classList.remove('active', 'done');
+        if (i < n) si.classList.add('done');
+        else if (i === n) si.classList.add('active');
+      }
+      document.getElementById('progressSteps').className = 'progress-steps step-' + n;
+      document.getElementById('btnPrev').style.display = n > 1 ? '' : 'none';
+      document.getElementById('btnNext').style.display = n < 5 ? '' : 'none';
+      document.getElementById('btnSubmit').style.display = n === 5 ? '' : 'none';
+      document.getElementById('stepIndicator').textContent = 'Step ' + n + ' / 5';
+      if (n === 5) buildReview();
+      window.scrollTo(0, 0);
+    }
+    function clickStep(n) { if (n <= highestStep) goStep(n); }
+
+    function validateCurrentStep() {
+      if (currentStep === 1) {
+        if (!/^\d{5}$/.test(document.getElementById('studentId').value.trim())) return showAlert('학번은 5자리 숫자여야 합니다.');
+        if (!document.getElementById('studentName').value.trim()) return showAlert('이름을 입력해주세요.');
+        if (!document.getElementById('totalParticipants').value.trim()) return showAlert('총 참여 인원을 입력해주세요.');
+        var purpose = document.getElementById('purpose').value;
+        if (!purpose) return showAlert('사용 목적을 선택해주세요.');
+        var otherPurpose = document.getElementById('otherPurpose').value.trim();
+        if (purpose === '동아리 활동' && !otherPurpose) return showAlert('동아리명을 입력해주세요.');
+        if (purpose === '기타' && !otherPurpose) return showAlert('기타 사유를 입력해주세요.');
+        if (!document.getElementById('title').value.trim()) return showAlert('실험·실습 주제를 입력해주세요.');
+      } else if (currentStep === 2) {
+        if (!document.getElementById('date').value) return showAlert('사용 날짜를 선택해주세요.');
+        var timeSlots = Array.from(document.querySelectorAll('input[name="timeSlot"]:checked')).map(function(c){return c.value;});
+        if (!timeSlots.length) return showAlert('시간을 하나 이상 선택해주세요.');
+        var labRooms = Array.from(document.querySelectorAll('input[name="labRoom"]:checked')).map(function(c){return c.value;});
+        if (!labRooms.length) return showAlert('사용 실습실을 하나 이상 선택해주세요.');
+      } else if (currentStep === 3) {
+        if (!document.getElementById('usagePlan').value.trim())
+          return showAlert('사용 계획을 입력해주세요.');
+      } else if (currentStep === 4) {
+        if (!document.getElementById('eduEquipment').value.trim() || !document.getElementById('eduCleanup').value.trim())
+          return showAlert('지도 선생님께 교육받은 내용을 모두 입력해주세요.');
+        if (!document.getElementById('teacher').value)
+          return showAlert('지도 선생님을 선택해주세요.');
+        var agr = document.querySelector('input[name="agreement"]:checked');
+        if (!agr || agr.value !== 'yes')
+          return showAlert('안전 수칙 동의에 체크해주세요.');
+      }
+      return true;
+    }
+    function nextStep() {
+      if (validateCurrentStep() === true) {
+        if (currentStep < 5) goStep(currentStep + 1);
+      }
+    }
+    function prevStep() { if (currentStep > 1) goStep(currentStep - 1); }
+
+    /* ============== 7교시 표시 토글 ============== */
+    function onDateChange() {
+      var v = document.getElementById('date').value;
+      var purpose = document.getElementById('purpose').value;
+      var isTuesday = false;
+      if (v) { var d = new Date(v + 'T00:00:00'); isTuesday = !isNaN(d.getTime()) && d.getDay() === 2; }
+      var allow = isTuesday && purpose === '동아리 활동';
+      var lbl = document.getElementById('period7Label');
+      if (allow) lbl.style.display = '';
+      else { lbl.style.display = 'none'; document.getElementById('period7').checked = false; }
+      refreshUnavailable();
+    }
+
+    /* [v3.58 / 5-4] 선택 날짜의 캘린더 차단을 미리 반영 — 시간·실습실 비활성화.
+       기존엔 조회가 없어서 학생이 5단계 전부 작성 후 제출 시점에야 거부당했음. */
+    var __unavailSeq = 0;
+    function refreshUnavailable() {
+      var slots = document.querySelectorAll('input[name="timeSlot"]');
+      var rooms = document.querySelectorAll('input[name="labRoom"]');
+      slots.forEach(function(cb){ cb.disabled = false; });
+      rooms.forEach(function(cb){ cb.disabled = false; if (cb.parentNode) cb.parentNode.style.opacity = ''; });
+      var note = document.getElementById('blockNotice');
+      if (!note) {
+        note = document.createElement('div');
+        note.id = 'blockNotice';
+        note.style.cssText = 'margin-top:8px;font-size:13px;color:#b45309;line-height:1.6;';
+        var dateEl = document.getElementById('date');
+        if (dateEl && dateEl.parentNode) dateEl.parentNode.appendChild(note);
+      }
+      note.textContent = '';
+      var v = document.getElementById('date').value;
+      if (!v || !(window.google && google.script && google.script.run)) return;
+      var seq = ++__unavailSeq;
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (seq !== __unavailSeq || !res) return;
+          var msgs = [];
+          if (res.allBlocked) {
+            slots.forEach(function(cb){ cb.disabled = true; cb.checked = false; });
+            rooms.forEach(function(cb){ cb.disabled = true; cb.checked = false; if (cb.parentNode) cb.parentNode.style.opacity = '0.45'; });
+            msgs.push('⛔ 이 날짜는 전체 사용 불가입니다.' + (res.notice ? ' (' + res.notice + ')' : ''));
+          } else {
+            (res.blockedTimes || []).forEach(function(t) {
+              slots.forEach(function(cb) {
+                if (cb.value === t) { cb.disabled = true; cb.checked = false; }
+              });
+            });
+            if ((res.blockedTimes || []).length) msgs.push('⏰ 사용 불가 시간: ' + res.blockedTimes.join(', '));
+            var blockedRooms = [];
+            rooms.forEach(function(cb) {
+              if ((res.blockedLabs || []).indexOf(cb.value) !== -1) {
+                cb.disabled = true; cb.checked = false;
+                if (cb.parentNode) cb.parentNode.style.opacity = '0.45';
+                blockedRooms.push(cb.value);
+              }
+            });
+            if (blockedRooms.length) msgs.push('🚫 사용 불가 실습실: ' + blockedRooms.join(', '));
+            var per = res.perLabTimes || {};
+            Object.keys(per).forEach(function(lab) {
+              var mine = Array.prototype.some.call(rooms, function(cb){ return cb.value === lab; });
+              if (mine && per[lab] && per[lab].length) msgs.push('🚫 ' + lab + ': ' + per[lab].join(', ') + ' 사용 불가');
+            });
+          }
+          note.textContent = msgs.join('  ');
+        })
+        .withFailureHandler(function(){ /* 조회 실패 시 제출 단계 서버 검증이 최종 방어 */ })
+        .getUnavailableForDate(v);
+    }
+
+    /* ============== 사용 목적 변경 ============== */
+    function onPurposeChange() {
+      var p = document.getElementById('purpose').value;
+      var wrap = document.getElementById('purposeDetailWrap');
+      var lbl = document.getElementById('purposeDetailLabel');
+      if (p === '동아리 활동') { wrap.style.display = ''; lbl.textContent = '동아리명'; }
+      else if (p === '기타') { wrap.style.display = ''; lbl.textContent = '기타 사유'; }
+      else { wrap.style.display = 'none'; document.getElementById('otherPurpose').value = ''; }
+      onDateChange();
+    }
+
+    /* ============== 지도교사 ============== */
+    var allTeachers = [];       // 서버에서 받은 전체 교사 목록 (필터 전)
+    var teacherCache = [];      // 현재 룸 선택 기준으로 필터된 목록 (onTeacherChange 등 호환)
+    /* [2026-08] 지도교사 후보 판단은 서버 LAB_APPROVAL_POLICY_ 가 담당한다.
+         공학 ZONE 4실(융합기술실·창의공학실·공작기계실·FAB Lab) = 과목 '기술'.
+         Tech & Art LAB 은 지도교사 자격이 달라(과목 '물리(테크)') 별도 양식으로 분리됐다. */
+    function loadTeachers() {
+      var rooms = Array.from(document.querySelectorAll('input[name="labRoom"]:checked'))
+        .map(function(c){ return c.value; });
+      loadEligibleTeachers({
+        selectId: 'teacher',
+        emailId: 'teacherEmail',
+        hintId: 'teacherHint',
+        labs: rooms,
+        showSubject: true,
+        onLoaded: function (list) {
+          teacherCache = list;
+          if (typeof onTeacherChange === 'function') onTeacherChange();
+        }
+      });
+    }
+    function renderTeacherOptions() { loadTeachers(); }
+    function onLabRoomChange() {
+      renderTeacherOptions();
+    }
+    function onTeacherChange() {
+      var name = document.getElementById('teacher').value;
+      var t = teacherCache.find(function(x){ return x.name === name; });
+      document.getElementById('teacherEmail').value = (t && t.email) || '';
+    }
+
+    /* ============== 데이터 수집 ============== */
+    function collectData() {
+      var labRooms = Array.from(document.querySelectorAll('input[name="labRoom"]:checked')).map(function(c){return c.value;});
+      var timeSlots = Array.from(document.querySelectorAll('input[name="timeSlot"]:checked')).map(function(c){return c.value;});
+      return {
+        formCategory: CATEGORY,
+        formType: '',
+        // [v3.58 / 5-3] 7교시 면제 플래그 — 미전송 시 신청제한 학생의 7교시
+        // 재신청 안내("7교시에는 신청 가능")가 서버에서 거짓이 되던 버그 수정.
+        is7thPeriod: timeSlots.indexOf('7교시') !== -1,
+        studentId: document.getElementById('studentId').value.trim(),
+        studentName: document.getElementById('studentName').value.trim(),
+        teamMembers: document.getElementById('teamMembers').value.trim(),
+        totalParticipants: document.getElementById('totalParticipants').value.trim(),
+        purpose: document.getElementById('purpose').value,
+        otherPurpose: document.getElementById('otherPurpose').value.trim(),
+        date: document.getElementById('date').value,
+        timeSlot: timeSlots.join(','),
+        title: document.getElementById('title').value.trim(),
+        teacher: document.getElementById('teacher').value,
+        teacherEmail: document.getElementById('teacherEmail').value,
+        lab: labRooms.join(', '),
+        labRooms: labRooms,
+        usagePlan: document.getElementById('usagePlan').value.trim(),
+        requestedEquipment: document.getElementById('requestedEquipment').value.trim(),
+        eduEquipment: document.getElementById('eduEquipment').value.trim(),
+        eduCleanup:   document.getElementById('eduCleanup').value.trim()
+      };
+    }
+
+    /* ============== Review (Step 5) ============== */
+    function buildReview() {
+      var d = collectData();
+      var labRooms = (d.labRooms || []).join(', ');
+      var purposeText = d.purpose + (d.otherPurpose ? ' - ' + d.otherPurpose : '');
+      var html =
+        '<div class="review-block"><div class="review-block-title">📝 기본 정보</div>' +
+          rrow('학번', d.studentId) +
+          rrow('이름', d.studentName) +
+          rrow('동반자 명단', d.teamMembers || '(없음)') +
+          rrow('총 참여 인원', d.totalParticipants + '명') +
+          rrow('사용 목적', purposeText) +
+          rrow('실험·실습 주제', d.title) +
+        '</div>' +
+        '<div class="review-block"><div class="review-block-title">📅 일정/실습실</div>' +
+          rrow('사용 날짜', d.date) +
+          rrow('시간', d.timeSlot) +
+          rrow('사용 실습실', labRooms) +
+        '</div>' +
+        '<div class="review-block"><div class="review-block-title">🛠️ 실습 내용</div>' +
+          rrow('사용 계획', '<pre>' + esc(d.usagePlan) + '</pre>') +
+          (d.requestedEquipment ? rrow('신청 장비', '<pre>' + esc(d.requestedEquipment) + '</pre>') : '') +
+        '</div>' +
+        '<div class="review-block"><div class="review-block-title">⚠️ 안전 계획</div>' +
+          rrow('교육받은 내용 — 장비 및 도구 사용법', '<pre>' + esc(d.eduEquipment) + '</pre>') +
+          rrow('교육받은 내용 — 정리 방법', '<pre>' + esc(d.eduCleanup) + '</pre>') +
+          rrow('지도 선생님', d.teacher) +
+          rrow('지도 선생님 이메일', d.teacherEmail || '(미등록)') +
+          rrow('안전 수칙 동의', '예') +
+        '</div>';
+      document.getElementById('reviewContent').innerHTML = html;
+    }
+    function rrow(k, v) {
+      return '<div class="review-row"><div class="key">' + esc(k) + '</div><div class="val">' + (v || '') + '</div></div>';
+    }
+    function esc(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+
+    /* ============== Alert / Submit ============== */
+    function showAlert(msg, type) {
+      var box = document.getElementById('resultMsg');
+      if (box && currentStep === 5) {
+        // [v3.58] 여러 줄 서버 메시지 가독성 — \n을 줄바꿈으로 표시
+        box.innerHTML = '<div class="alert alert-' + (type || 'error') + '">' + esc(msg).replace(/\n/g, '<br>') + '</div>';
+        box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        alert(msg);
+      }
+      return false;
+    }
+    function clearAlert() { var box = document.getElementById('resultMsg'); if (box) box.innerHTML = ''; }
+
+    function submitForm() {
+      clearAlert();
+      var d = collectData();
+      var btn = document.getElementById('btnSubmit');
+      btn.disabled = true;
+      btn.textContent = '제출 중...';
+      google.script.run
+        .withSuccessHandler(function(res) {
+          // [v3.58 / 5-5] 2.5초 자동 이동 제거 — "메일 발송 실패" 등 경고를 읽을 수
+          //   있게 결과를 유지하고, 돌아가기 버튼 제공. 경고 없으면 8초 후 자동 이동.
+          var text = String(res || '신청이 완료되었습니다.');
+          var hasWarn = text.indexOf('⚠️') !== -1;
+          showAlert(text, hasWarn ? 'error' : 'info');
+          btn.textContent = '신청 완료';
+          var box = document.getElementById('resultMsg');
+          if (box && !document.getElementById('btnBackToGateway')) {
+            var back = document.createElement('button');
+            back.id = 'btnBackToGateway';
+            back.type = 'button';
+            back.textContent = '처음 화면으로 돌아가기';
+            back.style.cssText = 'margin-top:10px;padding:10px 20px;border:none;border-radius:8px;background:#e65100;color:#fff;font-size:14px;font-weight:700;cursor:pointer;';
+            back.onclick = goBackToGateway;
+            box.appendChild(back);
+          }
+          if (!hasWarn) setTimeout(goBackToGateway, 8000);
+        })
+        .withFailureHandler(function(err) {
+          showAlert((err && err.message) || '제출 실패. 잠시 후 다시 시도해 주세요.');
+          btn.disabled = false;
+          btn.textContent = '신청하기';
+        })
+        .submitApplication(typeof attachSecurityFields === 'function' ? attachSecurityFields(d) : d);
+    }
+    function goBackToGateway() {
+      if (webAppUrl) window.top.location.href = webAppUrl;
+      else history.back();
+    }
+
+    /* ============== 임시저장 / 불러오기 ============== */
+    function snapshotForm() {
+      var d = collectData();
+      if (!d.studentId || !d.studentName || !d.date) {
+        alert('학번 / 이름 / 사용 날짜를 먼저 입력해 주세요. (임시저장 키)');
+        return;
+      }
+      google.script.run
+        .withSuccessHandler(function(msg) { alert(msg || '임시저장 완료'); })
+        .withFailureHandler(function(err) { alert('임시저장 실패: ' + (err && err.message ? err.message : err)); })
+        .saveDraft(d);
+    }
+    function openLoadDialog() {
+      var sid = prompt('대표자 학번 (5자리):');
+      if (!sid) return;
+      var name = prompt('대표자 이름:');
+      if (!name) return;
+      var date = prompt('사용 날짜 (YYYY-MM-DD):');
+      if (!date) return;
+      google.script.run
+        .withSuccessHandler(function(data) {
+          if (!data) { alert('해당 임시저장 내역이 없습니다.'); return; }
+          fillForm(data);
+          alert('불러오기 완료. 내용을 확인한 뒤 단계별로 진행해 주세요.');
+        })
+        .withFailureHandler(function(err) { alert('불러오기 실패: ' + (err && err.message ? err.message : err)); })
+        .loadDraft(sid, name, date, CATEGORY); // [v3.58 / 7-1] 폼 종류 지정
+    }
+    function fillForm(d) {
+      if (!d || typeof d !== 'object') return;
+      var setVal = function(id, v) { var el = document.getElementById(id); if (el) el.value = (v == null ? '' : v); };
+      setVal('studentId', d.studentId);
+      setVal('studentName', d.studentName);
+      setVal('teamMembers', d.teamMembers);
+      setVal('totalParticipants', d.totalParticipants);
+      setVal('purpose', d.purpose);
+      setVal('otherPurpose', d.otherPurpose);
+      setVal('title', d.title);
+      setVal('date', d.date);
+      setVal('usagePlan', d.usagePlan);
+      setVal('requestedEquipment', d.requestedEquipment);
+      setVal('eduEquipment', d.eduEquipment);
+      setVal('eduCleanup', d.eduCleanup);
+      setVal('teacher', d.teacher);
+      setVal('teacherEmail', d.teacherEmail);
+
+      // 시간 슬롯 / 실습실 체크박스
+      document.querySelectorAll('input[name="timeSlot"]').forEach(function(cb){ cb.checked = false; });
+      String(d.timeSlot || '').split(',').map(function(s){return s.trim();}).filter(Boolean).forEach(function(v) {
+        var el = Array.from(document.querySelectorAll('input[name="timeSlot"]')).find(function(cb){ return cb.value === v; });
+        if (el) el.checked = true;
+      });
+      document.querySelectorAll('input[name="labRoom"]').forEach(function(cb){ cb.checked = false; });
+      (Array.isArray(d.labRooms) ? d.labRooms : []).forEach(function(v) {
+        var el = Array.from(document.querySelectorAll('input[name="labRoom"]')).find(function(cb){ return cb.value === v; });
+        if (el) el.checked = true;
+      });
+
+      // 동의는 보안상 자동 체크 안 함
+      document.querySelectorAll('input[name="agreement"]').forEach(function(r){ r.checked = false; });
+
+      // 의존 UI 갱신
+      if (typeof onPurposeChange === 'function') onPurposeChange();
+      // [v3.58 / 5-6] 실습실 복원 후 교사 필터 갱신 + 교사 재설정.
+      //   기존엔 onLabRoomChange 미호출로 필터가 낡은 상태로 남아
+      //   실습실과 무관한 교사를 선택할 수 있었음.
+      if (typeof onLabRoomChange === 'function') onLabRoomChange();
+      setVal('teacher', d.teacher);
+      if (typeof onTeacherChange === 'function') onTeacherChange();
+      // 목록이 아직 로드 전이면 로드 완료 시 재적용 (v3.58 / 7-7)
+      window.__pendingTeacher__ = d.teacher || '';
+      var dateEl = document.getElementById('date');
+      if (dateEl) dateEl.dispatchEvent(new Event('change'));
+    }
+
+    /* ============== Init ============== */
+    loadTeachers();
+    (function(){
+      var t = new Date();
+      var y = t.getFullYear();
+      var m = ('0'+(t.getMonth()+1)).slice(-2);
+      var d = ('0'+t.getDate()).slice(-2);
+      document.getElementById('date').min = y + '-' + m + '-' + d;
+    })();
+    // 캘린더 위젯
+    initCalendarWidget('#date');
+  </script>
+</body>
+</html>

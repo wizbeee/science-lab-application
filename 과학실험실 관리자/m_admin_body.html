@@ -1,0 +1,213 @@
+<!-- ===== 목업 동일: 대시보드 (mobile_dashboard.html) ===== -->
+
+<!-- 통계 카드 (수평 스크롤) — 목업과 동일 구조 -->
+<div class="stats-scroll">
+  <div class="stats-row" id="stats-row">
+    <div class="stat-card active" data-status="전체" tabindex="0" role="button" aria-label="전체 신청" onclick="filterByStatusCard('전체')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();filterByStatusCard('전체');}">
+      <div class="stat-number" id="stat-total">-</div>
+      <div class="stat-label">전체 신청</div>
+    </div>
+    <div class="stat-card" data-status="대기" tabindex="0" role="button" aria-label="대기중 신청 필터" onclick="filterByStatusCard('대기')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();filterByStatusCard('대기');}">
+      <div class="stat-number" id="stat-pending">-</div>
+      <div class="stat-label">대기중</div>
+    </div>
+    <div class="stat-card" data-status="1차승인" tabindex="0" role="button" aria-label="1차 승인 필터" title="1·2층 양식의 지도교사 1차 승인을 받은 신청. 신규 양식(IT/가정/공학)은 단일 승인 흐름이라 이 단계가 없음." onclick="filterByStatusCard('1차승인')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();filterByStatusCard('1차승인');}">
+      <div class="stat-number" id="stat-first">-</div>
+      <div class="stat-label">1차승인</div>
+    </div>
+    <div class="stat-card" data-status="최종승인" tabindex="0" role="button" aria-label="최종 승인 필터" onclick="filterByStatusCard('최종승인')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();filterByStatusCard('최종승인');}">
+      <div class="stat-number" id="stat-final">-</div>
+      <div class="stat-label">최종승인</div>
+    </div>
+    <div class="stat-card" data-status="반려" tabindex="0" role="button" aria-label="반려 필터" onclick="filterByStatusCard('반려')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();filterByStatusCard('반려');}">
+      <div class="stat-number" id="stat-rejected">-</div>
+      <div class="stat-label">반려</div>
+    </div>
+  </div>
+</div>
+
+<!-- 필터 — 목업과 동일 구조 -->
+<div class="filter-section">
+  <div class="quick-filters">
+    <button class="quick-btn active" data-quick="today" onclick="onQuickFilter('today', this)">오늘</button>
+    <button class="quick-btn" data-quick="week" onclick="onQuickFilter('week', this)">이번 주</button>
+    <button class="quick-btn" data-quick="month" onclick="onQuickFilter('month', this)">이번 달</button>
+    <button class="quick-btn" data-quick="all" onclick="onQuickFilter('all', this)">전체</button>
+  </div>
+
+  <!-- 날짜 직접 지정 -->
+  <div class="date-range-row">
+    <input type="date" id="dateFrom" class="date-input" />
+    <span class="date-separator">~</span>
+    <input type="date" id="dateTo" class="date-input" />
+  </div>
+
+  <div class="filter-detail" id="filter-detail">
+    <div class="filter-row">
+      <select class="filter-select" id="labSelect">
+        <option value="">실험실 전체</option>
+        <optgroup label="S동 1층">
+          <option value="화학실험실">화학실험실</option>
+          <option value="생물실험실">생물실험실</option>
+          <option value="프로젝트실험실">프로젝트실험실</option>
+          <option value="첨단기기실험실">첨단기기실험실</option>
+          <option value="오픈랩">오픈랩</option>
+        </optgroup>
+        <optgroup label="S동 2층 — 물리">
+          <option value="물리실험실">물리실험실</option>
+          <option value="파동광학실험실">파동광학실험실</option>
+          <option value="AP Lab">AP Lab</option>
+        </optgroup>
+        <optgroup label="S동 2층 — IT">
+          <option value="IT 공학실">IT 공학실</option>
+          <option value="컴퓨터실">컴퓨터실 (개명 전 기록)</option>
+          <option value="코딩실">코딩실</option>
+          <option value="멀티미디어실">멀티미디어실</option>
+        </optgroup>
+        <optgroup label="N동 — 가정">
+          <option value="가정실습실">가정실습실</option>
+        </optgroup>
+        <optgroup label="N동 공학 ZONE · S동 3층">
+          <option value="융합기술실">융합기술실</option>
+          <option value="창의공학실">창의공학실</option>
+          <option value="공작기계실">공작기계실</option>
+          <option value="FAB Lab">FAB Lab</option>
+          <option value="Tech & Art LAB">Tech & Art LAB</option>
+        </optgroup>
+      </select>
+      <select class="filter-select" id="statusSelect">
+        <option value="">상태 전체</option>
+        <option value="대기">대기</option>
+        <option value="1차승인">1차승인</option>
+        <option value="최종승인">최종승인</option>
+        <option value="반려">반려</option>
+      </select>
+    </div>
+    <div class="filter-row">
+      <input class="filter-input" type="text" id="searchInput" placeholder="학번, 이름, 실험제목 검색">
+      <button class="filter-search-btn" onclick="loadApplications()">조회</button>
+    </div>
+  </div>
+</div>
+
+<!-- 결과 바 — 목업과 동일 구조 -->
+<div class="result-bar">
+  <span class="result-count" id="result-count">조회 버튼을 눌러주세요</span>
+  <div class="result-actions">
+    <button class="result-action-btn" onclick="toggleSortMenu()">정렬 ↕</button>
+    <button class="result-action-btn" onclick="exportCSV()">엑셀</button>
+  </div>
+</div>
+
+<!-- 신청 카드 목록 — 목업과 동일 구조 -->
+<div class="card-list" id="card-list">
+  <div class="m-empty">
+    <div>빠른 기간을 선택하거나 조회 버튼을 눌러주세요</div>
+  </div>
+</div>
+
+<!-- 상세보기 패널 (풀스크린) — 목업 mobile_detail.html과 동일 -->
+<div class="detail-panel" id="detail-panel" role="dialog" aria-modal="true" aria-labelledby="detail-status">
+  <div class="detail-topbar">
+    <button class="topbar-back" onclick="closeDetail()" aria-label="상세 화면 닫고 목록으로">← 뒤로</button>
+    <div class="topbar-actions">
+      <button class="topbar-action" onclick="editDetail()" title="수정">수정</button>
+      <button class="topbar-action" onclick="printDetail()" title="인쇄">인쇄</button>
+      <!-- [v4.18/S2] 삭제 — 데스크탑에만 있던 기능 -->
+      <button class="topbar-action" style="color:var(--danger,#dc2626);" onclick="mDeleteApplication()" title="삭제">삭제</button>
+    </div>
+  </div>
+  <div class="status-banner" id="detail-status"></div>
+  <div id="detail-body" style="flex:1;padding:0 0 90px;"></div>
+  <div class="bottom-actions" id="detail-bottom"></div>
+</div>
+
+<!-- ===== [v4.18/S3] 모바일: 오늘의 실험실 — 출석체크 패널 (공용 모듈 today_lab 이 내용 렌더) ===== -->
+<div id="m-todayLabPanel" class="detail-panel" style="display:none;z-index:120;">
+  <div class="detail-topbar">
+    <button class="topbar-back" onclick="tlClose()">← 뒤로</button>
+    <span class="topbar-title" style="font-size:15px;font-weight:700;">🧪 오늘의 실험실 — 출석체크</span>
+    <div class="topbar-actions"></div>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:16px;" id="todayLabBody"></div>
+</div>
+
+<!-- ===== 모바일: 지도일지 작성 모달 ===== -->
+<div id="m-guidanceModal" class="detail-panel" style="display:none;z-index:120;">
+  <div class="detail-topbar">
+    <button class="topbar-back" onclick="mCloseGuidanceModal()">← 뒤로</button>
+    <span class="topbar-title" style="font-size:15px;font-weight:700;" id="mg_modalTitle">지도일지 작성</span>
+    <div class="topbar-actions">
+      <!-- [v4.18/S2] 지도일지 조회 — 데스크탑에만 있던 기능 -->
+      <button class="topbar-action" style="font-size:14px;" id="mg_listToggleBtn" onclick="mToggleGuidanceList()">목록</button>
+      <button class="topbar-action" style="font-size:14px;font-weight:700;" id="mg_saveBtn" onclick="mSaveGuidance()">저장</button>
+    </div>
+  </div>
+  <!-- [v4.18/S2] 조회 목록 (기본 숨김) -->
+  <div id="mg_list" style="flex:1;overflow-y:auto;padding:16px;display:none;">
+    <div class="m-loading"><div class="m-loading-spinner"></div>로딩 중...</div>
+  </div>
+  <div id="mg_form" style="flex:1;overflow-y:auto;padding:16px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+      <div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">실험날짜</label><input type="date" id="mg_date" class="filter-input" style="width:100%;"></div>
+      <div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">실험실</label><select id="mg_lab" class="filter-select" style="width:100%;"></select></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+      <div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">학번</label><input id="mg_sid" class="filter-input" style="width:100%;"></div>
+      <div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">이름</label><input id="mg_name" class="filter-input" style="width:100%;"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px;">
+      <div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">시간</label>
+        <select id="mg_time" class="filter-select" style="width:100%;"><option value="ET">ET</option><option value="EP1">EP1</option><option value="7교시">7교시</option></select></div>
+      <div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">지도교사</label><input id="mg_teacher" class="filter-input" style="width:100%;" placeholder="이름"></div>
+      <div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">구분</label>
+        <select id="mg_level" class="filter-select" style="width:100%;"><option value="">선택</option><option value="지도">지도</option><option value="경고">경고</option><option value="칭찬">칭찬</option><option value="안전사고">안전사고</option><option value="기타 특이사항">기타</option></select></div>
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">지도 내용</label>
+      <textarea id="mg_content" rows="6" class="filter-input" style="width:100%;resize:vertical;" placeholder="상세 지도 내용을 입력하세요."></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 모바일: 지도 통계 모달 ===== -->
+<div id="m-warningModal" class="detail-panel" style="display:none;z-index:120;">
+  <div class="detail-topbar">
+    <button class="topbar-back" onclick="mCloseWarningStats()">← 뒤로</button>
+    <span class="topbar-title" style="font-size:15px;font-weight:700;">지도 횟수 통계</span>
+    <div class="topbar-actions"></div>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:16px;" id="m-warningBody">
+    <div class="m-loading"><div class="m-loading-spinner"></div>로딩 중...</div>
+  </div>
+</div>
+
+<!-- ===== 모바일: 신청 제한 관리 모달 ===== -->
+<div id="m-restrictionModal" class="detail-panel" style="display:none;z-index:120;">
+  <div class="detail-topbar">
+    <button class="topbar-back" onclick="mCloseRestrictionModal()">← 뒤로</button>
+    <span class="topbar-title" style="font-size:15px;font-weight:700;">신청 제한 관리</span>
+    <div class="topbar-actions"></div>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:16px;" id="m-restrictionBody">
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+      <button class="quick-btn active" onclick="mLoadRestrictedList()">제한 명단</button>
+      <button class="quick-btn" onclick="mLoadRestrictAccumList()">누적 기록</button>
+      <!-- [v4.18/S2] 정책 설정 — 데스크탑에만 있던 기능 -->
+      <button class="quick-btn" onclick="mShowPolicyPanel()">정책 설정</button>
+    </div>
+    <!-- [v4.18/S2] 정책 설정 패널 (기본 숨김) -->
+    <div id="m-policyPanel" style="display:none;background:var(--surface,#fff);border:1px solid var(--border,#e2e8f0);border-radius:12px;padding:16px;margin-bottom:14px;">
+      <label style="display:flex;align-items:center;gap:10px;font-weight:700;font-size:14px;margin-bottom:12px;">
+        <input type="checkbox" id="mp_enabled" style="width:20px;height:20px;"> 자동 신청 제한 사용
+      </label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">경고 임계(회)</label><input type="number" id="mp_count" class="filter-input" style="width:100%;" min="1" value="2"></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">제한 기간(일)</label><input type="number" id="mp_days" class="filter-input" style="width:100%;" min="1" value="30"></div>
+      </div>
+      <p style="font-size:12px;color:var(--text-muted);margin:0 0 12px;line-height:1.5;">최근 [기간] 안에 경고를 [임계] 회 이상 받은 학생의 신청을 자동으로 제한합니다.</p>
+      <button class="filter-search-btn" style="width:100%;" onclick="mSavePolicyMobile()">정책 저장</button>
+    </div>
+    <div id="m-restrictionResult"><div class="m-empty"><div>위 버튼을 눌러 조회하세요</div></div></div>
+  </div>
+</div>

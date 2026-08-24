@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>시약 검색</title>
+  <style>
+    /* 색상 팔레트 — 신청 폼(form.html)과 동일하게 통일 (라이트 전용) */
+    :root {
+      --bg: #f8fafc;
+      --panel: #ffffff;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --primary: #4361ee;
+      --primary-dark: #3730a3;
+      --primary-light: #eef2ff;
+      --danger: #ef4444;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 4px 20px rgba(15, 23, 42, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Pretendard", "맑은 고딕", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px 16px 60px;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 16px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s, box-shadow 0.15s;
+    }
+    .back-btn:hover { background: #f8fafc; box-shadow: var(--shadow); }
+    .header { margin-bottom: 20px; }
+    .header h1 {
+      margin: 0 0 6px;
+      font-size: 1.7rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .header .subtitle { color: var(--text-muted); font-size: 0.95rem; }
+    .info-box {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      background: var(--primary-light);
+      border: 1px solid #bfdbfe;
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      font-size: 13.5px;
+      color: #1e40af;
+      margin-bottom: 18px;
+    }
+    .info-box .icon { flex-shrink: 0; }
+    .search-panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+    }
+    .search-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .search-input {
+      flex: 1;
+      padding: 13px 16px;
+      font-size: 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: #fff;
+      color: var(--text);
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .search-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.12);
+    }
+    .clear-btn {
+      padding: 12px 16px;
+      background: #f1f5f9;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .clear-btn:hover { background: #e2e8f0; }
+    .result-meta {
+      margin: 16px 2px 10px;
+      font-size: 13px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .result-meta .count b { color: var(--text); }
+    .legend { font-size: 12px; }
+    .legend .req { color: var(--danger); font-weight: 700; }
+    .table-scroll { overflow-x: auto; border-radius: var(--radius-sm); }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      min-width: 640px;
+    }
+    thead th {
+      background: #f8fafc;
+      color: var(--text-muted);
+      font-weight: 700;
+      text-align: left;
+      padding: 11px 14px;
+      border-bottom: 2px solid var(--border);
+      white-space: nowrap;
+      position: sticky;
+      top: 0;
+    }
+    tbody td {
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    tbody tr:hover { background: #f8fafc; }
+    .chem-name { font-weight: 600; }
+    .formula { color: var(--text-muted); font-variant-ligatures: none; }
+    .pill {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.6;
+    }
+    .pill.req { background: #fee2e2; color: var(--danger); }
+    .pill.opt { background: #dcfce7; color: #15803d; }
+    .pill.none { background: #f1f5f9; color: #94a3b8; }
+    .pill.disp { background: #e0e7ff; color: #3730a3; }
+    .state-msg {
+      padding: 40px 16px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+    .spinner {
+      display: inline-block;
+      width: 18px; height: 18px;
+      border: 2px solid #cbd5e1;
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .footer-note {
+      margin-top: 24px;
+      text-align: center;
+      font-size: 12.5px;
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+    @media (max-width: 560px) {
+      .header h1 { font-size: 1.4rem; }
+      .search-row { flex-wrap: wrap; }
+      .clear-btn { flex: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <a class="back-btn" id="backBtn" href="#">← 처음으로</a>
+    </div>
+
+    <div class="header">
+      <h1>시약 검색</h1>
+      <div class="subtitle">실험·실습 주제를 정할 때 교내 구비 시약을 미리 둘러보세요.</div>
+    </div>
+
+    <div class="info-box">
+      <span>이 화면은 <b>조회 전용</b>입니다. 실제 사용 신청은 처음 화면에서 실험실을 선택해 진행해 주세요.
+        시약명·화학식·분류로 검색할 수 있습니다.</span>
+    </div>
+
+    <div class="search-panel">
+      <div class="search-row">
+        <input type="text" id="q" class="search-input" placeholder="시약명 또는 화학식 입력 (예: 염산, NaOH, 에탄올...)" autocomplete="off" spellcheck="false">
+        <button type="button" class="clear-btn" id="clearBtn">지우기</button>
+      </div>
+
+      <div class="result-meta">
+        <span class="count" id="count"></span>
+        <span class="legend">교사 임장 <span class="req">필요</span> 시약은 반드시 교사 지도가 필요합니다.</span>
+      </div>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>물질명</th>
+              <th>화학식</th>
+              <th>분류 / 상태</th>
+              <th>교사 임장</th>
+              <th>폐수 처리</th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <tr><td colspan="5" class="state-msg"><span class="spinner"></span>시약 목록을 불러오는 중…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      교내에 구비된 시약만 표시됩니다. 목록에 없는 시약이 필요하면 담당 선생님께 문의해 주세요.
+    </div>
+  </div>
+
+  <script>
+    var WEB_APP_URL = <?!= JSON.stringify(webAppUrl || '') ?>;
+
+    // 처음으로(게이트웨이) 링크
+    (function () {
+      var back = document.getElementById('backBtn');
+      if (WEB_APP_URL) back.setAttribute('href', WEB_APP_URL);
+      back.addEventListener('click', function (e) {
+        if (!WEB_APP_URL) return;
+        e.preventDefault();
+        window.top.location.href = WEB_APP_URL;
+      });
+    })();
+
+    var ALL = [];        // [[물질명, 화학식, 분류1, 교사임장여부, 폐수처리], ...]
+    var loaded = false;
+    var loadFailed = false;   // 로드 실패 시 검색해도 '결과 없음'으로 덮어쓰지 않도록
+
+    function escapeHtml(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) {
+        return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m];
+      });
+    }
+
+    // 교사임장여부 원본값 → 표시용 pill (시트 표기 변형 허용)
+    function guidancePill(raw) {
+      var s = String(raw || '').trim();
+      if (!s) return '<span class="pill none">—</span>';
+      if (/(필요|요함|필수)/.test(s) && !/(불필요|불요|미필요)/.test(s)) {
+        return '<span class="pill req">필요</span>';
+      }
+      if (/(불필요|불요|미필요|해당없음|없음|무)/.test(s)) {
+        return '<span class="pill opt">불필요</span>';
+      }
+      return '<span class="pill none">' + escapeHtml(s) + '</span>';
+    }
+
+    // 폐수 처리 분류 원본값 → 표시용 pill (유기/무기/산/염기/기타 등)
+    function disposalCell(raw) {
+      var s = String(raw || '').trim();
+      if (!s || s === '선택하세요') return '<span class="pill none">—</span>';
+      return '<span class="pill disp">' + escapeHtml(s) + '</span>';
+    }
+
+    function render(rows) {
+      var tbody = document.getElementById('tbody');
+      var countEl = document.getElementById('count');
+
+      if (!loaded) {
+        tbody.innerHTML = '<tr><td colspan="5" class="state-msg"><span class="spinner"></span>시약 목록을 불러오는 중…</td></tr>';
+        countEl.textContent = '';
+        return;
+      }
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="state-msg">검색 결과가 없습니다. 다른 이름이나 화학식으로 검색해 보세요.</td></tr>';
+        countEl.innerHTML = '<b>0</b>건';
+        return;
+      }
+      var html = rows.map(function (r) {
+        return '<tr>' +
+          '<td class="chem-name">' + escapeHtml(r[0]) + '</td>' +
+          '<td class="formula">' + escapeHtml(r[1]) + '</td>' +
+          '<td>' + escapeHtml(r[2]) + '</td>' +
+          '<td>' + guidancePill(r[3]) + '</td>' +
+          '<td>' + disposalCell(r[4]) + '</td>' +
+          '</tr>';
+      }).join('');
+      tbody.innerHTML = html;
+      countEl.innerHTML = '<b>' + rows.length + '</b>건';
+    }
+
+    function applyFilter() {
+      if (!loaded) return;
+      // [검토반영] 로드 실패 후 타이핑하면 오류 안내가 '검색 결과가 없습니다'로 바뀌어
+      //   학생이 "학교에 그 시약이 없다"고 오해하던 문제 — 실패 상태에선 갱신하지 않음.
+      if (loadFailed) return;
+      var kw = document.getElementById('q').value.trim().toLowerCase();
+      if (!kw) { render(ALL); return; }
+      var filtered = ALL.filter(function (r) {
+        return [0, 1, 2].some(function (i) {
+          return String(r[i]).toLowerCase().indexOf(kw) !== -1;
+        });
+      });
+      render(filtered);
+    }
+
+    document.getElementById('q').addEventListener('input', applyFilter);
+    document.getElementById('clearBtn').addEventListener('click', function () {
+      var q = document.getElementById('q');
+      q.value = '';
+      q.focus();
+      applyFilter();
+    });
+
+    // 전체 목록 1회 로드 → 클라이언트 실시간 필터
+    function loadList(attempt) {
+      google.script.run
+        .withSuccessHandler(function (res) {
+          ALL = (res && res.rows) ? res.rows : [];
+          loaded = true;
+          loadFailed = false;
+          applyFilter();
+        })
+        .withFailureHandler(function (err) {
+          if ((attempt || 0) < 2) { loadList((attempt || 0) + 1); return; }
+          loaded = true;
+          loadFailed = true;
+          document.getElementById('tbody').innerHTML =
+            '<tr><td colspan="5" class="state-msg" style="color:#dc2626;">시약 목록을 불러오지 못했습니다. 새로고침한 뒤 다시 시도해 주세요.</td></tr>';
+          document.getElementById('count').textContent = '';
+        })
+        .getChemicalListForTable();
+    }
+
+    loadList(0);
+  </script>
+</body>
+</html>

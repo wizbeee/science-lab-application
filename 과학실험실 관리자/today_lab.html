@@ -1,0 +1,257 @@
+<!-- ===================================================================
+  [v4.18/S3] 오늘의 실험실 — 출석체크 공용 모듈 (PC admin.html + 모바일 m_spa.html 공용)
+  - 셸(모달 껍데기)은 각 플랫폼이 제공: PC #todayLabModal / 모바일 #m-todayLabPanel
+  - 내용 컨테이너는 양쪽 모두 id="todayLabBody"
+  - 서버: getTodayLabSessions(dateStr) / saveAttendance(payload)
+==================================================================== -->
+<script>
+var TL_STATE = { date: '', sessions: [], openId: '' };
+
+function tlEsc(s) {
+  if (typeof escapeHtml === 'function') return escapeHtml(String(s == null ? '' : s));
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+  });
+}
+function tlBody_() { return document.getElementById('todayLabBody'); }
+function tlIsMobile_() { return !!document.getElementById('m-todayLabPanel'); }
+
+/* ---- 열기/닫기 (양 플랫폼) ---- */
+function openTodayLab() {
+  var mHost = document.getElementById('m-todayLabPanel');
+  var dHost = document.getElementById('todayLabModal');
+  if (mHost) {
+    if (typeof mEnsureTopLevel_ === 'function') mEnsureTopLevel_('m-todayLabPanel');
+    mHost.style.display = '';
+    mHost.classList.add('show');
+    if (typeof mPanelOpenPush_ === 'function') mPanelOpenPush_('m-todayLabPanel'); // [v4.18/S6] 뒤로가기 연동
+  } else if (dHost) {
+    dHost.style.display = 'flex';
+  } else { return; }
+  tlLoad('');
+}
+function tlClose() {
+  var mHost = document.getElementById('m-todayLabPanel');
+  var dHost = document.getElementById('todayLabModal');
+  if (mHost) {
+    mHost.classList.remove('show'); mHost.style.display = 'none';
+    if (typeof mPanelClosed_ === 'function') mPanelClosed_('m-todayLabPanel');
+  }
+  if (dHost) { dHost.style.display = 'none'; }
+}
+
+/* ---- 데이터 로드 ---- */
+function tlLoad(dateStr) {
+  var body = tlBody_();
+  if (!body) return;
+  body.innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--text-muted,#64748b);">불러오는 중…</div>';
+  google.script.run
+    .withSuccessHandler(function (res) {
+      TL_STATE.date = (res && res.date) || '';
+      TL_STATE.sessions = (res && res.sessions) || [];
+      TL_STATE.openId = '';
+      tlRenderList();
+    })
+    .withFailureHandler(function (err) {
+      body.innerHTML = '<div style="text-align:center;padding:30px 12px;color:var(--danger,#dc2626);">불러오지 못했습니다.<br>' +
+        tlEsc((err && (err.message || err)) || '') +
+        '<br><br><button onclick="tlLoad(\'\')" style="padding:8px 18px;border:none;border-radius:8px;background:var(--primary,#2563eb);color:#fff;font-weight:700;cursor:pointer;">다시 시도</button></div>';
+    })
+    .getTodayLabSessions(dateStr || '');
+}
+
+/* ---- 목록 화면 ---- */
+function tlRenderList() {
+  var body = tlBody_();
+  if (!body) return;
+  var s = TL_STATE.sessions;
+  var h = '<div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap;">' +
+    '<input type="date" id="tl_date" value="' + tlEsc(TL_STATE.date) + '" style="padding:8px 10px;border:1px solid var(--border,#e2e8f0);border-radius:8px;background:var(--surface,#fff);color:var(--text,#1e293b);font-size:14px;">' +
+    '<button onclick="tlLoad(document.getElementById(\'tl_date\').value)" style="padding:8px 16px;border:none;border-radius:8px;background:var(--primary,#2563eb);color:#fff;font-weight:700;cursor:pointer;">조회</button>' +
+    '<button onclick="tlLoad(\'\')" style="padding:8px 14px;border:1px solid var(--border,#e2e8f0);border-radius:8px;background:var(--surface,#fff);color:var(--text,#1e293b);font-weight:600;cursor:pointer;">오늘</button>' +
+    '</div>';
+  if (!s.length) {
+    h += '<div style="text-align:center;padding:36px 12px;color:var(--text-muted,#64748b);">이 날짜에는 실험실 예약이 없습니다.</div>';
+    body.innerHTML = h;
+    return;
+  }
+  h += s.map(function (sess, idx) {
+    var stColor = sess.status === '최종승인' ? '#16a34a' : (sess.status === '반려' ? '#dc2626' : (sess.status === '1차승인' ? '#2563eb' : '#b45309'));
+    var checked = sess.roster.filter(function (m) { return m.status; }).length;
+    // 인덱스 전달 — 신청ID 에 공백·따옴표가 섞여도 onclick 문자열이 깨지지 않도록
+    return '<div onclick="tlOpenSessionByIdx(' + idx + ')" ' +
+      'style="cursor:pointer;background:var(--surface,#fff);border:1px solid var(--border,#e2e8f0);border-radius:12px;padding:14px 16px;margin-bottom:10px;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">' +
+      '<b style="font-size:15px;">' + tlEsc(sess.lab) + ' <span style="font-weight:600;color:var(--primary,#2563eb);">' + tlEsc(sess.time) + '</span></b>' +
+      '<span style="display:flex;gap:6px;align-items:center;">' +
+      (sess.saved ? '<span style="font-size:11.5px;font-weight:700;color:#16a34a;background:#dcfce7;padding:3px 9px;border-radius:999px;">출석 ' + checked + '명 저장됨</span>' : '') +
+      '<span style="font-size:11.5px;font-weight:700;color:#fff;background:' + stColor + ';padding:3px 9px;border-radius:999px;">' + tlEsc(sess.status) + '</span></span></div>' +
+      '<div style="font-size:13.5px;margin-bottom:4px;">' + tlEsc(sess.title || '(제목 없음)') + '</div>' +
+      '<div style="font-size:12.5px;color:var(--text-muted,#64748b);">' + tlEsc(sess.leaderName) + ' (' + tlEsc(sess.leaderSid) + ') 외 — 명단 ' + sess.roster.length + '명' + (sess.count ? ' / 신청 인원 ' + tlEsc(sess.count) + '명' : '') + '</div>' +
+      '</div>';
+  }).join('');
+  h += '<p style="font-size:12px;color:var(--text-muted,#64748b);margin-top:4px;">예약을 누르면 명단이 열립니다. 출석 체크는 승인 상태와 무관하게 기록할 수 있습니다.</p>';
+  body.innerHTML = h;
+}
+
+/* ---- 출석 체크 화면 ---- */
+function tlOpenSessionByIdx(idx) {
+  var sess = TL_STATE.sessions[idx];
+  if (!sess) return;
+  TL_STATE.openId = String(sess.appId);
+  tlRenderRoster_(sess);
+}
+
+function tlStatusBtn_(idx, status, label, color) {
+  return '<button data-att-idx="' + idx + '" data-att-status="' + status + '" onclick="tlSetStatus(' + idx + ',\'' + status + '\')" ' +
+    'style="flex:1;min-width:52px;padding:8px 4px;border-radius:8px;border:1.5px solid var(--border,#e2e8f0);background:var(--surface,#fff);color:var(--text,#1e293b);font-size:12.5px;font-weight:700;cursor:pointer;" ' +
+    'data-color="' + color + '">' + label + '</button>';
+}
+
+function tlRenderRoster_(sess) {
+  var body = tlBody_();
+  if (!body) return;
+  var h = '<button onclick="tlRenderList()" style="margin-bottom:12px;padding:7px 14px;border:1px solid var(--border,#e2e8f0);border-radius:8px;background:var(--surface,#fff);color:var(--text,#1e293b);font-weight:600;cursor:pointer;">← 목록으로</button>' +
+    '<div style="background:var(--primary-light,#dbeafe);border-radius:10px;padding:12px 14px;margin-bottom:14px;">' +
+    '<b style="font-size:14.5px;">' + tlEsc(sess.lab) + ' · ' + tlEsc(sess.time) + ' · ' + tlEsc(TL_STATE.date) + '</b>' +
+    '<div style="font-size:12.5px;color:var(--text-muted,#334155);margin-top:3px;">' + tlEsc(sess.title || '') + '</div></div>';
+
+  h += sess.roster.map(function (m, i) {
+    return '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border,#e2e8f0);flex-wrap:wrap;">' +
+      '<div style="min-width:130px;flex:1;">' +
+      '<b style="font-size:14px;">' + tlEsc(m.name || '(이름 없음)') + '</b>' +
+      ' <span style="font-size:12px;color:var(--text-muted,#64748b);">' + tlEsc(m.sid || '') + '</span>' +
+      (m.extra ? ' <span style="font-size:10.5px;font-weight:700;color:#b45309;background:#fef3c7;padding:2px 7px;border-radius:999px;">명단 외</span>' : '') +
+      '</div>' +
+      '<div style="display:flex;gap:6px;flex:1.4;min-width:200px;" id="tl_row_' + i + '">' +
+      (m.extra
+        ? tlStatusBtn_(i, '무단참석', '무단참석', '#b45309') + tlStatusBtn_(i, '출석', '출석', '#16a34a')
+        : tlStatusBtn_(i, '출석', '출석', '#16a34a') + tlStatusBtn_(i, '지각', '지각', '#b45309') + tlStatusBtn_(i, '무단결석', '결석', '#dc2626')) +
+      '</div></div>';
+  }).join('');
+
+  h += '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center;">' +
+    '<input id="tl_extra_sid" placeholder="학번" style="width:90px;padding:8px 10px;border:1px solid var(--border,#e2e8f0);border-radius:8px;background:var(--surface,#fff);color:var(--text,#1e293b);font-size:13px;">' +
+    '<input id="tl_extra_name" placeholder="이름" style="width:110px;padding:8px 10px;border:1px solid var(--border,#e2e8f0);border-radius:8px;background:var(--surface,#fff);color:var(--text,#1e293b);font-size:13px;">' +
+    '<button onclick="tlAddExtra()" style="padding:8px 14px;border:none;border-radius:8px;background:#b45309;color:#fff;font-weight:700;cursor:pointer;">명단 외 학생 추가 (무단참석)</button></div>' +
+    '<p style="font-size:12px;color:var(--text-muted,#64748b);margin:10px 0 14px;line-height:1.55;">체크하지 않은 학생은 저장 시 <b style="color:#dc2626;">무단결석</b>으로 기록됩니다. 같은 예약을 다시 저장하면 이전 기록을 덮어씁니다.</p>' +
+    '<button onclick="tlSave()" style="width:100%;padding:13px;border:none;border-radius:10px;background:var(--primary,#2563eb);color:#fff;font-weight:800;font-size:15px;cursor:pointer;">출석 저장</button>';
+
+  body.innerHTML = h;
+  // 기존 저장 상태 반영
+  sess.roster.forEach(function (m, i) { if (m.status) tlPaintRow_(i, m.status); });
+}
+
+function tlSetStatus(idx, status) {
+  var sess = TL_STATE.sessions.find(function (x) { return String(x.appId) === TL_STATE.openId; });
+  if (!sess || !sess.roster[idx]) return;
+  // 같은 버튼 재클릭 → 체크 해제
+  sess.roster[idx].status = (sess.roster[idx].status === status) ? '' : status;
+  tlPaintRow_(idx, sess.roster[idx].status);
+}
+
+function tlPaintRow_(idx, status) {
+  var row = document.getElementById('tl_row_' + idx);
+  if (!row) return;
+  var btns = row.querySelectorAll('button[data-att-status]');
+  for (var i = 0; i < btns.length; i++) {
+    var b = btns[i];
+    var active = b.getAttribute('data-att-status') === status;
+    b.style.background = active ? (b.getAttribute('data-color') || '#2563eb') : 'var(--surface,#fff)';
+    b.style.color = active ? '#fff' : 'var(--text,#1e293b)';
+    b.style.borderColor = active ? (b.getAttribute('data-color') || '#2563eb') : 'var(--border,#e2e8f0)';
+  }
+}
+
+function tlAddExtra() {
+  var sess = TL_STATE.sessions.find(function (x) { return String(x.appId) === TL_STATE.openId; });
+  if (!sess) return;
+  var sid = (document.getElementById('tl_extra_sid') || {}).value || '';
+  var name = (document.getElementById('tl_extra_name') || {}).value || '';
+  sid = sid.trim(); name = name.trim();
+  if (!sid && !name) { alert('학번 또는 이름을 입력해 주세요.'); return; }
+  var dup = sess.roster.some(function (m) { return m.sid === sid && m.name === name; });
+  if (dup) { alert('이미 명단에 있는 학생입니다.'); return; }
+  sess.roster.push({ sid: sid, name: name, status: '무단참석', extra: true });
+  tlRenderRoster_(sess);
+}
+
+function tlSave() {
+  var sess = TL_STATE.sessions.find(function (x) { return String(x.appId) === TL_STATE.openId; });
+  if (!sess) return;
+  var unchecked = sess.roster.filter(function (m) { return !m.status && !m.extra; });
+  if (sess.roster.every(function (m) { return !m.status; })) {
+    if (!confirm('아무도 체크하지 않았습니다. 명단 전원을 무단결석으로 기록할까요?')) return;
+  } else if (unchecked.length > 0) {
+    if (!confirm('체크하지 않은 ' + unchecked.length + '명은 무단결석으로 기록됩니다. 저장할까요?')) return;
+  }
+  var records = sess.roster
+    .map(function (m) { return { sid: m.sid, name: m.name, status: m.status || (m.extra ? '' : '무단결석') }; })
+    .filter(function (r) { return r.status; });
+  if (!records.length) { alert('저장할 기록이 없습니다.'); return; }
+  if (typeof showGlobalBusy === 'function') showGlobalBusy('출석 저장 중입니다');
+  google.script.run
+    .withSuccessHandler(function (res) {
+      if (!res || res.success === false) {
+        var msg = (res && res.message) || '알 수 없는 오류';
+        if (typeof showGlobalError === 'function') showGlobalError('출석 저장 실패', msg);
+        else alert('저장 실패: ' + msg);
+        return;
+      }
+      sess.saved = true;
+      if (typeof showGlobalSuccess === 'function') showGlobalSuccess('출석이 저장되었습니다', res.saved + '명 기록 완료');
+      else alert('저장되었습니다 (' + res.saved + '명)');
+      tlAfterSave_(sess);
+    })
+    .withFailureHandler(function (err) {
+      var msg = (err && (err.message || err)) || '알 수 없는 오류';
+      if (typeof showGlobalError === 'function') showGlobalError('출석 저장 실패', msg);
+      else alert('저장 실패: ' + msg);
+    })
+    .saveAttendance({ date: TL_STATE.date, appId: sess.appId, lab: sess.lab, time: sess.time, records: records });
+}
+
+/* ---- 저장 후: 지도일지 연동 ---- */
+function tlAfterSave_(sess) {
+  var body = tlBody_();
+  if (!body) return;
+  var h = '<div style="text-align:center;padding:26px 12px;">' +
+    '<div style="font-size:46px;margin-bottom:10px;">✅</div>' +
+    '<b style="font-size:16px;">출석 기록 완료</b>' +
+    '<p style="font-size:13px;color:var(--text-muted,#64748b);margin:8px 0 20px;">' + tlEsc(sess.lab) + ' · ' + tlEsc(sess.time) + ' — 이어서 지도일지를 작성할 수 있습니다.</p>' +
+    '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">' +
+    '<button onclick="tlToGuidance()" style="padding:11px 20px;border:none;border-radius:10px;background:#16a34a;color:#fff;font-weight:700;cursor:pointer;">📝 지도일지 작성</button>' +
+    '<button onclick="tlRenderList()" style="padding:11px 20px;border:1px solid var(--border,#e2e8f0);border-radius:10px;background:var(--surface,#fff);color:var(--text,#1e293b);font-weight:700;cursor:pointer;">목록으로</button>' +
+    '</div></div>';
+  body.innerHTML = h;
+}
+
+/** 지도일지 자동 채움 — 날짜·실험실·시간·대표자 (PC: g_*, 모바일: mg_*) */
+function tlToGuidance() {
+  var sess = TL_STATE.sessions.find(function (x) { return String(x.appId) === TL_STATE.openId; });
+  if (!sess) return;
+  tlClose();
+  if (typeof openGuidanceModal !== 'function') return;
+  openGuidanceModal();
+  var set = function (id, val) {
+    var el = document.getElementById(id);
+    if (el && val != null && val !== '') {
+      el.value = val;
+      try { el.dispatchEvent(new Event('change')); } catch (e) {}
+    }
+  };
+  // [v4.18/S6] 시간이 "ET, EP1"처럼 복수면 select 옵션과 안 맞아 무시되던 문제 — 첫 시간대만 주입
+  var timeOne = String(sess.time || '').split(',')[0].trim();
+  // 렌더 직후 값 주입 (양 플랫폼 필드 id 모두 시도)
+  setTimeout(function () {
+    set('g_date', TL_STATE.date);  set('mg_date', TL_STATE.date);
+    set('g_lab', sess.lab);        set('mg_lab', sess.lab);
+    set('g_time', timeOne);        set('mg_time', timeOne);
+    set('g_sid', sess.leaderSid);  set('mg_sid', sess.leaderSid);
+    set('g_name', sess.leaderName); set('mg_name', sess.leaderName);
+    // 이전 작성 내용이 남아 있으면 혼동 — 내용란은 비워서 시작
+    var c1 = document.getElementById('g_content');  if (c1) c1.value = '';
+    var c2 = document.getElementById('mg_content'); if (c2) c2.value = '';
+  }, 60);
+}
+</script>

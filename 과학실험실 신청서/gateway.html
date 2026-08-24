@@ -32,27 +32,36 @@
     }
 
     .card-container {
-      display: flex;
-      gap: 32px;
-      flex-wrap: wrap;
-      justify-content: center;
-      max-width: 900px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      max-width: 1200px;
       width: 100%;
+    }
+    /* 5개 카드일 때 마지막 행 두 카드를 가운데 두 칸(2~3)에 배치 — 빈 칸을 좌측으로 */
+    @media (min-width: 1025px) {
+      .card-container > .card:nth-last-child(2) { grid-column-start: 2; }
+      .card-container > .card:last-child        { grid-column-start: 3; }
+    }
+    @media (max-width: 1024px) {
+      .card-container { grid-template-columns: repeat(2, 1fr); gap: 20px; max-width: 800px; }
+    }
+    @media (max-width: 600px) {
+      .card-container { grid-template-columns: 1fr; gap: 16px; max-width: 480px; }
     }
 
     .card {
       background: #fff;
       border-radius: 16px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-      width: 400px;
       max-width: 100%;
       overflow: hidden;
       transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
       cursor: pointer;
       text-decoration: none;
       color: inherit;
-        display: flex;
-        flex-direction: column;
+      display: flex;
+      flex-direction: column;
     }
     .card:hover {
       transform: translateY(-4px);
@@ -88,11 +97,42 @@
       background: #e8f5e9;
       color: #2e7d32;
     }
+    .card.it .floor-badge {
+      background: #f3e5f5;
+      color: #7b1fa2;
+    }
+    .card.home .floor-badge {
+      background: #fce4ec;
+      color: #c2185b;
+    }
+    .card.engineering .floor-badge {
+      background: #fff3e0;
+      color: #e65100;
+    }
+    /* [2026-08] Tech & Art LAB — 공학 ZONE 에서 분리된 별도 카드 */
+    .card.techart .floor-badge {
+      background: #ede7f6;
+      color: #4527a0;
+    }
+    /* (legacy 호환 — 더 이상 사용하지 않지만 빠른 롤백을 위해 보존) */
+    .card.coming-soon .floor-badge {
+      background: #f3e5f5;
+      color: #7b1fa2;
+    }
+    .card.coming-soon-n .floor-badge {
+      background: #fff3e0;
+      color: #e65100;
+    }
     .card-header h2 {
-      font-size: 1.5rem;
+      font-size: 1.4rem;
       color: #222;
       font-weight: 800;
       margin-bottom: 6px;
+      word-break: keep-all;
+      line-height: 1.3;
+    }
+    @media (max-width: 1024px) {
+      .card-header h2 { font-size: 1.25rem; }
     }
     .card-header .subtitle {
       font-size: 0.8rem;
@@ -149,6 +189,40 @@
     .card.floor23 .btn {
       background: linear-gradient(135deg, #2e7d32, #66bb6a);
     }
+    .card.it .btn {
+      background: linear-gradient(135deg, #7b1fa2, #ba68c8);
+    }
+    .card.home .btn {
+      background: linear-gradient(135deg, #c2185b, #ec407a);
+    }
+    .card.engineering .btn {
+      background: linear-gradient(135deg, #e65100, #ff9800);
+    }
+    .card.techart .btn {
+      background: linear-gradient(135deg, #4527a0, #7e57c2);
+    }
+    /* (legacy 호환) */
+    .card.coming-soon .btn {
+      background: linear-gradient(135deg, #7b1fa2, #ba68c8);
+    }
+    .card.coming-soon-n .btn {
+      background: linear-gradient(135deg, #e65100, #ff9800);
+    }
+    .card.disabled {
+      opacity: 0.65; cursor: default;
+    }
+    .card.disabled:hover {
+      transform: none;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    .coming-tag {
+      display: inline-block; padding: 3px 10px; border-radius: 12px;
+      font-size: 0.7rem; font-weight: 700; background: #f3e5f5; color: #7b1fa2;
+      margin-left: 8px; vertical-align: middle;
+    }
+    .card.coming-soon-n .coming-tag {
+      background: #fff3e0; color: #e65100;
+    }
 
     @keyframes spin {
       to { transform: rotate(360deg); }
@@ -173,6 +247,37 @@
       line-height: 1.6;
     }
 
+    .skip-link {
+      position: absolute;
+      top: -40px;
+      left: 0;
+      background: #1a237e;
+      color: #fff;
+      padding: 8px 16px;
+      z-index: 100;
+      transition: top 0.2s;
+    }
+    .skip-link:focus {
+      top: 0;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); }
+      .card { background: #1e1e2e; color: #e0e0e0; }
+      .card:hover { box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
+      .card-header h2 { color: #e0e0e0; }
+      .card-header .subtitle { color: #aaa; }
+      .lab-list .lab-label, .lab-list .lab-names { color: #ccc; }
+      .footer-note { color: #888; }
+      .header h1 { color: #90caf9; }
+      .header p { color: #aaa; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .card { transition: none; }
+      .btn .spinner { animation: none; }
+    }
+
     @media (max-width: 768px) {
       body { padding: 20px 12px; }
       .header h1 { font-size: 1.5rem; }
@@ -180,62 +285,189 @@
       .card { width: 100%; }
       .card-header h2 { font-size: 1.25rem; }
     }
+
+    /* 시약 검색 배너 — 신청 카드와 구분되는 조회 전용 진입점 */
+    .chem-search-banner {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      max-width: 820px;
+      margin: 28px auto 0;
+      padding: 18px 22px;
+      background: linear-gradient(135deg, #0ea5e9, #2563eb);
+      border-radius: 16px;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.25);
+      transition: transform 0.15s, box-shadow 0.15s;
+      color: #fff;
+    }
+    .chem-search-banner:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(37, 99, 235, 0.35); }
+    .chem-search-banner:focus-visible { outline: 3px solid #93c5fd; outline-offset: 3px; }
+    .chem-search-banner .chem-icon { font-size: 2rem; flex-shrink: 0; }
+    .chem-search-banner .chem-text { flex: 1; min-width: 0; }
+    .chem-search-banner .chem-title { font-size: 1.15rem; font-weight: 800; letter-spacing: -0.01em; }
+    .chem-search-banner .chem-sub { font-size: 0.85rem; opacity: 0.92; margin-top: 2px; }
+    .chem-search-banner .chem-arrow { font-size: 1.5rem; font-weight: 700; flex-shrink: 0; }
+    @media (max-width: 560px) {
+      .chem-search-banner { margin-top: 20px; padding: 16px; gap: 12px; }
+      .chem-search-banner .chem-icon { font-size: 1.7rem; }
+      .chem-search-banner .chem-title { font-size: 1.05rem; }
+      .chem-search-banner .chem-sub { font-size: 0.8rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .chem-search-banner { transition: none; }
+      .chem-search-banner:hover { transform: none; }
+    }
   </style>
+  <?!= include('_security_guard') ?>
 </head>
 <body>
 
+  <a href="#main-content" class="skip-link">본문으로 건너뛰기</a>
+
+  <main>
+
   <div class="header">
-    <h1>과학실험실 사용 신청</h1>
-    <p>신청하려는 실험실이 위치한 층을 선택해 주세요.</p>
+    <h1>과학 실험·실습실 사용 신청</h1>
+    <p>신청하려는 실험·실습실이 위치한 층을 선택해 주세요.</p>
   </div>
 
-  <div class="card-container">
+  <div class="card-container" id="main-content">
 
     <!-- 1층 과학실험실 -->
-    <div class="card floor1" onclick="goToForm('form')">
+    <div class="card floor1" role="button" tabindex="0" aria-label="1층 화학·생물 계열 실험·실습실 신청 페이지로 이동" onclick="goToForm('form', event)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
       <div class="card-header">
         <div class="floor-badge">S동 1층</div>
-        <h2>1층 과학실험실 신청</h2>
-        <div class="subtitle">화학 · 생물 계열 실험실</div>
+        <h2>1층 과학 실험·실습실</h2>
+        <div class="subtitle">화학 · 생물 계열 실험·실습실</div>
       </div>
       <div class="lab-list">
-        <div class="lab-label">신청 가능 실험실</div>
+        <div class="lab-label">신청 가능 실험·실습실</div>
         <div class="lab-names"><span class="lab-name">화학실험실</span><span class="separator"> · </span><span class="lab-name">생물실험실</span><span class="separator"> · </span><span class="lab-name">첨단기기 실험실</span><span class="separator"> · </span><span class="lab-name">프로젝트 실험실</span><span class="separator"> · </span><span class="lab-name">OPEN Lab</span></div>
       </div>
       <div class="card-action">
-        <div class="btn">1층 실험실 신청하기 →</div>
+        <div class="btn">신청하기 →</div>
       </div>
     </div>
 
     <!-- 2, 3층 과학실험실 -->
-    <div class="card floor23" onclick="goToForm('form2f')">
+    <div class="card floor23" role="button" tabindex="0" aria-label="2층 물리 계열 실험·실습실 신청 페이지로 이동" onclick="goToForm('form2f', event)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
       <div class="card-header">
-        <div class="floor-badge">S동 2·3층</div>
-        <h2>2, 3층 과학실험실 신청</h2>
-        <div class="subtitle">물리 계열 실험실</div>
+        <div class="floor-badge">S동 2층</div>
+        <h2>2층 과학 실험·실습실</h2>
+        <div class="subtitle">물리 계열 실험·실습실</div>
       </div>
       <div class="lab-list">
-        <div class="lab-label">신청 가능 실험실</div>
-        <div class="lab-names"><span class="lab-name">물리실험실</span><span class="separator"> · </span><span class="lab-name">파동광학 실험실</span><span class="separator"> · </span><span class="lab-name">AP Lab</span><span class="separator"> · </span><span class="lab-name">Tech &amp Art LaB</span></div>
+        <div class="lab-label">신청 가능 실험·실습실</div>
+        <div class="lab-names"><span class="lab-name">물리실험실</span><span class="separator"> · </span><span class="lab-name">파동광학 실험실</span><span class="separator"> · </span><span class="lab-name">AP Lab</span></div>
       </div>
       <div class="card-action">
-        <div class="btn">2, 3층 실험실 신청하기 →</div>
+        <div class="btn">신청하기 →</div>
+      </div>
+    </div>
+
+    <!-- S동 2층 IT 관련 실습실 -->
+    <!-- [v3.58 / 5-1] 전면 활성화 -->
+    <div class="card it" role="button" tabindex="0" aria-label="IT 관련 실습실 신청 페이지로 이동" onclick="goToForm('form_it', event)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
+      <div class="card-header">
+        <div class="floor-badge">S동 2층</div>
+        <h2>IT 관련 실습실</h2>
+        <div class="subtitle">IT 공학 · 코딩 계열 실습실</div>
+      </div>
+      <div class="lab-list">
+        <div class="lab-label">신청 가능 실습실</div>
+        <div class="lab-names"><span class="lab-name">IT 공학실</span><span class="separator"> · </span><span class="lab-name">코딩실</span></div>
+      </div>
+      <div class="card-action">
+        <div class="btn">신청하기 →</div>
+      </div>
+    </div>
+
+    <!-- N동 공학 ZONE -->
+    <!-- [2026-08] Tech & Art LAB 을 별도 카드로 분리 — 지도교사 자격이 서로 다름
+         (공학 ZONE = 기술 / Tech & Art LAB = 물리(테크)) -->
+    <div class="card engineering" role="button" tabindex="0" aria-label="N동 공학 ZONE 신청 페이지로 이동" onclick="goToForm('form_engineering', event)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
+      <div class="card-header">
+        <div class="floor-badge">N동</div>
+        <h2>공학 ZONE</h2>
+        <div class="subtitle">공학 · 기술 계열 실습실</div>
+      </div>
+      <div class="lab-list">
+        <div class="lab-label">신청 가능 실습실 <span style="font-weight:400">(1~4개 선택)</span></div>
+        <div class="lab-names"><span class="lab-name">융합기술실</span><span class="separator"> · </span><span class="lab-name">창의공학실</span><span class="separator"> · </span><span class="lab-name">공작기계실</span><span class="separator"> · </span><span class="lab-name">FAB Lab</span></div>
+      </div>
+      <div class="card-action">
+        <div class="btn">신청하기 →</div>
+      </div>
+    </div>
+
+    <!-- S동 3층 Tech & Art LAB -->
+    <div class="card techart" role="button" tabindex="0" aria-label="Tech &amp; Art LAB 신청 페이지로 이동" onclick="goToForm('form_techart', event)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
+      <div class="card-header">
+        <div class="floor-badge">S동 3층</div>
+        <h2>Tech &amp; Art LAB</h2>
+        <div class="subtitle">기술 · 예술 융합 실습실</div>
+      </div>
+      <div class="lab-list">
+        <div class="lab-label">신청 가능 실습실</div>
+        <div class="lab-names"><span class="lab-name">Tech &amp; Art LAB</span></div>
+      </div>
+      <div class="card-action">
+        <div class="btn">신청하기 →</div>
+      </div>
+    </div>
+
+    <!-- N동 가정실습실 -->
+    <!-- [v3.58 / 5-1] 전면 활성화 -->
+    <div class="card home" role="button" tabindex="0" aria-label="가정실습실 신청 페이지로 이동" onclick="goToForm('form_home', event)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
+      <div class="card-header">
+        <div class="floor-badge">N동</div>
+        <h2>가정실습실</h2>
+        <div class="subtitle">조리 · 가정 계열 실습실</div>
+      </div>
+      <div class="lab-list">
+        <div class="lab-label">신청 가능 실습실</div>
+        <div class="lab-names"><span class="lab-name">가정실습실</span></div>
+      </div>
+      <div class="card-action">
+        <div class="btn">신청하기 →</div>
       </div>
     </div>
 
   </div>
 
+  <!-- 시약 검색 (조회 전용) — 신청 절차 없이 교내 시약을 둘러보는 진입점 -->
+  <div class="chem-search-banner" role="button" tabindex="0"
+       aria-label="시약 검색 페이지로 이동 (조회 전용)"
+       onclick="goToChemSearch(event)"
+       onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
+    <div class="chem-text">
+      <div class="chem-title">시약 검색하기</div>
+      <div class="chem-sub">신청 전, 사용할 시약을 미리 찾아보세요 · 조회 전용</div>
+    </div>
+    <div class="chem-arrow" aria-hidden="true">→</div>
+  </div>
+
   <div class="footer-note">
     신청 전 지도교사와 사전 협의가 필요합니다.<br>
-    실험실 안전 수칙을 반드시 숙지한 후 신청해 주세요.
+    실험·실습실 안전 수칙을 반드시 숙지한 후 신청해 주세요.
   </div>
+
+  </main>
 
   <script>
     // 서버에서 주입
     const webAppUrl = <?!= JSON.stringify(webAppUrl || '') ?>;
     let isNavigating = false;
 
-    function goToForm(page) {
+    // [v3.58] 전면 활성화로 현재 미사용 — 향후 특정 양식을 다시 잠글 때 재사용.
+    function showStageNotice(labLabel, e) {
+      try { (e || window.event).preventDefault(); } catch(_) {}
+      try { (e || window.event).stopPropagation(); } catch(_) {}
+      alert(labLabel + '은(는) 현재 신청 준비 중입니다.\n추후 운영 안내에 따라 활성화됩니다.');
+    }
+
+    function goToForm(page, e) {
       if (isNavigating) return;
       if (!webAppUrl) {
         alert('URL 정보를 가져올 수 없습니다. 페이지를 새로고침해 주세요.');
@@ -243,13 +475,34 @@
       }
       isNavigating = true;
 
-      const card = event.currentTarget;
+      const card = (e || window.event).currentTarget;
       const btn = card.querySelector('.btn');
+      const originalText = btn.textContent;
       card.classList.add('loading');
       btn.innerHTML = '<span class="spinner"></span>이동 중...';
 
       const url = webAppUrl + '?page=' + encodeURIComponent(page);
+
+      // B-NEW-9: 네비게이션 실패 시 5초 후 복구
+      setTimeout(function() {
+        isNavigating = false;
+        card.classList.remove('loading');
+        btn.innerHTML = originalText;
+      }, 5000);
+
       window.top.location.href = url;
+    }
+
+    // 시약 검색(조회 전용) 페이지로 이동 — 카드 로딩 UI 없이 단순 이동
+    function goToChemSearch(e) {
+      if (isNavigating) return;
+      if (!webAppUrl) {
+        alert('URL 정보를 가져올 수 없습니다. 페이지를 새로고침해 주세요.');
+        return;
+      }
+      isNavigating = true;
+      setTimeout(function () { isNavigating = false; }, 5000);
+      window.top.location.href = webAppUrl + '?page=chemsearch';
     }
   </script>
 </body>

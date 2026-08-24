@@ -1,0 +1,1199 @@
+<script>
+/* =========================================================
+ * 모바일 대시보드 스크립트 — 목업 클래스명 동일 버전
+ * ========================================================= */
+
+let ALL = [];
+let VIEW = [];
+let STATUS_FILTER = '';
+const PAGE = { current: 1, size: 20 };
+let CURRENT_DETAIL = null;
+
+const mFilters = {
+  basis: '실험할날짜', dateFrom: '', dateTo: '',
+  lab: '', status: '', search: ''
+};
+
+/* ===== 데이터 로딩 ===== */
+// [MR21/MR22] 로딩 중 버튼 비활성화 + 실패 시 재시도 버튼
+var LOADING = false;
+function _setLoadingUIEnabled_(disabled) {
+  // [v4.18/S6] 대시보드 뷰로 스코프 한정 (재부모화된 모달·다른 뷰 버튼 오염 방지)
+  var ids = ['#labSelect','#statusSelect','#searchInput','#view-admin .filter-search-btn','#view-admin .quick-btn'];
+  ids.forEach(function(sel){
+    document.querySelectorAll(sel).forEach(function(el){
+      el.disabled = disabled;
+      if (disabled) el.setAttribute('aria-busy', 'true'); else el.removeAttribute('aria-busy');
+    });
+  });
+}
+// [v4.0.10/UX-38] 풀-투-리프레시 비활성 안내 — 첫 진입 1회만 (localStorage 표시)
+(function showPtrNoticeOnce(){
+  try {
+    if (localStorage.getItem('m-ptr-notice-shown') === '1') return;
+    setTimeout(function(){
+      var box = document.createElement('div');
+      box.style.cssText = 'position:fixed;left:50%;bottom:80px;transform:translateX(-50%);background:rgba(0,0,0,.85);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;z-index:9999;max-width:90vw;text-align:center;';
+      box.innerHTML = '아래로 당겨도 새로고침이 되지 않습니다.<br>우측 상단 ↻ 버튼을 사용하세요.';
+      document.body.appendChild(box);
+      setTimeout(function(){ if (box.parentNode) box.parentNode.removeChild(box); }, 4500);
+      localStorage.setItem('m-ptr-notice-shown', '1');
+    }, 1500);
+  } catch (_) {}
+})();
+
+function loadApplications() {
+  if (LOADING) return;           // 중복 호출 방지
+  LOADING = true;
+  _setLoadingUIEnabled_(true);
+
+  mFilters.lab = $('#labSelect') ? $('#labSelect').value || '' : '';
+  mFilters.status = $('#statusSelect') ? $('#statusSelect').value || '' : '';
+  mFilters.search = $('#searchInput') ? $('#searchInput').value.trim() : '';
+
+  $('#card-list').innerHTML = '<div class="m-loading"><div class="m-loading-spinner"></div><span>데이터를 불러오는 중...</span></div>';
+
+  google.script.run
+    .withSuccessHandler(function(list) {
+      LOADING = false;
+      _setLoadingUIEnabled_(false);
+      ALL = Array.isArray(list) ? list : [];
+      applyStats();
+      PAGE.current = 1;
+      refreshView();
+    })
+    .withFailureHandler(function(err) {
+      LOADING = false;
+      _setLoadingUIEnabled_(false);
+      // [MR22] 재시도 버튼 제공
+      var msg = (err && (err.message || err)) || '알 수 없는 오류';
+      $('#card-list').innerHTML =
+        '<div class="m-empty">' +
+        '<div>오류: ' + escapeHtml(msg) + '</div>' +
+        '<button type="button" class="m-retry-btn" onclick="loadApplications()" ' +
+        'style="margin-top:12px;padding:10px 20px;background:var(--primary,#2563eb);color:#fff;border:0;border-radius:8px;font-size:14px;min-height:44px;">다시 시도</button>' +
+        '</div>';
+    })
+    .getAllApplications({
+      dateFrom: mFilters.dateFrom, dateTo: mFilters.dateTo,
+      lab: mFilters.lab, status: mFilters.status,
+      searchTerm: mFilters.search, basis: mFilters.basis,
+      includeChemicals: false  // ✅ 대시보드 목록에서는 시약 데이터 불필요
+    });
+}
+
+/* ===== 통계 ===== */
+function applyStats() {
+  var pending = 0, first = 0, final_ = 0, rejected = 0;
+  ALL.forEach(function(app) {
+    var st = calcStatus(app);
+    if (st === '대기') pending++;
+    else if (st === '1차승인') first++;
+    else if (st === '최종승인') final_++;
+    else if (st === '반려') rejected++;
+  });
+  $('#stat-total').textContent = ALL.length;
+  $('#stat-pending').textContent = pending;
+  $('#stat-first').textContent = first;
+  $('#stat-final').textContent = final_;
+  $('#stat-rejected').textContent = rejected;
+  updatePendingBadge(pending);
+}
+
+/* ===== 필터/정렬 → 뷰 갱신 ===== */
+function refreshView() {
+  var rows = ALL.slice();
+  if (STATUS_FILTER) rows = rows.filter(function(a) { return calcStatus(a) === STATUS_FILTER; });
+  if (mFilters.status) rows = rows.filter(function(a) { return calcStatus(a) === mFilters.status; });
+  // [v2] 신규 양식 '사용실험실목록'(콤마결합)에도 매칭
+  if (mFilters.lab) {
+    var labQ = String(mFilters.lab);
+    rows = rows.filter(function(a) {
+      if (String(a['신청실험실'] || '') === labQ) return true;
+      var list = String(a['사용실험실목록'] || '').split(',').map(function(s){return s.trim();}).filter(Boolean);
+      return list.indexOf(labQ) >= 0;
+    });
+  }
+  if (mFilters.search) {
+    var t = mFilters.search.toLowerCase();
+    rows = rows.filter(function(a) {
+      return String(a['대표자학번']||'').toLowerCase().includes(t) ||
+        String(a['대표자이름']||'').toLowerCase().includes(t) ||
+        String(a['지도교사이름']||'').toLowerCase().includes(t) ||
+        String(a['실험제목']||'').toLowerCase().includes(t) ||
+        labelOfFormCategory(a).toLowerCase().includes(t); // [v2] 양식 한글 라벨
+    });
+  }
+  rows.sort(function(a, b) { return cmpDateTs(b['실험할날짜'], a['실험할날짜']); });
+  VIEW = rows;
+  renderCards();
+}
+
+/* ===== 카드 렌더링 — 목업 HTML과 동일 구조 ===== */
+function renderCards() {
+  var container = $('#card-list');
+  var total = VIEW.length;
+  var end = PAGE.current * PAGE.size;
+  var showing = VIEW.slice(0, end);
+  var remaining = total - end;
+
+  var countEl = $('#result-count');
+  if (countEl) {
+    if (total === 0) countEl.textContent = '조건에 맞는 신청이 없습니다';
+    else countEl.innerHTML = '총 <strong>' + total + '건</strong>' + (remaining > 0 ? ' 중 <strong>' + showing.length + '건</strong> 표시' : '');
+  }
+
+  if (total === 0) {
+    container.innerHTML = '<div class="m-empty"><div>조건에 맞는 신청이 없습니다</div></div>';
+    return;
+  }
+
+  var html = '';
+  showing.forEach(function(app) {
+    var status = calcStatus(app);
+    var appId = escapeHtml(app['신청ID'] || '');
+    var name = escapeHtml(app['대표자이름'] || '');
+    var stuId = escapeHtml(app['대표자학번'] || '');
+    var lab = escapeHtml(app['신청실험실'] || '');
+    var date = fmtDate(app['실험할날짜']);
+    var time = escapeHtml(app['신청시간'] || '');
+    var title = escapeHtml(app['실험제목'] || '');
+    var teacher = escapeHtml(app['지도교사이름'] || '');
+    var badgeClass = statusBadgeClass(status);
+    var dataStatus = statusDataAttr(status);
+
+    var approveBtn = '';
+    if (status === '대기') {
+      approveBtn = '<button class="card-btn card-btn-approve-menu" onclick="event.stopPropagation(); quickApprove(\'' + appId + '\')">승인 처리 ▾</button>';
+    } else if (status === '1차승인') {
+      approveBtn = '<button class="card-btn card-btn-approve-menu" onclick="event.stopPropagation(); quickFinalApprove(\'' + appId + '\')">최종승인 ▾</button>';
+    } else if (status === '반려') {
+      approveBtn = '<button class="card-btn" style="background:#fee2e2;color:#991b1b;" onclick="event.stopPropagation(); openDetail(\'' + appId + '\')">반려 사유</button>';
+    } else {
+      approveBtn = '<button class="card-btn" style="background:var(--bg);color:var(--text-muted);">완료됨</button>';
+    }
+
+    // [v4.0.10/UX-20] 모바일 카드 좌→우 스와이프=승인, 우→좌=반려 (touchstart/touchend)
+    html += '<div class="app-card" data-status="' + dataStatus + '" data-app-id="' + appId + '" ' +
+      'ontouchstart="(function(e,el){el.dataset._tx=e.touches[0].clientX;el.dataset._ty=e.touches[0].clientY;})(event,this)" ' +
+      'ontouchend="(function(e,el){var sx=parseFloat(el.dataset._tx||0),sy=parseFloat(el.dataset._ty||0);var ex=e.changedTouches[0].clientX,ey=e.changedTouches[0].clientY;var dx=ex-sx,dy=ey-sy;if(Math.abs(dx)>80&&Math.abs(dx)>Math.abs(dy)*2){var id=el.dataset.appId;if(dx>0){if(typeof quickApprove===\'function\')quickApprove(id);}else{if(typeof mSwipeReject===\'function\')mSwipeReject(id);else openDetail(id);}}})(event,this)" ' +
+      'onclick="openDetail(\'' + appId + '\')">' +
+      '<div class="card-header">' +
+        '<div><span class="card-student">' + name + '</span><span class="card-student-id">' + stuId + '</span></div>' +
+        '<span class="status-badge ' + badgeClass + '">' + status + '</span>' +
+      '</div>' +
+      '<div class="card-info">' +
+        '<span class="card-info-item">' + mLabBadge(app) + lab + '</span>' +
+        '<span class="card-info-item">' + date + '</span>' +
+        '<span class="card-info-item">' + time + '</span>' +
+        '<span class="card-info-item">' + teacher + '</span>' +
+      '</div>' +
+      '<div class="card-title">' + title + '</div>' +
+      '<div class="card-actions">' +
+        '<button class="card-btn card-btn-detail" onclick="event.stopPropagation(); openDetail(\'' + appId + '\')">상세 보기</button>' +
+        approveBtn +
+      '</div>' +
+    '</div>';
+  });
+
+  if (remaining > 0) {
+    html += '<div class="load-more"><button class="load-more-btn" onclick="loadMore()">더보기 (' + remaining + '건 남음) ↓</button></div>';
+  }
+  container.innerHTML = html;
+}
+
+function loadMore() { PAGE.current++; renderCards(); }
+
+/* ===== 상세보기 — 목업 mobile_detail.html과 동일 구조 ===== */
+function openDetail(id) {
+  var app = ALL.find(function(a) { return String(a['신청ID']) === String(id); });
+  if (!app) { alert('신청 데이터를 찾을 수 없습니다.'); return; }
+  CURRENT_DETAIL = app;
+  // [v4.0.10/UX-35] 진동 피드백 (Android — 사용자 옵션 미구현, 짧게 20ms)
+  try { if (navigator.vibrate) navigator.vibrate(20); } catch (_) {}
+  var status = calcStatus(app);
+
+  // 상태 배너
+  var statusEl = $('#detail-status');
+  var statusClassMap = { '대기': 'pending', '1차승인': 'first', '최종승인': 'final', '반려': 'rejected' };
+  statusEl.className = 'status-banner ' + (statusClassMap[status] || '');
+  statusEl.textContent = status + (status === '대기' ? ' — 승인 대기 중' : '');
+
+  // 상세 내용 — section/info-row 구조 (목업 동일)
+  var body = $('#detail-body');
+  var h = '<div class="section"><div class="section-title">기본 정보</div><div class="info-grid">' +
+    ir('신청번호', '#' + escapeHtml(app['신청ID']||'')) +
+    ir('대표자', escapeHtml(app['대표자이름']||'') + ' (' + escapeHtml(app['대표자학번']||'') + ')') +
+    ir('실험·실습실', mLabBadge(app) + escapeHtml(app['신청실험실']||'')) +
+    ir('실험날짜', fmtDate(app['실험할날짜'])) +
+    ir('시간', escapeHtml(app['신청시간']||'')) +
+    ir('실험제목', escapeHtml(app['실험제목']||'')) +
+    ir('지도교사', escapeHtml(app['지도교사이름']||'')) +
+    ir('제출일시', fmtDate(app['제출일시'], true)) +
+    ir('총인원', escapeHtml(app['총인원수']||'')) +
+    ir('사용목적', escapeHtml(app['사용목적']||'') + (app['사용목적 기타'] ? ' <span style="color:var(--text-muted)">(' + escapeHtml(app['사용목적 기타']) + ')</span>' : '')) +
+    ((app['임장지도 시작시간'] || app['임장지도 종료시간']) ? ir('임장지도 시간', escapeHtml(app['임장지도 시작시간']||'-') + ' ~ ' + escapeHtml(app['임장지도 종료시간']||'-')) : '') +
+    (app['안전장구'] ? ir('안전장구', escapeHtml(app['안전장구'])) : '') +
+  '</div></div>';
+
+  // [G+] 승인 검토 섹션 — 데스크탑 admin_scripts.html 과 동일 항목 노출
+  //   1차/최종 승인 결과·의견 + 1차 검토(P0-2: 도구장비/실험내용 적절성)
+  if (app['지도승인여부'] || app['지도승인의견'] || app['최종승인여부'] || app['최종승인의견'] || app['도구장비_적절성'] || app['실험내용_적절성']) {
+    // [기능 변경] 승인이면 '승인 의견', 반려면 '반려 사유'로 동적 라벨
+    var _s1 = String(app['지도승인여부']||'').trim();
+    var _sf = String(app['최종승인여부']||'').trim();
+    h += '<div class="section"><div class="section-title">승인 검토 정보</div><div class="info-rows">' +
+      (app['지도승인여부']   ? ir('1차(지도) 승인 결과', escapeHtml(app['지도승인여부']))   : '') +
+      (app['지도승인의견']   ? ir('1차(지도) ' + (_s1==='반려' ? '반려 사유' : '승인 의견'), escapeHtml(app['지도승인의견']))   : '') +
+      (app['도구장비_적절성'] ? ir('1차 검토 — 도구·장비·시약·재료 적절', escapeHtml(app['도구장비_적절성'])) : '') +
+      (app['실험내용_적절성'] ? ir('1차 검토 — 실험과정·뒷정리·주의사항 적절', escapeHtml(app['실험내용_적절성'])) : '') +
+      (app['최종승인여부']   ? ir('최종 승인 결과', escapeHtml(app['최종승인여부']))   : '') +
+      (app['최종승인의견']   ? ir('최종 ' + (_sf==='반려' ? '반려 사유' : '승인 의견'), escapeHtml(app['최종승인의견']))   : '') +
+    '</div></div>';
+  }
+
+  var companions = app['동반자명단'] || '';
+  if (companions) {
+    h += '<div class="section"><div class="section-title">동반 학생</div><div class="companion-list">';
+    String(companions).split(',').forEach(function(c) {
+      c = c.trim();
+      if (c) h += '<div class="companion-chip">' + escapeHtml(c) + '</div>';
+    });
+    h += '</div></div>';
+  }
+
+  if (app['실험준비물'] || app['실험과정'] || app['실험뒷정리'] || app['실험시 주의사항']) {
+    h += '<div class="section">';
+    if (app['실험준비물']) h += '<div class="section-title">실험 준비물</div><p style="font-size:14px;line-height:1.6;color:var(--text-muted);margin-bottom:16px;">' + escapeHtml(app['실험준비물']) + '</p>';
+    if (app['실험과정']) h += '<div class="section-title">실험 과정</div><p style="font-size:14px;line-height:1.6;color:var(--text-muted);margin-bottom:16px;">' + escapeHtml(app['실험과정']) + '</p>';
+    if (app['실험뒷정리']) h += '<div class="section-title">실험 뒷정리</div><p style="font-size:14px;line-height:1.6;color:var(--text-muted);margin-bottom:16px;">' + escapeHtml(app['실험뒷정리']) + '</p>';
+    if (app['실험시 주의사항']) h += '<div class="section-title">실험 시 주의사항</div><p style="font-size:14px;line-height:1.6;color:var(--text-muted);">' + escapeHtml(app['실험시 주의사항']) + '</p>';
+    h += '</div>';
+  }
+
+  // [v2] 신규 양식(IT/가정/공학) 전용 섹션 — 1·2층 신청은 빈 문자열 반환
+  h += mCategorySectionsHtml(app);
+
+  // 📨 메일 재발송 — 승인자가 자동 메일을 받지 못했을 때 관리자가 수동 재발송
+  var isNew_m = isNewLabApp(app);
+  var teacherEmail_m = String(app['지도교사이메일'] || '').trim();
+  var teacherBtn_m = isNew_m
+    ? '<button class="action-btn" style="background:#e2e8f0;color:#94a3b8;cursor:not-allowed;" disabled>🔁 지도교사 1차 (해당 없음)</button>'
+    : (teacherEmail_m
+        ? '<button class="action-btn" style="background:#dbeafe;color:#1e40af;" onclick="m_resendApprovalMail(\'' + encodeURIComponent(app['신청ID']) + '\', \'teacher\')">🔁 지도교사 1차 메일 재발송</button>'
+        : '<button class="action-btn" style="background:#fee2e2;color:#991b1b;" onclick="alert(\'⚠️ 이 신청에는 지도교사 이메일이 기록되어 있지 않습니다.\')">⚠ 지도교사 이메일 없음</button>');
+  // [v4.18/S8] 실습실(신규 양식) 승인자 = 지도교사
+  // [v4.18/S9] 이메일이 비어 있어도 지도교사 이름이 있으면 서버가 교사 명단에서 조회
+  var teacherName_m = String(app['지도교사이름'] || '').trim();
+  var finalBtn_m = (isNew_m && !teacherEmail_m && !teacherName_m)
+    ? '<button class="action-btn" style="background:#fee2e2;color:#991b1b;cursor:not-allowed;" disabled>⚠ 지도교사 미지정</button>'
+    : '<button class="action-btn" style="background:#dcfce7;color:#166534;" onclick="m_resendApprovalMail(\'' + encodeURIComponent(app['신청ID']) + '\', \'final\')">🔁 ' + (isNew_m ? '지도교사(단일 승인)' : '최종 승인자(담당교사)') + ' 메일 재발송</button>';
+  // [v4.18/S8] 단일 양식 전용: 실습실 담당 선생님 안내 메일 (승인 권한 없음, 정보 전달용)
+  var infoBtn_m = '';
+  if (isNew_m) {
+    infoBtn_m = '<button class="action-btn" style="background:#fef3c7;color:#92400e;" onclick="m_resendApprovalMail(\'' + encodeURIComponent(app['신청ID']) + '\', \'info\')">📨 실습실 담당 선생님 안내 메일</button>';
+  }
+  h += '<div class="section">' +
+       '<div class="section-title">📨 메일 재발송</div>' +
+       '<p style="font-size:12px;line-height:1.55;color:var(--text-muted);margin:0 0 10px;">승인자가 자동 발송 메일을 받지 못했을 때 동일한 본문·승인 링크로 재발송합니다.' +
+       (isNew_m ? ' 실습실 신청은 지도교사가 승인하며, 실습실 담당 선생님께는 안내 메일을 보낼 수 있습니다 (승인 권한 없음).' : '') +
+       '</p>' +
+       '<div style="display:flex;flex-direction:column;gap:8px;">' + teacherBtn_m + finalBtn_m + infoBtn_m + '</div>' +
+       '</div>';
+
+  body.innerHTML = h;
+  // [v2] 시약 섹션은 1·2층 양식만 — 신규 양식은 호출 자체를 생략하여 불필요 네트워크 차단
+  if (hasChemSection(app)) loadChemicals(id);
+
+  // 하단 액션 — 목업과 동일
+  var btm = $('#detail-bottom');
+  if (status === '대기') {
+    // [v4.18/S6] 신규 양식(IT/가정/공학)은 단일 승인 — 존재하지 않는 1차승인 버튼 숨김
+    //   (기존: 눌러도 무동작인데 "완료" 안내가 떠서 혼란)
+    if (typeof isNewLabApp === 'function' && isNewLabApp(app)) {
+      btm.innerHTML = '<button class="action-btn btn-final" onclick="approveAction(\'최종승인\')">최종승인 (단일 승인)</button><button class="action-btn btn-reject" onclick="approveAction(\'반려\')">반려</button>';
+    } else {
+      btm.innerHTML = '<button class="action-btn btn-first" onclick="approveAction(\'1차승인\')">1차승인</button><button class="action-btn btn-final" onclick="approveAction(\'최종승인\')">최종승인</button><button class="action-btn btn-reject" onclick="approveAction(\'반려\')">반려</button>';
+    }
+  } else if (status === '1차승인') {
+    btm.innerHTML = '<button class="action-btn btn-final" onclick="approveAction(\'최종승인\')">최종승인</button><button class="action-btn btn-reject" onclick="approveAction(\'반려\')">반려</button>';
+  } else {
+    btm.innerHTML = '<button class="action-btn" style="background:var(--bg);color:var(--text);border:1.5px solid var(--border);" onclick="closeDetail()">닫기</button>';
+  }
+
+  $('#detail-panel').classList.add('show');
+
+  // [MR12/MR13] history state에 detail 오픈 상태 기록 → Android 하드웨어 뒤로가기·브라우저 뒤로가기로 패널 닫기
+  try {
+    if (!(window.history.state && window.history.state.detailOpen)) {
+      window.history.pushState({ detailOpen: true, detailId: id }, '', window.location.href);
+    }
+  } catch(_) {}
+
+  // [MR28] 포커스 트랩 활성화 + 원본 opener 저장
+  _detailOpenerEl = document.activeElement;
+  _attachFocusTrap_();
+  // 첫 포커스 가능 요소로 이동 (뒤로 버튼 등)
+  setTimeout(function(){
+    var panel = document.getElementById('detail-panel');
+    if (!panel) return;
+    var first = panel.querySelector('button, [tabindex]:not([tabindex="-1"])');
+    if (first && typeof first.focus === 'function') {
+      try { first.focus(); } catch(_) {}
+    }
+  }, 50);
+}
+
+// [MR12/MR13] popstate — 하드웨어 뒤로가기 또는 브라우저 뒤로가기 시 상세 패널 자동 닫기
+// [v4.18/S6] 관리 패널 4종도 하드웨어 뒤로가기로 닫기 (기존: detail-panel 만 지원)
+var M_MANAGED_PANELS = ['m-todayLabPanel', 'm-guidanceModal', 'm-warningModal', 'm-restrictionModal'];
+var _mPanelFromHistory_ = false;
+function mPanelOpenPush_(id) {
+  try {
+    if (!(window.history.state && window.history.state.mPanelOpen)) {
+      window.history.pushState({ mPanelOpen: id }, '', window.location.href);
+    }
+  } catch (_) {}
+}
+function mPanelClosed_(id) {
+  // 버튼으로 닫힌 경우 history state 정리 (popstate 경로는 이미 pop 됨)
+  try {
+    if (!_mPanelFromHistory_ && window.history.state && window.history.state.mPanelOpen === id) {
+      window.history.back();
+    }
+  } catch (_) {}
+}
+
+window.addEventListener('popstate', function(e) {
+  // 열려 있는 관리 패널 우선 닫기
+  for (var pi = 0; pi < M_MANAGED_PANELS.length; pi++) {
+    var pel = document.getElementById(M_MANAGED_PANELS[pi]);
+    if (pel && pel.classList.contains('show')) {
+      _mPanelFromHistory_ = true;
+      pel.classList.remove('show');
+      pel.style.display = 'none';
+      _mPanelFromHistory_ = false;
+      return;
+    }
+  }
+  var panel = document.getElementById('detail-panel');
+  if (panel && panel.classList.contains('show')) {
+    // history.back()이 popstate를 또 트리거하지 않도록 플래그로 구분
+    _closeDetailFromHistory_ = true;
+    closeDetail();
+    _closeDetailFromHistory_ = false;
+  }
+});
+var _closeDetailFromHistory_ = false;
+
+function closeDetail() {
+  var wasOpen = $('#detail-panel').classList.contains('show');
+  $('#detail-panel').classList.remove('show');
+  CURRENT_DETAIL = null;
+
+  // [MR12] 버튼으로 닫힌 경우 history.back()을 호출해 state 정리
+  // popstate 경로에서 호출된 경우는 이미 pop 됐으므로 생략
+  if (wasOpen && !_closeDetailFromHistory_) {
+    try {
+      if (window.history.state && window.history.state.detailOpen) {
+        window.history.back();
+      }
+    } catch(_) {}
+  }
+
+  // [MR28] 포커스 트랩 해제
+  _detachFocusTrap_();
+  // [MR28] 포커스를 열어둔 원본 요소로 복원
+  if (_detailOpenerEl && typeof _detailOpenerEl.focus === 'function') {
+    try { _detailOpenerEl.focus(); } catch(_) {}
+  }
+  _detailOpenerEl = null;
+}
+
+/**
+ * 📨 메일 재발송 (모바일) — 지도교사 1차 / 최종 승인자 메일을 동일 본문으로 다시 발송.
+ *   - 자동 메일과 동일한 양식·승인 링크 사용 (서버 측 resendApprovalRequestEmail 호출)
+ *   - 신규 양식(IT/가정/공학)은 1차 단계가 없으므로 'teacher'도 단일 승인자로 라우팅됨
+ */
+function m_resendApprovalMail(appIdEnc, kind) {
+  var appId = decodeURIComponent(String(appIdEnc || ''));
+  var app = ALL.find(function(a) { return String(a['신청ID']) === String(appId); });
+  if (!app) { alert('신청 정보를 찾을 수 없습니다.'); return; }
+
+  var isNew = isNewLabApp(app);
+  var recipientDesc = '';
+
+  // [v4.18/S8] 실습실(신규 양식) 승인자 = 지도교사. 'info'는 실습실 담당 선생님 안내로 전환.
+  if (kind === 'teacher' || kind === 'final') {
+    // [v4.18/S9] 이메일이 비어 있어도 지도교사 '이름'이 있으면 서버가 교사 명단에서 조회
+    if ((isNew || kind === 'teacher') && !app['지도교사이메일'] && !app['지도교사이름']) {
+      alert('⚠️ 이 신청에는 지도교사 정보(이름·이메일)가 모두 없습니다.\n\n신청서를 수정해 지도교사를 지정한 뒤 다시 시도해 주세요.');
+      return;
+    }
+    var emailDesc = app['지도교사이메일'] || '이메일 비어 있음 → 교사 명단에서 조회';
+    if (isNew) {
+      recipientDesc = '지도교사 ' + (app['지도교사이름'] || '?') + ' <' + emailDesc + '> (실습실 단일 승인)';
+    } else if (kind === 'teacher') {
+      recipientDesc = '지도교사 ' + (app['지도교사이름'] || '?') + ' <' + emailDesc + '>';
+    } else {
+      recipientDesc = '실험실 담당교사 (' + (app['신청실험실'] || '') + ')';
+    }
+  } else if (kind === 'info') {
+    if (!isNew) {
+      alert('⚠️ 실습실 담당 선생님 안내 메일은 단일 승인 양식(IT/가정/공학)에서만 사용됩니다.\n\n1·2층 양식은 실험실 담당교사가 최종 승인자이므로 별도 안내가 필요 없습니다.');
+      return;
+    }
+    recipientDesc = '실습실 담당 선생님 (' + (app['사용실험실목록'] || app['신청실험실'] || '') + ') — 안내용, 승인 권한 없음';
+  } else {
+    alert('알 수 없는 발송 종류: ' + kind);
+    return;
+  }
+
+  var stageLabel = (kind === 'teacher') ? (isNew ? '지도교사 (실습실 단일 승인)' : '1차 승인 (지도교사)')
+                : (kind === 'final')   ? (isNew ? '지도교사 (실습실 단일 승인)' : '최종 승인 (담당교사)')
+                :                        '실습실 담당 선생님 안내';
+  var confirmMsg =
+    '다음 대상에게 메일을 재발송할까요?\n\n' +
+    '• 단계: ' + stageLabel + '\n' +
+    '• 대상: ' + recipientDesc + '\n' +
+    '• 신청 ID: ' + appId + '\n' +
+    '• 대표자: ' + (app['대표자이름'] || '') + ' (' + (app['대표자학번'] || '') + ')\n\n' +
+    '자동 발송과 동일한 본문·승인 링크로 다시 발송됩니다.';
+
+  if (!confirm(confirmMsg)) return;
+
+  // 발송 중 — 상세 패널 안의 버튼들을 비활성화
+  var btns = document.querySelectorAll('#detail-panel button');
+  var prev = [];
+  btns.forEach(function(b) { prev.push(b.disabled); b.disabled = true; });
+  var restore = function() { btns.forEach(function(b, i) { b.disabled = prev[i]; }); };
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      restore();
+      if (res && res.ok) {
+        alert('✅ 메일 발송 성공\n\n• 대상: ' + (res.recipient || recipientDesc));
+      } else {
+        alert('❌ 메일 발송 실패\n\n' + ((res && res.error) || '알 수 없는 오류'));
+      }
+    })
+    .withFailureHandler(function(err) {
+      restore();
+      alert('❌ 메일 발송 중 오류\n\n' + ((err && err.message) || err));
+    })
+    .resendApprovalRequestEmail(appId, kind);
+}
+
+/* [MR28] 상세 패널 포커스 트랩 (Tab 키가 배경으로 못 빠져나가게) */
+var _detailOpenerEl = null;
+var _detailTrapHandler = null;
+function _attachFocusTrap_() {
+  _detachFocusTrap_();
+  var panel = document.getElementById('detail-panel');
+  if (!panel) return;
+  _detailTrapHandler = function(e) {
+    if (e.key !== 'Tab') return;
+    if (!panel.classList.contains('show')) return;
+    var focusables = panel.querySelectorAll(
+      'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    );
+    if (focusables.length === 0) return;
+    var first = focusables[0], last = focusables[focusables.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
+  document.addEventListener('keydown', _detailTrapHandler, true);
+}
+function _detachFocusTrap_() {
+  if (_detailTrapHandler) {
+    document.removeEventListener('keydown', _detailTrapHandler, true);
+    _detailTrapHandler = null;
+  }
+}
+function ir(label, value) { return '<div class="info-row"><span class="info-label">' + label + '</span><span class="info-value">' + value + '</span></div>'; }
+
+/* =========================================================
+ * [v2] 신규 양식(IT/가정/공학) 표시용 헬퍼 — 모바일
+ *   데스크톱(admin_scripts.html)과 같은 함수명이지만 별도 파일이라 충돌 없음.
+ * ========================================================= */
+// [v4.0.2] 신청서 NEW_LAB_CONFIG.sheetCategory 한글 라벨 → 내부 키 매핑
+var SHEET_CAT_MAP = {
+  'IT실': 'it',
+  '가정실습실': 'home',
+  'N동 공학 Zone': 'engineering',
+  'N동 공학 ZONE': 'engineering',
+  // [2026-08] Tech & Art LAB 분리 전 기존 기록도 계속 공학으로 조회
+  'N동 공학 ZONE, Tech & Art LAB': 'engineering',
+  'Tech & Art LAB': 'techart',
+  'S동 1층': 'floor1',
+  'S동 2층': 'floor2'
+};
+function formCategoryOf(app) {
+  var raw = String(app && app['양식종류'] || '').trim();
+  if (SHEET_CAT_MAP[raw]) return SHEET_CAT_MAP[raw];
+  var lower = raw.toLowerCase();
+  if (lower === 'it' || lower === 'home' || lower === 'engineering' || lower === 'techart' || lower === 'floor1' || lower === 'floor2') return lower;
+  var lab = String(app && app['신청실험실'] || '');
+  if (/물리|파동|AP\s?Lab/i.test(lab)) return 'floor2';
+  return 'floor1';
+}
+function isNewLabApp(app) {
+  var c = formCategoryOf(app);
+  return c === 'it' || c === 'home' || c === 'engineering' || c === 'techart';
+}
+function hasChemSection(app) {
+  var c = formCategoryOf(app);
+  return c === 'floor1' || c === 'floor2';
+}
+function mLabBadge(app) {
+  var cat = formCategoryOf(app);
+  var styles = {
+    floor1:      { label: '1층', bg: '#e3f2fd', fg: '#1565c0' },
+    floor2:      { label: '2층', bg: '#e8f5e9', fg: '#2e7d32' },
+    it:          { label: 'IT',   bg: '#f3e5f5', fg: '#7b1fa2' },
+    home:        { label: '가정', bg: '#fce4ec', fg: '#c2185b' },
+    engineering: { label: '공학', bg: '#fff3e0', fg: '#e65100' },
+    techart:     { label: 'Tech&Art', bg: '#ede7f6', fg: '#4527a0' }
+  };
+  var c = styles[cat] || styles.floor1;
+  return '<span style="display:inline-block;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700;background:' +
+    c.bg + ';color:' + c.fg + ';margin-right:6px;vertical-align:middle">' + c.label + '</span>';
+}
+// [v2] 검색·필터에서 사용자가 입력하는 한글 라벨로 양식 종류 매핑
+function labelOfFormCategory(app) {
+  var KO = { floor1: '1층', floor2: '2층', it: 'IT', home: '가정', engineering: '공학' };
+  return KO[formCategoryOf(app)] || '';
+}
+function parseRecipeJson(raw) {
+  // 신청서 form_home.html#collectMaterials 가 [{name, qty, disposal}, ...] 형태로 저장.
+  // 영문 키를 사용자가 익숙한 한글 라벨로 매핑. 미정의 키는 키명 그대로 표시(fallback).
+  var KEY_LABELS = { name: '재료', qty: '질량/부피', disposal: '폐기 방법' };
+  if (!raw) return '';
+  var arr;
+  try { arr = JSON.parse(raw); }
+  catch (e) {
+    return '<p style="font-size:12px;color:var(--text-muted);">재료 JSON 파싱 실패: ' + escapeHtml(String(raw).slice(0, 120)) + '…</p>';
+  }
+  if (!Array.isArray(arr) || arr.length === 0) return '<p style="font-size:14px;color:var(--text-muted);">등록된 재료가 없습니다.</p>';
+  var headers = Object.keys(arr[0] || {});
+  if (headers.length === 0) return '<p style="font-size:14px;color:var(--text-muted);">등록된 재료가 없습니다.</p>';
+  var thead = '<thead><tr>' + headers.map(function(h) { return '<th>' + escapeHtml(KEY_LABELS[h] || h) + '</th>'; }).join('') + '</tr></thead>';
+  var tbody = '<tbody>' + arr.map(function(r) {
+    return '<tr>' + headers.map(function(h) { return '<td>' + escapeHtml(String(r[h] == null ? '' : r[h])) + '</td>'; }).join('') + '</tr>';
+  }).join('') + '</tbody>';
+  // [v4.18/S6] 좁은 화면 가로 스크롤 래퍼
+  return '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;"><table class="chemical-table">' + thead + tbody + '</table></div>';
+}
+function mCategorySectionsHtml(app) {
+  var cat = formCategoryOf(app);
+  var h = '';
+
+  // 사용 실험·실습실 목록 (콤마결합) — 신규 양식 공통
+  var usageList = String(app['사용실험실목록'] || '').trim();
+  if (usageList) {
+    h += '<div class="section"><div class="section-title">사용 실험·실습실</div><div class="companion-list">';
+    usageList.split(',').forEach(function(s) {
+      s = s.trim();
+      if (s) h += '<div class="companion-chip">' + escapeHtml(s) + '</div>';
+    });
+    h += '</div></div>';
+  }
+
+  if (cat === 'it') {
+    h += '<div class="section"><div class="section-title">IT 실습 정보</div><div class="info-grid">' +
+      ir('사용 컴퓨터 번호', escapeHtml(app['사용컴퓨터번호']||'-')) +
+      ir('납땜 사용 여부', escapeHtml(app['납땜여부']||'-')) +
+    '</div></div>';
+  } else if (cat === 'home') {
+    h += '<div class="section"><div class="section-title">가정 실습 정보</div><div class="info-grid">' +
+      ir('위험 도구', escapeHtml(app['위험도구']||'-')) +
+      ir('사용 계획', escapeHtml(app['사용계획']||'-')) +
+    '</div></div>';
+    var recipe = String(app['재료JSON']||'').trim();
+    if (recipe) {
+      h += '<div class="section"><div class="section-title">재료 목록</div>' + parseRecipeJson(recipe) + '</div>';
+    }
+  } else if (cat === 'engineering' || cat === 'techart') {
+    h += '<div class="section"><div class="section-title">신청 장비</div>' +
+      '<p style="font-size:14px;line-height:1.6;color:var(--text-muted);white-space:pre-wrap;">' + escapeHtml(app['신청장비']||'-') + '</p>' +
+    '</div>';
+  }
+
+  // 교육 내용 (모든 신규 양식 공통)
+  if (isNewLabApp(app)) {
+    var eq = String(app['교육_장비사용법']||'').trim();
+    var cl = String(app['교육_정리방법']||'').trim();
+    if (eq || cl) {
+      h += '<div class="section"><div class="section-title">교육 내용</div><div class="info-grid">';
+      if (eq) h += ir('장비 사용법', escapeHtml(eq));
+      if (cl) h += ir('정리 방법', escapeHtml(cl));
+      h += '</div></div>';
+    }
+  }
+
+  return h;
+}
+
+function loadChemicals(appId) {
+  google.script.run
+    .withSuccessHandler(function(chems) {
+      if (!chems || !chems.length) return;
+      // [v4.18/S1] 컬럼을 데스크탑과 통일 — 기존 '단위'/'폐기방법'은 시약 시트에 없는(또는
+      //   전 행이 빈) 컬럼이라 항상 빈칸으로 표시됐음. 실데이터가 있는 컬럼으로 교체.
+      var h = '<div class="section"><div class="section-title">시약 정보</div>' +
+        '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">' + // [v4.18/S6] 가로 스크롤
+        '<table class="chemical-table"><thead><tr><th>시약명</th><th>상태</th><th>농도</th><th>용량</th><th>MSDS·폐기</th><th>교사임장</th></tr></thead><tbody>';
+      chems.forEach(function(c) {
+        var msds = c['MSDS'] || c['폐기 방법'] || c['폐기방법'] || '';
+        h += '<tr><td><strong>' + escapeHtml(c['시약명']||'') + '</strong></td><td>' + escapeHtml(c['상태']||'') + '</td><td>' + escapeHtml(c['농도']||'') + '</td><td>' + escapeHtml(c['용량']||'') + '</td><td>' + escapeHtml(msds) + '</td><td>' + escapeHtml(c['교사임장여부']||'') + '</td></tr>';
+      });
+      h += '</tbody></table></div></div>';
+      var body = $('#detail-body');
+      var first = body.querySelector('.section');
+      if (first && first.nextSibling) first.insertAdjacentHTML('afterend', h);
+      else body.insertAdjacentHTML('beforeend', h);
+    })
+    .withFailureHandler(function() {
+      // [v4.18/S1] 실패 무통보 제거 — 시약 섹션이 조용히 사라지던 문제
+      try {
+        var body = $('#detail-body');
+        if (body) body.insertAdjacentHTML('beforeend',
+          '<div class="section"><div class="section-title">시약 정보</div>' +
+          '<div style="color:var(--danger,#dc2626);font-size:13px;">시약 정보를 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.</div></div>');
+      } catch (_) {}
+    })
+    .getApplicationChemicals(appId);
+}
+
+/* ===== 승인/반려 ===== */
+// [C8] 재클릭 가드 — confirm 여러 번 통과해도 서버로 두 번 안 보냄
+var APPROVING = false;
+
+// [MR16] 반려 시 사유 입력 — 기존 1차/최종 승인 상태로 어느 의견 컬럼에 쓸지 결정
+function determineRejectCommentField_(app) {
+  // 1차 미처리 → 1차 반려 → '지도승인의견'에 기록
+  // 1차 승인 완료 후 반려 → '최종승인의견'에 기록
+  // [v4.18/S6] 신규 양식(단일 승인)은 항상 최종 단계 → '최종승인의견'
+  if (app && typeof isNewLabApp === 'function' && isNewLabApp(app)) return '최종승인의견';
+  var first = String((app && app['지도승인여부']) || '').trim();
+  return first === '승인' ? '최종승인의견' : '지도승인의견';
+}
+
+function approveAction(newStatus) {
+  if (APPROVING) return;           // 이미 진행 중
+  if (!CURRENT_DETAIL) return;
+  var name = CURRENT_DETAIL['대표자이름'] || '';
+
+  // [E1] 신규 양식 단일 승인 흐름 보존을 위해 CURRENT_DETAIL(현재 신청 객체) 전달
+  var approvals = mapStatusToApprovals(newStatus, CURRENT_DETAIL);
+
+  // [MR16] 반려는 사유 입력을 강제
+  if (newStatus === '반려') {
+    var reason = prompt(name + ' 학생의 신청을 반려하려면 사유를 입력하세요.\n(학생에게 안내됩니다)');
+    if (reason === null) return; // 취소
+    reason = String(reason).trim();
+    if (!reason) { alert('반려 사유를 입력해야 합니다.'); return; }
+    var commentField = determineRejectCommentField_(CURRENT_DETAIL);
+    approvals[commentField] = reason;
+  } else {
+    if (!confirm(name + ' 학생의 신청을 "' + newStatus + '"(으)로 변경하시겠습니까?')) return;
+  }
+
+  APPROVING = true;
+  if (typeof showGlobalBusy === 'function') showGlobalBusy('처리 중입니다');
+  google.script.run
+    .withSuccessHandler(function(res) {
+      APPROVING = false;
+      // [v4.18/S1] 서버는 오류를 throw 대신 {success:false, message} 로 반환 —
+      //   실패도 "저장되었습니다"로 표시되던 문제. 반환값 확인 후 분기.
+      if (res && res.success === false) {
+        var failMsg = res.message || '처리에 실패했습니다. 다시 시도해 주세요.';
+        if (typeof showGlobalError === 'function') showGlobalError('처리 실패', failMsg);
+        else alert('처리 실패: ' + failMsg);
+        return;
+      }
+      closeDetail();
+      loadApplications();
+      if (typeof showGlobalSuccess === 'function') {
+        showGlobalSuccess('저장되었습니다', newStatus + ' 처리가 완료되었습니다.');
+      } else {
+        alert(newStatus + ' 처리되었습니다.');
+      }
+    })
+    .withFailureHandler(function(err) {
+      APPROVING = false;
+      var msg = (err && (err.message || err)) || '알 수 없는 오류';
+      if (typeof showGlobalError === 'function') {
+        showGlobalError('처리 실패', msg);
+      } else {
+        alert('처리 실패: ' + msg);
+      }
+    })
+    .updateApplicationFields(CURRENT_DETAIL['신청ID'], approvals);
+}
+
+function quickApprove(appId) {
+  var app = ALL.find(function(a) { return String(a['신청ID']) === String(appId); });
+  if (!app) return;
+  // [v4.18/S6] 완료·반려 건은 스와이프 빠른승인 차단 — 최종승인 건이 실수로 강등되는 사고 방지
+  var st = calcStatus(app);
+  if (st !== '대기' && st !== '1차승인') {
+    if (typeof showGlobalSuccess === 'function') showGlobalSuccess('이미 처리됨', '현재 상태: ' + st, 1800);
+    return;
+  }
+  CURRENT_DETAIL = app;
+  // [v4.18/S6] 신규 양식은 1차승인 선택지 제외 (단일 승인 흐름)
+  if (typeof isNewLabApp === 'function' && isNewLabApp(app)) {
+    var c2 = prompt('승인 처리 (단일 승인 양식):\n1: 최종승인\n2: 반려');
+    if (c2 === '1') approveAction('최종승인');
+    else if (c2 === '2') approveAction('반려');
+    else CURRENT_DETAIL = null;
+    return;
+  }
+  var choice = prompt('승인 처리:\n1: 1차승인\n2: 최종승인\n3: 반려');
+  if (choice === '1') approveAction('1차승인');
+  else if (choice === '2') approveAction('최종승인');
+  else if (choice === '3') approveAction('반려');
+  else CURRENT_DETAIL = null;
+}
+
+function quickFinalApprove(appId) {
+  var app = ALL.find(function(a) { return String(a['신청ID']) === String(appId); });
+  if (!app) return;
+  CURRENT_DETAIL = app;
+  var choice = prompt('처리:\n1: 최종승인\n2: 반려');
+  if (choice === '1') approveAction('최종승인');
+  else if (choice === '2') approveAction('반려');
+  else CURRENT_DETAIL = null;
+}
+
+/* ===== 상태 카드 필터 ===== */
+function filterByStatusCard(status) {
+  STATUS_FILTER = (status === '전체') ? '' : status;
+  // [v4.18/S6] 상태 드롭다운과 AND 로 겹쳐 빈 목록이 되던 문제 — 카드 선택 시 드롭다운·내부 상태 초기화
+  var ss = document.getElementById('statusSelect');
+  if (ss && ss.value) ss.value = '';
+  if (typeof mFilters !== 'undefined') mFilters.status = '';
+  $$('.stat-card').forEach(function(c) {
+    var s = c.dataset.status;
+    c.classList.toggle('active', s === status || (status === '전체' && s === '전체'));
+  });
+  PAGE.current = 1;
+  refreshView();
+}
+
+/* ===== 날짜 직접 지정 ===== */
+function onDateRangeChange() {
+  var from = $('#dateFrom') ? $('#dateFrom').value : '';
+  var to = $('#dateTo') ? $('#dateTo').value : '';
+  if (!from || !to) return;
+  mFilters.dateFrom = from;
+  mFilters.dateTo = to;
+  $$('.quick-btn').forEach(function(b) { b.classList.remove('active'); });
+  loadApplications();
+}
+
+/* ===== 빠른 기간 ===== */
+function onQuickFilter(type, btn) {
+  // [v4.18/S6] 선택자 스코프 한정 — 전역 .quick-btn 조작이 제한 모달 탭·다른 뷰의
+  //   active 상태까지 지우던 문제 (SPA 밖 단독 로드 대비 폴백 포함)
+  var qbtns = document.querySelectorAll('#view-admin .quick-btn');
+  if (!qbtns.length) qbtns = document.querySelectorAll('.filter-section .quick-btn');
+  qbtns.forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  var dates = setQuickDate(type);
+  if (dates) { mFilters.dateFrom = dates.from; mFilters.dateTo = dates.to; }
+  loadApplications();
+}
+
+/* ===== 정렬 ===== */
+function toggleSortMenu() {
+  var choice = prompt('정렬:\n1: 실험날짜 최신순\n2: 실험날짜 오래된순\n3: 제출일시 최신순\n4: 이름순');
+  if (choice === '1') VIEW.sort(function(a, b) { return cmpDateTs(b['실험할날짜'], a['실험할날짜']); });
+  else if (choice === '2') VIEW.sort(function(a, b) { return cmpDateTs(a['실험할날짜'], b['실험할날짜']); });
+  else if (choice === '3') VIEW.sort(function(a, b) { return cmpDateTs(b['제출일시'], a['제출일시']); });
+  else if (choice === '4') VIEW.sort(function(a, b) { return String(a['대표자이름']||'').localeCompare(String(b['대표자이름']||''), 'ko'); });
+  else return;
+  PAGE.current = 1;
+  renderCards();
+}
+
+/* ===== CSV ===== */
+function escapeCSV(val) { var s = String(val==null?'':val); return (s.includes(',')||s.includes('"')||s.includes('\n')) ? '"'+s.replace(/"/g,'""')+'"' : s; }
+function exportCSV() {
+  if (!VIEW || !VIEW.length) { alert('내보낼 데이터가 없습니다.'); return; }
+  // [v2] 양식종류·사용실험실목록 추가 (신규 양식 IT/가정/공학 식별·복수 룸 정보 보존)
+  var h = ['신청ID','제출일시','대표자학번','대표자이름','동반자명단','총인원수','양식종류','신청실험실','사용실험실목록','실험할날짜','신청시간','사용목적','실험제목','실험과정','실험준비물','지도교사이름','상태','지도승인여부','최종승인여부'];
+  var rows = [h.join(',')];
+  VIEW.forEach(function(a) {
+    rows.push([a['신청ID'],fmtDate(a['제출일시'],true),a['대표자학번'],a['대표자이름'],a['동반자명단'],a['총인원수'],labelOfFormCategory(a),a['신청실험실'],a['사용실험실목록']||'',fmtDate(a['실험할날짜']),a['신청시간'],a['사용목적'],a['실험제목'],a['실험과정'],a['실험준비물'],a['지도교사이름'],calcStatus(a),a['지도승인여부'],a['최종승인여부']].map(escapeCSV).join(','));
+  });
+  var blob = new Blob(['\uFEFF'+rows.join('\n')], {type:'text/csv;charset=utf-8;'});
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = '실험실신청_'+toLocalYMD(new Date())+'.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+function editDetail() {
+  if (!CURRENT_DETAIL) return;
+  // [MR16] 모바일에서 자주 쓰는 작업(반려 사유 입력)은 approveAction('반려')로 대체.
+  //   전체 필드 수정은 여전히 데스크탑에서 처리.
+  alert('신청 전체 수정은 데스크탑에서 이용해주세요.\n반려 처리는 하단 "반려" 버튼에서 사유와 함께 가능합니다.');
+}
+function printDetail() { window.print(); }
+
+/* ===== 초기화 ===== */
+function adminInit() {
+  var dates = setQuickDate('today');
+  if (dates) { mFilters.dateFrom = dates.from; mFilters.dateTo = dates.to; }
+
+  /* 날짜 직접 지정 시 빠른필터 해제 + 자동 조회 */
+  if ($('#dateFrom')) $('#dateFrom').addEventListener('change', onDateRangeChange);
+  if ($('#dateTo')) $('#dateTo').addEventListener('change', onDateRangeChange);
+
+  if ($('#labSelect')) $('#labSelect').addEventListener('change', function() { mFilters.lab = this.value; PAGE.current = 1; refreshView(); });
+  if ($('#statusSelect')) $('#statusSelect').addEventListener('change', function() {
+    mFilters.status = this.value; STATUS_FILTER = '';
+    $$('.stat-card').forEach(function(c) { c.classList.remove('active'); });
+    if (!this.value) document.querySelector('.stat-card[data-status="전체"]').classList.add('active');
+    PAGE.current = 1; refreshView();
+  });
+  // [MR18] 모바일 타이핑 중 재렌더 깜빡임 감소 (300ms → 400ms)
+  if ($('#searchInput')) $('#searchInput').addEventListener('input', debounce(function() {
+    mFilters.search = $('#searchInput').value.trim();
+    PAGE.current = 1; refreshView();
+  }, 400));
+
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeDetail(); });
+
+  loadApplications();
+}
+if (typeof SPA_MODE === 'undefined') window.addEventListener('load', adminInit);
+
+/* =========================================================
+ * 모바일: 지도일지 작성 / 지도 통계 / 신청 제한 관리
+ * - 데스크탑 admin_scripts.html과 동일한 서버 함수를 호출하지만
+ *   UI는 모바일 풀스크린 패널(detail-panel 스타일)을 재사용
+ * ========================================================= */
+// [v4] 신청서 NEW_LAB_CONFIG 와 일치하는 표준 16개 룸 (지도일지 모달용)
+var M_LAB_OPTIONS = ['화학실험실','생물실험실','프로젝트실험실','첨단기기실험실','오픈랩',
+  '물리실험실','파동광학실험실','AP Lab',
+  'IT 공학실','컴퓨터실','코딩실','멀티미디어실',
+  '가정실습실',
+  '융합기술실','창의공학실','공작기계실','FAB Lab','Tech & Art LAB'];
+
+/* ---- 지도일지 작성 ---- */
+// [v4.18/S2] 모달을 body 직속으로 재부모화 — SPA 에서 모달이 #view-admin 안에 있어서
+//   시약/학생/임장 뷰(조상 display:none)에서는 열어도 보이지 않던 버그 수정
+function mEnsureTopLevel_(id) {
+  var el = document.getElementById(id);
+  if (el && el.parentNode !== document.body) { try { document.body.appendChild(el); } catch (e) {} }
+  return el;
+}
+
+function openGuidanceModal() {
+  var panel = mEnsureTopLevel_('m-guidanceModal');
+  if (!panel) return;
+  panel.style.display = '';
+  panel.classList.add('show');
+  mPanelOpenPush_('m-guidanceModal'); // [v4.18/S6] 뒤로가기 연동
+  // 작성 폼 상태로 초기화
+  var listBox = document.getElementById('mg_list');
+  var formBox = document.getElementById('mg_form');
+  if (listBox) listBox.style.display = 'none';
+  if (formBox) formBox.style.display = '';
+  var tbtn = document.getElementById('mg_listToggleBtn'); if (tbtn) tbtn.textContent = '목록';
+  var ttl = document.getElementById('mg_modalTitle'); if (ttl) ttl.textContent = '지도일지 작성';
+  var sbtn = document.getElementById('mg_saveBtn'); if (sbtn) sbtn.style.display = '';
+  // 실험실 옵션 세팅
+  var labSel = document.getElementById('mg_lab');
+  if (labSel && !labSel.options.length) {
+    labSel.innerHTML = M_LAB_OPTIONS.map(function(v){ return '<option value="'+escapeHtml(v)+'">'+escapeHtml(v)+'</option>'; }).join('');
+  }
+  // 오늘 날짜 기본값
+  var dateInput = document.getElementById('mg_date');
+  if (dateInput && !dateInput.value) {
+    var now = new Date();
+    dateInput.value = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+  }
+}
+function mCloseGuidanceModal() {
+  var panel = document.getElementById('m-guidanceModal');
+  if (panel) { panel.classList.remove('show'); panel.style.display = 'none'; }
+  mPanelClosed_('m-guidanceModal');
+}
+function mSaveGuidance() {
+  var entry = {
+    date: (document.getElementById('mg_date')||{}).value || '',
+    studentId: (document.getElementById('mg_sid')||{}).value || '',
+    name: (document.getElementById('mg_name')||{}).value || '',
+    lab: (document.getElementById('mg_lab')||{}).value || '',
+    teacher: (document.getElementById('mg_teacher')||{}).value || '',
+    time: (document.getElementById('mg_time')||{}).value || '',
+    level: (document.getElementById('mg_level')||{}).value || '',
+    content: (document.getElementById('mg_content')||{}).value || ''
+  };
+  if (!entry.date || !entry.studentId || !entry.name) {
+    alert('실험날짜/학번/이름은 필수입니다.'); return;
+  }
+  if (typeof showGlobalBusy === 'function') showGlobalBusy('저장 중입니다');
+  google.script.run
+    .withSuccessHandler(function(r) {
+      if (r && r.success) {
+        mCloseGuidanceModal();
+        if (typeof showGlobalSuccess === 'function') showGlobalSuccess('저장되었습니다', '지도 일지가 저장되었습니다.');
+        else alert('저장되었습니다.');
+      } else {
+        if (typeof showGlobalError === 'function') showGlobalError('저장 실패', (r && r.message) || '알 수 없는 오류');
+        else alert('저장 실패: ' + ((r && r.message) || ''));
+      }
+    })
+    .withFailureHandler(function(err) {
+      if (typeof showGlobalError === 'function') showGlobalError('저장 실패', (err && (err.message||err)) || '알 수 없는 오류');
+      else alert('저장 실패: ' + ((err && (err.message||err)) || ''));
+    })
+    .addLabGuidanceLog(entry);
+}
+
+/* ---- [v4.18/S2] 지도일지 조회 목록 ---- */
+function mToggleGuidanceList() {
+  var listBox = document.getElementById('mg_list');
+  var formBox = document.getElementById('mg_form');
+  var tbtn = document.getElementById('mg_listToggleBtn');
+  var ttl = document.getElementById('mg_modalTitle');
+  var sbtn = document.getElementById('mg_saveBtn');
+  if (!listBox || !formBox) return;
+  var showingList = listBox.style.display !== 'none';
+  if (showingList) {
+    listBox.style.display = 'none'; formBox.style.display = '';
+    if (tbtn) tbtn.textContent = '목록';
+    if (ttl) ttl.textContent = '지도일지 작성';
+    if (sbtn) sbtn.style.display = '';
+    return;
+  }
+  listBox.style.display = ''; formBox.style.display = 'none';
+  if (tbtn) tbtn.textContent = '작성';
+  if (ttl) ttl.textContent = '지도일지 목록';
+  if (sbtn) sbtn.style.display = 'none';
+  listBox.innerHTML = '<div class="m-loading"><div class="m-loading-spinner"></div>로딩 중...</div>';
+  google.script.run
+    .withSuccessHandler(function(rows) {
+      if (!Array.isArray(rows) || rows.length === 0) {
+        listBox.innerHTML = '<div class="m-empty"><div>기록된 지도일지가 없습니다.</div></div>';
+        return;
+      }
+      var recent = rows.slice(-100).reverse(); // 최신 100건
+      var h = recent.map(function(r) {
+        var lv = String(r['경고여부']||'');
+        var lvColor = lv === '경고' ? '#dc2626' : (lv === '칭찬' ? '#16a34a' : (lv === '안전사고' ? '#b45309' : 'var(--text-muted)'));
+        return '<div style="background:var(--surface,#fff);border:1px solid var(--border,#e2e8f0);border-radius:10px;padding:12px 14px;margin-bottom:10px;">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
+          '<b style="font-size:14px;">' + escapeHtml(r['이름']||'') + ' <span style="font-weight:400;color:var(--text-muted);">(' + escapeHtml(r['학번']||'') + ')</span></b>' +
+          '<span style="font-size:12px;font-weight:700;color:' + lvColor + ';">' + escapeHtml(lv || '지도') + '</span></div>' +
+          '<div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">' + escapeHtml(r['실험날짜']||'') + ' · ' + escapeHtml(r['실험실']||'') + ' · ' + escapeHtml(r['시간']||'') + ' · ' + escapeHtml(r['지도교사']||'') + '</div>' +
+          '<div style="font-size:13px;line-height:1.5;white-space:pre-wrap;">' + escapeHtml(r['지도내용']||'') + '</div></div>';
+      }).join('');
+      listBox.innerHTML = (rows.length > 100 ? '<div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">최근 100건만 표시합니다 (전체 ' + rows.length + '건)</div>' : '') + h;
+    })
+    .withFailureHandler(function(err) {
+      listBox.innerHTML = '<div class="m-empty"><div>목록 조회 실패: ' + escapeHtml((err && (err.message||String(err))) || '') + '</div></div>';
+    })
+    .listLabGuidanceLogs();
+}
+
+/* ---- [v4.18/S2] 신청 삭제 (상세 화면) ---- */
+function mDeleteApplication() {
+  if (!CURRENT_DETAIL) return;
+  var id = CURRENT_DETAIL['신청ID'];
+  var name = CURRENT_DETAIL['대표자이름'] || '';
+  if (!confirm(name + ' 학생의 신청서를 삭제할까요?\n연결된 시약 기록도 함께 삭제됩니다.')) return;
+  if (!confirm('⚠️ 삭제하면 되돌릴 수 없습니다. 정말 삭제할까요?')) return;
+  if (typeof showGlobalBusy === 'function') showGlobalBusy('삭제 중입니다');
+  google.script.run
+    .withSuccessHandler(function(r) {
+      if (r && r.success === false) {
+        if (typeof showGlobalError === 'function') showGlobalError('삭제 실패', r.message || '알 수 없는 오류');
+        else alert('삭제 실패: ' + (r.message || ''));
+        return;
+      }
+      closeDetail();
+      loadApplications();
+      if (typeof showGlobalSuccess === 'function') showGlobalSuccess('삭제되었습니다', '신청서가 삭제되었습니다.');
+      else alert('삭제되었습니다.');
+    })
+    .withFailureHandler(function(err) {
+      var msg = (err && (err.message||err)) || '알 수 없는 오류';
+      if (typeof showGlobalError === 'function') showGlobalError('삭제 실패', msg);
+      else alert('삭제 실패: ' + msg);
+    })
+    .deleteApplication(id);
+}
+
+/* ---- [v4.18/S2] 스와이프 좌 → 실제 반려 흐름 (사유 입력 포함) ---- */
+function mSwipeReject(id) {
+  var app = ALL.find(function(a) { return String(a['신청ID']) === String(id); });
+  if (!app) return;
+  CURRENT_DETAIL = app;
+  approveAction('반려');
+}
+
+/* ---- 지도 통계 ---- */
+function openWarningStats() {
+  var panel = mEnsureTopLevel_('m-warningModal');
+  if (!panel) return;
+  panel.style.display = '';
+  panel.classList.add('show');
+  mPanelOpenPush_('m-warningModal'); // [v4.18/S6] 뒤로가기 연동
+  var body = document.getElementById('m-warningBody');
+  body.innerHTML = '<div class="m-loading"><div class="m-loading-spinner"></div>로딩 중...</div>';
+  google.script.run
+    .withSuccessHandler(function(arr) {
+      if (!Array.isArray(arr) || arr.length === 0) {
+        body.innerHTML = '<div class="m-empty"><div>통계 데이터가 없습니다.</div></div>';
+        return;
+      }
+      var rows = arr.map(function(r) {
+        return '<tr><td>'+escapeHtml(r['학번']||'')+'</td><td>'+escapeHtml(r['이름']||'')+'</td>'
+          +'<td>'+escapeHtml(r['지도']||0)+'</td><td>'+escapeHtml(r['경고']||0)+'</td>'
+          +'<td>'+escapeHtml(r['안전사고']||0)+'</td><td>'+escapeHtml(r['기타 특이사항']||0)+'</td><td><b>'+escapeHtml(r['total']||0)+'</b></td></tr>';
+      }).join('');
+      // [v4.18/S6] '기타' 열 추가 — 행 합계와 총계가 안 맞아 보이던 문제 (칭찬·기타가 총계에만 포함됐음)
+      body.innerHTML = '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">'
+        +'<table style="width:100%;border-collapse:collapse;font-size:13px;">'
+        +'<thead><tr style="background:var(--primary-light);"><th style="padding:10px 8px;">학번</th><th style="padding:10px 8px;">이름</th><th style="padding:10px 8px;">지도</th><th style="padding:10px 8px;">경고</th><th style="padding:10px 8px;">안전사고</th><th style="padding:10px 8px;">기타</th><th style="padding:10px 8px;">총계</th></tr></thead>'
+        +'<tbody>'+rows+'</tbody></table></div>';
+      // 테이블 셀 스타일
+      body.querySelectorAll('td,th').forEach(function(c){ c.style.textAlign='center'; c.style.borderBottom='1px solid var(--border)'; });
+    })
+    .withFailureHandler(function(err) {
+      body.innerHTML = '<div class="m-empty"><div>통계 조회 실패: '+(err&&(err.message||err)||'')+'</div></div>';
+    })
+    .warningStatsByStudent();
+}
+function mCloseWarningStats() {
+  var panel = document.getElementById('m-warningModal');
+  if (panel) { panel.classList.remove('show'); panel.style.display = 'none'; }
+  mPanelClosed_('m-warningModal');
+}
+
+/* ---- 신청 제한 관리 ---- */
+function openRestrictionModal() {
+  var panel = mEnsureTopLevel_('m-restrictionModal');
+  if (!panel) return;
+  panel.style.display = '';
+  panel.classList.add('show');
+  mPanelOpenPush_('m-restrictionModal'); // [v4.18/S6] 뒤로가기 연동
+}
+
+/* ---- [v4.18/S2] 제한 정책 설정 (모바일) ---- */
+function mShowPolicyPanel() {
+  var p = document.getElementById('m-policyPanel');
+  var box = document.getElementById('m-restrictionResult');
+  if (!p) return;
+  if (p.style.display !== 'none') { p.style.display = 'none'; return; }
+  p.style.display = '';
+  if (box) box.innerHTML = '';
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (!res) return;
+      var en = document.getElementById('mp_enabled');
+      var cn = document.getElementById('mp_count');
+      var dy = document.getElementById('mp_days');
+      if (en) en.checked = !!res.enabled;
+      if (cn) cn.value = res.count || 2;
+      if (dy) dy.value = res.days || 30;
+    })
+    .withFailureHandler(function(err) {
+      if (typeof showGlobalError === 'function') showGlobalError('정책 조회 실패', (err && (err.message||err)) || '');
+    })
+    .getRestrictionPolicy();
+}
+function mSavePolicyMobile() {
+  var payload = {
+    enabled: !!(document.getElementById('mp_enabled')||{}).checked,
+    count: parseInt((document.getElementById('mp_count')||{}).value || '2', 10),
+    days:  parseInt((document.getElementById('mp_days')||{}).value  || '30', 10)
+  };
+  if (typeof showGlobalBusy === 'function') showGlobalBusy('정책 저장 중입니다');
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (res && res.success === false) {
+        if (typeof showGlobalError === 'function') showGlobalError('정책 저장 실패', res.message || res.error || '잠시 후 다시 시도해 주세요.');
+        else alert('저장 실패');
+        return;
+      }
+      if (typeof showGlobalSuccess === 'function') showGlobalSuccess('저장되었습니다', '제한 정책이 저장되었습니다.');
+      else alert('저장되었습니다.');
+    })
+    .withFailureHandler(function(err) {
+      var msg = (err && (err.message||err)) || '알 수 없는 오류';
+      if (typeof showGlobalError === 'function') showGlobalError('정책 저장 실패', msg);
+      else alert('저장 실패: ' + msg);
+    })
+    .saveRestrictionPolicy(payload);
+}
+function mCloseRestrictionModal() {
+  var panel = document.getElementById('m-restrictionModal');
+  if (panel) { panel.classList.remove('show'); panel.style.display = 'none'; }
+  mPanelClosed_('m-restrictionModal');
+}
+function mLoadRestrictedList() {
+  var box = document.getElementById('m-restrictionResult');
+  box.innerHTML = '<div class="m-loading"><div class="m-loading-spinner"></div>로딩 중...</div>';
+  google.script.run
+    .withSuccessHandler(function() {
+      google.script.run
+        .withSuccessHandler(function(list) {
+          if (!Array.isArray(list) || list.length === 0) {
+            box.innerHTML = '<div class="m-empty"><div>현재 제한 명단이 없습니다.</div></div>';
+            return;
+          }
+          var rows = list.map(function(r) {
+            return '<tr><td>'+escapeHtml(r['학번']||'')+'</td><td>'+escapeHtml(r['이름']||'')+'</td>'
+              +'<td>'+escapeHtml(r['시작일']||'')+'</td><td>'+escapeHtml(r['종료일']||'')+'</td></tr>';
+          }).join('');
+          box.innerHTML = '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">'
+            +'<table style="width:100%;border-collapse:collapse;font-size:13px;">'
+            +'<thead><tr style="background:var(--primary-light);"><th style="padding:10px 8px;">학번</th><th style="padding:10px 8px;">이름</th><th style="padding:10px 8px;">시작일</th><th style="padding:10px 8px;">종료일</th></tr></thead>'
+            +'<tbody>'+rows+'</tbody></table></div>';
+          box.querySelectorAll('td,th').forEach(function(c){ c.style.textAlign='center'; c.style.borderBottom='1px solid var(--border)'; });
+        })
+        .withFailureHandler(function(err) { box.innerHTML = '<div class="m-empty"><div>조회 실패</div></div>'; })
+        .getRestrictedListLite();
+    })
+    .withFailureHandler(function() { box.innerHTML = '<div class="m-empty"><div>만료 정리 실패</div></div>'; })
+    .purgeExpiredRestrictions();
+}
+function mLoadRestrictAccumList() {
+  var box = document.getElementById('m-restrictionResult');
+  box.innerHTML = '<div class="m-loading"><div class="m-loading-spinner"></div>로딩 중...</div>';
+  google.script.run
+    .withSuccessHandler(function() {
+      google.script.run
+        .withSuccessHandler(function(list) {
+          if (!Array.isArray(list) || list.length === 0) {
+            box.innerHTML = '<div class="m-empty"><div>누적 기록이 없습니다.</div></div>';
+            return;
+          }
+          var rows = list.map(function(r) {
+            return '<tr><td>'+escapeHtml(r['학번']||'')+'</td><td>'+escapeHtml(r['이름']||'')+'</td>'
+              +'<td><b>'+escapeHtml(r['누적횟수']||0)+'</b></td></tr>';
+          }).join('');
+          box.innerHTML = '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">'
+            +'<table style="width:100%;border-collapse:collapse;font-size:13px;">'
+            +'<thead><tr style="background:var(--primary-light);"><th style="padding:10px 8px;">학번</th><th style="padding:10px 8px;">이름</th><th style="padding:10px 8px;">누적횟수</th></tr></thead>'
+            +'<tbody>'+rows+'</tbody></table></div>';
+          box.querySelectorAll('td,th').forEach(function(c){ c.style.textAlign='center'; c.style.borderBottom='1px solid var(--border)'; });
+        })
+        .withFailureHandler(function(err) { box.innerHTML = '<div class="m-empty"><div>조회 실패</div></div>'; })
+        .getRestrictedAccumList();
+    })
+    .withFailureHandler(function() { box.innerHTML = '<div class="m-empty"><div>만료 정리 실패</div></div>'; })
+    .purgeExpiredRestrictions();
+}
+</script>

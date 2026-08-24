@@ -1,0 +1,313 @@
+<!--
+  ============================================================
+  _security_guard.html — 클라이언트 측 보안 가드 (Phase 4)
+  ============================================================
+  포함되는 모든 페이지에서 자동 실행되어 다음을 수행:
+    1) F12 / Ctrl+Shift+I/J/C / Ctrl+U / Ctrl+S 등 개발자 키 차단
+    2) 우클릭 / 드래그 / 텍스트 선택 일부 제한
+    3) DevTools 열림 감지 (창 크기 변화 + debugger 트랩) → 페이지 가리기
+    4) Form-token 자동 주입 (페이지 로드 시각)
+    5) Honeypot 필드 자동 주입
+    6) 폼 제출 시 자동으로 _form_ts / _hp_field 첨부
+
+  ⚠️ 알아두실 점:
+    - 어떤 사이트도 DevTools를 100% 차단할 수는 없습니다 (브라우저 자체 기능).
+    - 본 가드는 일반 학생의 우연·시도 차단용. 결정적 공격은 서버 측 가드(SEC-P1~P4)에서 잡습니다.
+    - 모바일에서 USB 디버깅은 별도 설정이 필요해 일반 학생에겐 거의 불가능합니다.
+============================================================ -->
+<script>
+(function() {
+  'use strict';
+
+  // ========== [1] 페이지 로드 시각(form-token) — 매크로/너무 빠른 제출 차단 ==========
+  window.__FORM_TS__ = Date.now();
+  // 폼 제출 데이터에 자동 첨부할 수 있도록 헬퍼 노출
+  window.attachSecurityFields = function(obj) {
+    if (!obj || typeof obj !== 'object') return obj;
+    obj._form_ts = window.__FORM_TS__;
+    var hp = document.querySelector('input[name="_hp_field"]');
+    obj._hp_field = hp ? hp.value : '';
+    return obj;
+  };
+
+  // ========== [2] Honeypot 필드 자동 주입 ==========
+  // 사람 눈에 안 보이는 입력란. 봇/매크로는 모든 input을 채우므로 이 필드가 비어있지 않으면 봇으로 간주.
+  function injectHoneypot() {
+    if (document.querySelector('input[name="_hp_field"]')) return; // 중복 방지
+    var hp = document.createElement('input');
+    hp.type = 'text';
+    hp.name = '_hp_field';
+    hp.tabIndex = -1;
+    hp.autocomplete = 'off';
+    hp.setAttribute('aria-hidden', 'true');
+    // CSS off-screen (display:none은 일부 봇이 채우지 않으므로 off-screen 사용)
+    hp.style.cssText = 'position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;';
+    document.body.appendChild(hp);
+  }
+  if (document.body) injectHoneypot();
+  else document.addEventListener('DOMContentLoaded', injectHoneypot);
+
+  // ========== [3] 개발자 도구 단축키 차단 ==========
+  // 일반 학생이 우연히/쉽게 시도하는 단축키만 차단. 결정적 우회는 서버 가드가 처리.
+  document.addEventListener('keydown', function(e) {
+    var blocked = false;
+
+    // F12
+    if (e.key === 'F12' || e.keyCode === 123) blocked = true;
+
+    // Ctrl+Shift+I / J / C / K (DevTools, Console, Picker, Web Console)
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
+      var k = (e.key || '').toUpperCase();
+      if (['I', 'J', 'C', 'K'].indexOf(k) !== -1) blocked = true;
+    }
+
+    // Ctrl+U (소스보기), Ctrl+S (저장)
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey) {
+      var k2 = (e.key || '').toUpperCase();
+      if (k2 === 'U' || k2 === 'S') blocked = true;
+    }
+
+    if (blocked) {
+      e.preventDefault();
+      e.stopPropagation();
+      try { console.warn('[SEC] 개발자 도구 단축키는 차단됩니다.'); } catch(_) {}
+      return false;
+    }
+  }, true);
+
+  // ========== [4] 우클릭 / 드래그 차단 ==========
+  document.addEventListener('contextmenu', function(e) {
+    // 텍스트 입력란에서는 우클릭 허용 (붙여넣기 등 필요)
+    var tag = (e.target && e.target.tagName) || '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    e.preventDefault();
+    return false;
+  }, true);
+
+  document.addEventListener('dragstart', function(e) {
+    var tag = (e.target && e.target.tagName) || '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    e.preventDefault();
+    return false;
+  }, true);
+
+  // ========== [5] DevTools 열림 감지 (창 크기 변화) ==========
+  // [v3.58 / 3-1] 확대(줌) 오탐 수정.
+  //   페이지 확대는 innerWidth를 줄여 기존 로직(diff>200)이 DevTools로 오인했음
+  //   (예: 1280px 창 150% 줌 → diff≈427 → 오탐 차단 화면).
+  //   확대는 devicePixelRatio가 함께 변하고 DevTools는 변하지 않으므로 이를 구분 신호로 사용.
+  //   또한 절대 임계값 대신 "로드 후 관찰된 최소 diff 대비 +300px 급증"으로 판정.
+  var DEV_TOOL_OPEN = false;
+  var __baseDiffW = null, __baseDiffH = null;
+  var __lastDPR = window.devicePixelRatio || 1;
+  var __lastDetectAt = 0;
+  function checkDevTools() {
+    try {
+      var dW = window.outerWidth - window.innerWidth;
+      var dH = window.outerHeight - window.innerHeight;
+      var dpr = window.devicePixelRatio || 1;
+      if (__baseDiffW === null) { __baseDiffW = dW; __baseDiffH = dH; }
+      if (Math.abs(dpr - __lastDPR) > 0.001) {
+        // 확대/축소 변경 — DevTools 아님. 기준값 재설정 후 종료.
+        __lastDPR = dpr; __baseDiffW = dW; __baseDiffH = dH;
+        if (DEV_TOOL_OPEN) { DEV_TOOL_OPEN = false; onDevToolsClosed(); }
+        return;
+      }
+      var opened = (dW - __baseDiffW > 300) || (dH - __baseDiffH > 300);
+      if (opened) {
+        __lastDetectAt = Date.now();
+        if (!DEV_TOOL_OPEN) { DEV_TOOL_OPEN = true; onDevToolsDetected(); }
+      } else {
+        if (DEV_TOOL_OPEN) { DEV_TOOL_OPEN = false; onDevToolsClosed(); }
+        // 닫힘 상태에서 관찰된 최소 diff로 기준 갱신
+        if (dW < __baseDiffW) __baseDiffW = dW;
+        if (dH < __baseDiffH) __baseDiffH = dH;
+      }
+    } catch(_) {}
+  }
+  setInterval(checkDevTools, 1000);
+
+  // ========== [6] DevTools 감지 — debugger 트랩 ==========
+  // DevTools 콘솔이 열려 있으면 debugger 트랩에서 페이지가 일시정지됨.
+  // [v3.58] 감지 시각을 기록해, 신호가 6초간 없으면 오버레이 자동 해제 (영구 잔존 방지).
+  function debuggerTrap() {
+    try {
+      var start = performance.now();
+      // eslint-disable-next-line no-debugger
+      (function(){}).constructor('debugger')();
+      var elapsed = performance.now() - start;
+      if (elapsed > 200) {
+        __lastDetectAt = Date.now();
+        onDevToolsDetected();
+      }
+    } catch(_) {}
+  }
+  setInterval(debuggerTrap, 2000);
+
+  // [v3.58] (구 6b) 타이밍 프로브 제거 — 저사양 크롬북·백그라운드 탭 스로틀에서
+  //   50k 루프가 500ms를 넘겨 DevTools 없이도 영구 차단 화면이 뜨던 최대 오탐원.
+
+  // [v3.58] 오버레이 자동 해제 감시자 — 감지 신호가 6초간 없고 크기 감지도
+  //   닫힘 상태면 오버레이를 내림 (undocked DevTools를 닫은 경우 등).
+  setInterval(function() {
+    try {
+      var overlay = document.getElementById('__sec_overlay__');
+      if (!overlay || overlay.style.display === 'none') return;
+      if (!DEV_TOOL_OPEN && Date.now() - __lastDetectAt > 6000) {
+        overlay.style.display = 'none';
+      }
+    } catch(_) {}
+  }, 2000);
+
+  // ========== [6c] 페이지 visibility / focus 추적 (자동화 감지) ==========
+  // 봇/매크로는 흔히 백그라운드 탭에서 동작. 사람은 보통 포커스된 탭에서만 작업.
+  window.__visTrack__ = { hidden: 0, shown: 0, lastHiddenAt: 0 };
+  document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+      window.__visTrack__.hidden++;
+      window.__visTrack__.lastHiddenAt = Date.now();
+    } else {
+      window.__visTrack__.shown++;
+    }
+  });
+
+  // ========== [6d] 비정상 빠른 클릭 감지 (서버에 별도 신호로 전달) ==========
+  var __clickTimes__ = [];
+  document.addEventListener('click', function() {
+    var now = Date.now();
+    __clickTimes__.push(now);
+    // 최근 1초 안의 클릭만 유지
+    __clickTimes__ = __clickTimes__.filter(function(t){ return now - t < 1000; });
+    if (__clickTimes__.length > 8) {
+      // 1초에 8회 이상 클릭 = 매크로 가능성
+      try { console.warn('[SEC] 비정상적인 빠른 클릭 감지'); } catch(_) {}
+    }
+  }, true);
+
+  // ========== [7] DevTools 감지 시 동작 ==========
+  function onDevToolsDetected() {
+    try {
+      // 화면을 부분적으로 가리고 경고
+      var overlay = document.getElementById('__sec_overlay__');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = '__sec_overlay__';
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);color:#fff;z-index:2147483647;display:flex;align-items:center;justify-content:center;font-family:\'맑은 고딕\',sans-serif;text-align:center;padding:24px;';
+        overlay.innerHTML =
+          '<div>' +
+          '<div style="font-size:60px;margin-bottom:18px;">⚠️</div>' +
+          '<h1 style="margin:0 0 12px;font-size:28px;">개발자 도구 감지</h1>' +
+          '<p style="font-size:16px;line-height:1.6;max-width:520px;margin:0 auto;">' +
+          '이 페이지에서는 개발자 도구를 사용할 수 없습니다.<br>' +
+          '모든 접속·조회 시도는 자동으로 기록되며,<br>' +
+          '본인의 학번이 아닌 신청을 조회·수정하려는 시도는 추적됩니다.<br><br>' +
+          '<b>학교 규정 위반 시 학생 생활 지도부에 통보될 수 있습니다.</b>' +
+          '</p>' +
+          '<p style="margin-top:24px;font-size:13px;color:#ccc;">개발자 도구를 닫으면 몇 초 안에 자동으로 복귀됩니다.<br>' +
+          '개발자 도구를 연 적이 없는데 이 화면이 계속 보이면 아래 버튼을 눌러 주세요.</p>' +
+          '<button type="button" id="__sec_overlay_close__" ' +
+          'style="margin-top:16px;padding:10px 22px;border:none;border-radius:8px;background:#334155;color:#fff;font-size:14px;cursor:pointer;">' +
+          '화면으로 돌아가기</button>' +
+          '</div>';
+        document.body.appendChild(overlay);
+        // [v3.58] 수동 복귀 버튼 — 오탐(감지 오류) 시 학생이 작성 내용을 잃지 않도록 탈출구 제공.
+        //   DevTools가 실제로 계속 열려 있으면 다음 감지 주기에 다시 표시됨.
+        try {
+          document.getElementById('__sec_overlay_close__').addEventListener('click', function() {
+            overlay.style.display = 'none';
+          });
+        } catch(_) {}
+      }
+      overlay.style.display = 'flex';
+    } catch(_) {}
+  }
+  function onDevToolsClosed() {
+    var overlay = document.getElementById('__sec_overlay__');
+    if (overlay) overlay.style.display = 'none';
+  }
+
+  // ========== [8] 콘솔 경고 메시지 ==========
+  try {
+    var bigStyle = 'color:#ef4444;font-size:32px;font-weight:bold;';
+    var noteStyle = 'color:#1f2937;font-size:14px;';
+    console.log('%c⛔ 경고', bigStyle);
+    console.log('%c여기에 코드를 붙여넣지 마세요. 본 콘솔은 모니터링됩니다.', noteStyle);
+    console.log('%c다른 학생의 계정/신청 정보를 조회·수정하려는 시도는 자동 기록되며 학교 규정에 따라 처리됩니다.', noteStyle);
+  } catch(_) {}
+
+  // ========== [9] 자동 폼 제출 가로채기 — 폼 객체에 보안 필드 자동 첨부 ==========
+  // 페이지가 google.script.run.submitApplication(data) 형태로 호출하기 전에
+  // 개발자가 명시적으로 attachSecurityFields(data)를 호출해야 함. (Form별 통합 필요)
+
+  // ========== [10] 학번 자동 채우기 + 잠금 (★ 본인 학번 강제) ==========
+  // 페이지 로드 후 google.script.run.getMyStudentInfo() 호출 →
+  //   학생 세션이면 studentId input에 본인 학번 자동 입력 + readonly + 시각적 잠금 표시.
+  //   다른 학번 입력 자체가 불가능해짐.
+  function applyOwnerLock() {
+    var input = document.getElementById('studentId');
+    if (!input) return; // form 페이지가 아니면 skip
+    if (!(window.google && google.script && google.script.run)) return;
+
+    google.script.run
+      .withSuccessHandler(function(info) {
+        if (!info) return;
+        if (info.isStudent && info.studentId) {
+          // 학생 세션 — 학번 강제
+          input.value = info.studentId;
+          input.readOnly = true;
+          input.setAttribute('aria-readonly', 'true');
+          input.style.background = '#f3f4f6';
+          input.style.color = '#374151';
+          input.style.cursor = 'not-allowed';
+          input.title = '본인 학번 자동 입력됨 (변경 불가)';
+
+          // 옆에 잠금 안내 배지 (중복 방지)
+          if (!document.getElementById('__sec_studentLockBadge__')) {
+            var badge = document.createElement('div');
+            badge.id = '__sec_studentLockBadge__';
+            badge.textContent = '🔒 본인 학번 자동 입력 (변경 불가)';
+            badge.style.cssText = 'display:inline-block;margin-top:6px;padding:4px 10px;font-size:12px;border-radius:12px;background:#dbeafe;color:#1e40af;font-weight:600;';
+            // input 다음에 삽입
+            if (input.parentNode) input.parentNode.insertBefore(badge, input.nextSibling);
+          }
+
+          // 학생이 콘솔로 input.value를 바꿔도 매 0.5초마다 강제 복구
+          setInterval(function() {
+            if (input.value !== info.studentId) {
+              input.value = info.studentId;
+            }
+          }, 500);
+
+          // 입력 이벤트 차단 (혹시라도 readonly 우회 시도)
+          ['input', 'change', 'keydown', 'paste'].forEach(function(evt) {
+            input.addEventListener(evt, function(e) {
+              if (input.value !== info.studentId) {
+                input.value = info.studentId;
+                try { e.preventDefault(); } catch(_) {}
+              }
+            }, true);
+          });
+        } else if (info.isTeacher || info.isAdmin) {
+          // 교사/관리자 — 그대로 (대리 신청 가능)
+          if (!document.getElementById('__sec_teacherBadge__')) {
+            var tb = document.createElement('div');
+            tb.id = '__sec_teacherBadge__';
+            tb.textContent = '👨‍🏫 교사/관리자 모드 — 학번 직접 입력 가능';
+            tb.style.cssText = 'display:inline-block;margin-top:6px;padding:4px 10px;font-size:12px;border-radius:12px;background:#fef3c7;color:#92400e;font-weight:600;';
+            if (input.parentNode) input.parentNode.insertBefore(tb, input.nextSibling);
+          }
+        }
+      })
+      .withFailureHandler(function(err) {
+        try { console.warn('[SEC] 학번 자동 채우기 실패:', err && err.message); } catch(_) {}
+      })
+      .getMyStudentInfo();
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyOwnerLock);
+  } else {
+    applyOwnerLock();
+  }
+
+})();
+</script>
